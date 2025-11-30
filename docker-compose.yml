@@ -15,6 +15,11 @@ services:
       - .:/var/www
     networks:
       - app-network
+    deploy: # Добавляем ограничения ресурсов
+      resources:
+        limits:
+          cpus: '1'  # Ограничиваем использование CPU до 2 ядер
+          memory: 0.9G # Ограничиваем использование памяти до 2 ГБ
 
   # Сервис базы данных PostgreSQL
   db:

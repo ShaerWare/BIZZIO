@@ -1,4 +1,4 @@
-# Stage 1: Установка зависимостей
+# Stage 1: Установка зависимостей Composer
 FROM composer:2 AS vendor
 
 WORKDIR /app
@@ -16,21 +16,32 @@ RUN composer install \
 # Stage 2: Сборка финального образа
 FROM php:8.2-fpm-alpine
 
-# Устанавливаем системные зависимости
+# Устанавливаем системные зависимости, необходимые для работы приложения и сборки расширений
+# Я объединил установку зависимостей и расширений в один RUN для оптимизации слоев
 RUN apk add --no-cache \
+    # Постоянные зависимости
     nginx \
     supervisor \
+    libzip \
+    postgresql-libs \
+    oniguruma \
+    libxml2 \
+    # Временные зависимости для сборки (build-deps)
+    && apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS \
     libzip-dev \
-    # Для работы с PostgreSQL
     postgresql-dev \
     oniguruma-dev \
     libxml2-dev \
-    # >>> ИСПРАВЛЕНИЕ: Добавляем заголовки ядра Linux для компиляции расширения sockets
-    linux-headers
-
-# Устанавливаем расширения PHP
-RUN docker-php-ext-install \
-    # Драйвер PostgreSQL
+    linux-headers \
+    # >>>>> ВОТ ИСПРАВЛЕНИЕ: Добавляем зависимости для GD <<<<<
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    # Устанавливаем расширения PHP
+    && docker-php-ext-install \
     pdo_pgsql \
     pgsql \
     zip \
@@ -39,7 +50,13 @@ RUN docker-php-ext-install \
     pcntl \
     bcmath \
     sockets \
-    opcache
+    opcache \
+    gd \
+    # Очищаем временные зависимости после сборки
+    && apk del .build-deps
+
+# Устанавливаем Composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 # Копируем код приложения
 WORKDIR /var/www
@@ -53,7 +70,7 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
     chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Копируем конфигурацию Nginx и Supervisor
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Открываем порт
