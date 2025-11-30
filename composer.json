@@ -9,7 +9,8 @@
         "php": "^8.2",
         "google-gemini-php/client": "^2.6",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "orchid/platform": "^14.52"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

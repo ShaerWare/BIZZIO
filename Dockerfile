@@ -17,16 +17,20 @@ RUN composer install \
 FROM php:8.2-fpm-alpine
 
 # Устанавливаем системные зависимости, необходимые для работы приложения и сборки расширений
-# Я объединил установку зависимостей и расширений в один RUN для оптимизации слоев
 RUN apk add --no-cache \
-    # Постоянные зависимости
+    # Постоянные зависимости, необходимые для работы приложения (RUNTIME)
     nginx \
     supervisor \
     libzip \
     postgresql-libs \
     oniguruma \
     libxml2 \
-    # Временные зависимости для сборки (build-deps)
+    # >>>>> ИСПРАВЛЕНИЕ: Добавляем runtime-библиотеки для GD сюда <<<<<
+    freetype \
+    libjpeg-turbo \
+    libpng \
+    libwebp \
+    # Временные зависимости для сборки (BUILD-DEPS)
     && apk add --no-cache --virtual .build-deps \
     $PHPIZE_DEPS \
     libzip-dev \
@@ -34,13 +38,13 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libxml2-dev \
     linux-headers \
-    # >>>>> ВОТ ИСПРАВЛЕНИЕ: Добавляем зависимости для GD <<<<<
+    # Dev-пакеты для GD
     freetype-dev \
     libjpeg-turbo-dev \
     libpng-dev \
     libwebp-dev \
+    # Конфигурируем и устанавливаем расширения PHP
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    # Устанавливаем расширения PHP
     && docker-php-ext-install \
     pdo_pgsql \
     pgsql \
