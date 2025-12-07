@@ -1,0 +1,57 @@
+# docker-compose.override.yml
+version: '3.8'
+
+services:
+  # Автоматический HTTPS-прокси + Let's Encrypt
+  proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy
+    ports:
+      #- "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: acme-companion
+    environment:
+      - DEFAULT_EMAIL=admin@bizzio.ru          # ваш email для уведомлений Let’s Encrypt
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - acme:/etc/acme.sh
+    depends_on:
+      - proxy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Меняем ваш текущий сервис app
+  app:
+    environment:
+      - VIRTUAL_HOST=bizzio.ru,www.bizzio.ru
+      - LETSENCRYPT_HOST=bizzio.ru,www.bizzio.ru
+      - LETSENCRYPT_EMAIL=admin@bizzio.ru
+    # Убираем проброс порта 80 наружу — теперь всё идёт через proxy
+    # ports:  # закомментировать или убрать эту строку
+    #   - "80:80"
+
+volumes:
+  certs:
+  vhost:
+  html:
+  acme:
+
+networks:
+  app-network:
+    external: true  # важно! чтобы proxy видел сервис app
