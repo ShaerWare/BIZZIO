@@ -73,6 +73,6 @@ class SocialiteController extends Controller
         // Входим в систему
         Auth::login($user, true);
 
-        return redirect()->intended('/admin'); // Редирект в админку Orchid
+        return redirect()->intended('/companies'); // Редирект в админку Orchid
     }
 }
