@@ -34,7 +34,11 @@ Route::get('companies/{company}', [CompanyController::class, 'show'])->name('com
 Route::middleware('auth')->group(function () {
     // Using resource routes for authenticated actions (create, store, edit, update, destroy)
     // 'index' and 'show' are excluded here as they are defined above as public.
-    Route::resource('companies', CompanyController::class)->except(['index', 'show']);
+    Route::get('companies/create', [CompanyController::class, 'create'])->name('companies.create');
+    Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+    Route::get('companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
+    Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
+    Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
 });
 
 
