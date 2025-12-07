@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
 use Gemini\Client;
 use Gemini;
 
@@ -13,14 +14,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register the Gemini Client as a singleton
-        $this->app->singleton(Client::class, function ($app) {
-            $apiKey = config('gemini.api_key');
-            if (!$apiKey) {
-                throw new \Exception('GEMINI_API_KEY is not set in .env file.');
-            }
-            return Gemini::client($apiKey);
-        });
+        //  
+         
     }
 
     /**
@@ -28,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Регистрация VK-провайдера для Socialite
+        $socialite = $this->app->make(SocialiteFactory::class);
+        
+        $socialite->extend('vk', function ($app) use ($socialite) {
+            $config = $app['config']['services.vk'];
+            return $socialite->buildProvider(\SocialiteProviders\VKontakte\Provider::class, $config);
+        });
     }
 }
