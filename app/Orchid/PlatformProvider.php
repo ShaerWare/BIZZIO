@@ -36,7 +36,7 @@ class PlatformProvider extends OrchidServiceProvider
         return [
             Menu::make('Get Started')
                 ->icon('bs.book')
-                ->title('Navigation')
+                ->title('Примеры страниц')
                 ->route(config('platform.index')),
 
             Menu::make('Sample Screen')
@@ -66,29 +66,30 @@ class PlatformProvider extends OrchidServiceProvider
                 ->route('platform.example.cards')
                 ->divider(),
 
-            Menu::make(__('Users'))
+            Menu::make(__('Юзеры'))
                 ->icon('bs.people')
                 ->route('platform.systems.users')
                 ->permission('platform.systems.users')
-                ->title(__('Access Controls')),
+                ->title(__('Настройки')),
 
-            Menu::make(__('Roles'))
+            Menu::make(__('Роли пользователей'))
                 ->icon('bs.shield')
                 ->route('platform.systems.roles')
                 ->permission('platform.systems.roles')
                 ->divider(),
 
-            Menu::make('Documentation')
-                ->title('Docs')
+            Menu::make('Компании')
+                ->icon('briefcase')
+                ->route('platform.companies.list'),
+                 
+
+            Menu::make('Документация проекта')
+                ->title('Документация')
                 ->icon('bs.box-arrow-up-right')
-                ->url('https://orchid.software/en/docs')
+                ->url('https://github.com/ShaerWare/BIZZIO')
                 ->target('_blank'),
 
-            Menu::make('Changelog')
-                ->icon('bs.box-arrow-up-right')
-                ->url('https://github.com/orchidsoftware/platform/blob/master/CHANGELOG.md')
-                ->target('_blank')
-                ->badge(fn () => Dashboard::version(), Color::DARK),
+            
         ];
     }
 

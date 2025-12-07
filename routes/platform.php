@@ -19,6 +19,8 @@ use App\Orchid\Screens\User\UserListScreen;
 use App\Orchid\Screens\User\UserProfileScreen;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
+use App\Orchid\Screens\CompanyListScreen;
+use App\Orchid\Screens\CompanyEditScreen;
 
 /*
 |--------------------------------------------------------------------------
@@ -102,3 +104,8 @@ Route::screen('/examples/charts', ExampleChartsScreen::class)->name('platform.ex
 Route::screen('/examples/cards', ExampleCardsScreen::class)->name('platform.example.cards');
 
 // Route::screen('idea', Idea::class, 'platform.screens.idea');
+
+// Компании
+Route::screen('companies', CompanyListScreen::class)->name('platform.companies.list');
+Route::screen('companies/create', CompanyEditScreen::class)->name('platform.companies.create');
+Route::screen('companies/{company}/edit', CompanyEditScreen::class)->name('platform.companies.edit');
