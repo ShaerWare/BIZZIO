@@ -17,8 +17,7 @@ class CompanyListScreen extends Screen
     {
         return [
             'companies' => Company::with(['industry', 'creator'])
-                ->filters()
-                ->defaultSort('id', 'desc')
+                ->orderBy('id', 'desc')  // ✅ ИСПРАВЛЕНО
                 ->paginate(20),
         ];
     }
@@ -60,17 +59,15 @@ class CompanyListScreen extends Screen
             Layout::table('companies', [
                 TD::make('id', 'ID')
                     ->sort()
-                    ->filter(TD::FILTER_TEXT),
+                    ->cantHide(),
 
                 TD::make('name', 'Название')
                     ->sort()
-                    ->filter(TD::FILTER_TEXT)
                     ->render(fn(Company $company) => Link::make($company->name)
                         ->route('platform.companies.edit', $company->id)),
 
                 TD::make('inn', 'ИНН')
-                    ->sort()
-                    ->filter(TD::FILTER_TEXT),
+                    ->sort(),
 
                 TD::make('industry', 'Отрасль')
                     ->render(fn(Company $company) => $company->industry?->name ?? '—'),

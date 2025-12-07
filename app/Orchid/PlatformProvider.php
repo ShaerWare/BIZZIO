@@ -34,6 +34,26 @@ class PlatformProvider extends OrchidServiceProvider
     public function menu(): array
     {
         return [
+
+            Menu::make(__('Юзеры'))
+                ->icon('bs.people')
+                ->route('platform.systems.users')
+                ->permission('platform.systems.users')
+                ->title(__('Настройки')),
+
+            Menu::make(__('Роли пользователей'))
+                ->icon('bs.shield')
+                ->route('platform.systems.roles')
+                ->permission('platform.systems.roles')
+                ->divider(),
+
+            Menu::make(__('Компании'))
+                ->icon('briefcase')
+                ->route('platform.companies.list'),
+                 
+
+            
+
             Menu::make('Get Started')
                 ->icon('bs.book')
                 ->title('Примеры страниц')
@@ -65,23 +85,6 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('bs.card-text')
                 ->route('platform.example.cards')
                 ->divider(),
-
-            Menu::make(__('Юзеры'))
-                ->icon('bs.people')
-                ->route('platform.systems.users')
-                ->permission('platform.systems.users')
-                ->title(__('Настройки')),
-
-            Menu::make(__('Роли пользователей'))
-                ->icon('bs.shield')
-                ->route('platform.systems.roles')
-                ->permission('platform.systems.roles')
-                ->divider(),
-
-            Menu::make('Компании')
-                ->icon('briefcase')
-                ->route('platform.companies.list'),
-                 
 
             Menu::make('Документация проекта')
                 ->title('Документация')
