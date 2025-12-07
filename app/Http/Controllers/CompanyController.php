@@ -1,76 +1,35 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
-use App\Http\Resources\CompanyResource;
 use App\Models\Company;
-use Illuminate\Http\JsonResponse;
+use App\Models\Industry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @OA\Tag(
- *     name="Companies",
- *     description="Управление компаниями"
- * )
- */
 class CompanyController extends Controller
 {
     /**
-     * @OA\Get(
-     *     path="/api/companies",
-     *     tags={"Companies"},
-     *     summary="Получить список компаний",
-     *     description="Возвращает пагинированный список компаний с фильтрами",
-     *     @OA\Parameter(
-     *         name="industry_id",
-     *         in="query",
-     *         description="ID отрасли",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="is_verified",
-     *         in="query",
-     *         description="Фильтр по верификации (0 или 1)",
-     *         required=false,
-     *         @OA\Schema(type="boolean")
-     *     ),
-     *     @OA\Parameter(
-     *         name="search",
-     *         in="query",
-     *         description="Поиск по названию или ИНН",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Успешный ответ",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Company"))
-     *         )
-     *     )
-     * )
+     * Display a listing of companies.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = Company::with(['industry', 'creator', 'moderators']);
 
         // Фильтр по отрасли
-        if ($request->has('industry_id')) {
+        if ($request->filled('industry_id')) {
             $query->where('industry_id', $request->industry_id);
         }
 
         // Фильтр по верификации
-        if ($request->has('is_verified')) {
+        if ($request->filled('is_verified')) {
             $query->where('is_verified', $request->boolean('is_verified'));
         }
 
         // Поиск по названию или ИНН
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -79,48 +38,24 @@ class CompanyController extends Controller
         }
 
         $companies = $query->paginate(20);
+        $industries = Industry::orderBy('name')->get();
 
-        return response()->json([
-            'data' => CompanyResource::collection($companies),
-            'meta' => [
-                'current_page' => $companies->currentPage(),
-                'last_page' => $companies->lastPage(),
-                'per_page' => $companies->perPage(),
-                'total' => $companies->total(),
-            ]
-        ]);
+        return view('companies.index', compact('companies', 'industries'));
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/companies",
-     *     tags={"Companies"},
-     *     summary="Создать компанию",
-     *     security={{"BearerAuth": {}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name", "inn"},
-     *             @OA\Property(property="name", type="string", example="ООО Рога и Копыта"),
-     *             @OA\Property(property="inn", type="string", example="123456789012"),
-     *             @OA\Property(property="legal_form", type="string", example="ООО"),
-     *             @OA\Property(property="short_description", type="string"),
-     *             @OA\Property(property="full_description", type="string"),
-     *             @OA\Property(property="industry_id", type="integer")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Компания создана",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="data", ref="#/components/schemas/Company")
-     *         )
-     *     ),
-     *     @OA\Response(response=422, description="Ошибка валидации"),
-     *     @OA\Response(response=401, description="Не авторизован")
-     * )
+     * Show the form for creating a new company.
      */
-    public function store(StoreCompanyRequest $request): JsonResponse
+    public function create()
+    {
+        $industries = Industry::orderBy('name')->get();
+        return view('companies.create', compact('industries'));
+    }
+
+    /**
+     * Store a newly created company.
+     */
+    public function store(StoreCompanyRequest $request)
     {
         $data = $request->validated();
         $data['created_by'] = auth()->id();
@@ -139,75 +74,40 @@ class CompanyController extends Controller
             }
         }
 
-        // Назначить создателя модератором
+        // Назначить создателя владельцем
         $company->assignModerator(auth()->user(), 'owner');
 
-        return response()->json([
-            'data' => new CompanyResource($company->load(['industry', 'creator', 'moderators']))
-        ], 201);
+        return redirect()->route('companies.show', $company)
+            ->with('success', 'Компания успешно создана!');
     }
 
     /**
-     * @OA\Get(
-     *     path="/api/companies/{id}",
-     *     tags={"Companies"},
-     *     summary="Получить компанию по ID",
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Успешный ответ",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="data", ref="#/components/schemas/Company")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="Компания не найдена")
-     * )
+     * Display the specified company.
      */
-    public function show(Company $company): JsonResponse
+    public function show(Company $company)
     {
-        return response()->json([
-            'data' => new CompanyResource($company->load(['industry', 'creator', 'moderators']))
-        ]);
+        $company->load(['industry', 'creator', 'moderators']);
+        return view('companies.show', compact('company'));
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/companies/{id}",
-     *     tags={"Companies"},
-     *     summary="Обновить компанию",
-     *     security={{"BearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string"),
-     *             @OA\Property(property="inn", type="string"),
-     *             @OA\Property(property="short_description", type="string")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Компания обновлена",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="data", ref="#/components/schemas/Company")
-     *         )
-     *     ),
-     *     @OA\Response(response=403, description="Доступ запрещён"),
-     *     @OA\Response(response=404, description="Компания не найдена"),
-     *     @OA\Response(response=422, description="Ошибка валидации")
-     * )
+     * Show the form for editing the specified company.
      */
-    public function update(UpdateCompanyRequest $request, Company $company): JsonResponse
+    public function edit(Company $company)
+    {
+        // Проверка прав доступа
+        if ($company->created_by !== auth()->id() && !$company->isModerator(auth()->user())) {
+            abort(403, 'У вас нет прав для редактирования этой компании');
+        }
+
+        $industries = Industry::orderBy('name')->get();
+        return view('companies.edit', compact('company', 'industries'));
+    }
+
+    /**
+     * Update the specified company.
+     */
+    public function update(UpdateCompanyRequest $request, Company $company)
     {
         $data = $request->validated();
 
@@ -229,37 +129,28 @@ class CompanyController extends Controller
             }
         }
 
-        return response()->json([
-            'data' => new CompanyResource($company->load(['industry', 'creator', 'moderators']))
-        ]);
+        return redirect()->route('companies.show', $company)
+            ->with('success', 'Компания успешно обновлена!');
     }
 
     /**
-     * @OA\Delete(
-     *     path="/api/companies/{id}",
-     *     tags={"Companies"},
-     *     summary="Удалить компанию",
-     *     security={{"BearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=204, description="Компания удалена"),
-     *     @OA\Response(response=403, description="Доступ запрещён"),
-     *     @OA\Response(response=404, description="Компания не найдена")
-     * )
+     * Remove the specified company.
      */
-    public function destroy(Company $company): JsonResponse
+    public function destroy(Company $company)
     {
         // Только создатель может удалить компанию
         if ($company->created_by !== auth()->id()) {
-            return response()->json(['message' => 'Доступ запрещён'], 403);
+            abort(403, 'У вас нет прав для удаления этой компании');
+        }
+
+        // Удаление логотипа
+        if ($company->logo) {
+            Storage::disk('public')->delete($company->logo);
         }
 
         $company->delete();
 
-        return response()->json(null, 204);
+        return redirect()->route('companies.index')
+            ->with('success', 'Компания успешно удалена!');
     }
 }
