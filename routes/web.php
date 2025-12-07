@@ -25,9 +25,7 @@ Route::get('/', function () {
 // ========================================================================
 
 // Publicly accessible routes for viewing companies
-// Публичный доступ к списку и просмотру компаний
-Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
-Route::get('companies/{company}', [CompanyController::class, 'show'])->name('companies.show');
+
 
 // Authenticated routes for managing companies (create, store, edit, update, delete)
 // CRUD компаний (создание, обновление, удаление только для авторизованных)
@@ -40,7 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
     Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
 });
-
+// Публичный доступ к списку и просмотру компаний
+Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+Route::get('companies/{company}', [CompanyController::class, 'show'])->name('companies.show');
 
 // ========================================================================
 // DASHBOARD & PROFILE ROUTES
