@@ -89,7 +89,7 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')
                 ->icon('bs.box-arrow-up-right')
-                ->url('hhttps://docs.google.com/document/d/1I1sToGlYhBs8LfqvqQUpwbPSc3vi37kQRokgvtSpSzU/edit?usp=sharing')
+                ->url('https://docs.google.com/document/d/1I1sToGlYhBs8LfqvqQUpwbPSc3vi37kQRokgvtSpSzU/edit?usp=sharing')
                 ->target('_blank'),
 
             Menu::make('Документация проекта')
