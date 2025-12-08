@@ -44,13 +44,12 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make(__('Роли пользователей'))
                 ->icon('bs.shield')
                 ->route('platform.systems.roles')
-                ->permission('platform.systems.roles')
-                ->divider(),
+                ->permission('platform.systems.roles'),
 
             Menu::make(__('Компании'))
                 ->icon('briefcase')
-                ->route('platform.companies.list'),
-                 
+                ->route('platform.companies.list')
+                ->divider(),
 
             
 
