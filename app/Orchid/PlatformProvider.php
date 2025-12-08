@@ -86,8 +86,13 @@ class PlatformProvider extends OrchidServiceProvider
                 ->route('platform.example.cards')
                 ->divider(),
 
-            Menu::make('Документация проекта')
+            Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')
+                ->icon('bs.box-arrow-up-right')
+                ->url('hhttps://docs.google.com/document/d/1I1sToGlYhBs8LfqvqQUpwbPSc3vi37kQRokgvtSpSzU/edit?usp=sharing')
+                ->target('_blank'),
+
+            Menu::make('Документация проекта')
                 ->icon('bs.box-arrow-up-right')
                 ->url('https://github.com/ShaerWare/BIZZIO')
                 ->target('_blank'),
