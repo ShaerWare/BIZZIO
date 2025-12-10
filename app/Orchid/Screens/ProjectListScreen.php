@@ -11,6 +11,11 @@ use Orchid\Screen\TD;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\Input;
 use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\DropDown;
+//use Orchid\Screen\Actions\Link;
+//use Orchid\Screen\Actions\DropDown;
+use Orchid\Support\Facades\Toast;
 
 class ProjectListScreen extends Screen
 {
@@ -95,9 +100,7 @@ class ProjectListScreen extends Screen
             ]),
 
             Layout::table('projects', [
-                TD::make('id', 'ID')
-                    ->sort()
-                    ->cantHide(),
+                TD::make('id', 'ID')->sort()->cantHide(),
 
                 TD::make('name', 'Название')
                     ->sort()
@@ -111,14 +114,12 @@ class ProjectListScreen extends Screen
                     ->sort()
                     ->render(function (Project $project) {
                         $badges = [
-                            'active' => 'success',
+                            'active'    => 'success',
                             'completed' => 'info',
                             'cancelled' => 'danger',
                         ];
-                        
                         $statusText = Project::getStatuses()[$project->status] ?? $project->status;
                         $badgeClass = $badges[$project->status] ?? 'secondary';
-                        
                         return "<span class='badge bg-{$badgeClass}'>{$statusText}</span>";
                     }),
 
@@ -127,10 +128,9 @@ class ProjectListScreen extends Screen
                     ->render(fn (Project $project) => $project->start_date?->format('d.m.Y') ?? '—'),
 
                 TD::make('end_date', 'Дата окончания')
-                    ->render(fn (Project $project) => 
-                        $project->is_ongoing 
-                            ? '<span class="badge bg-primary">По настоящее время</span>' 
-                            : ($project->end_date?->format('d.m.Y') ?? '—')
+                    ->render(fn (Project $project) => $project->is_ongoing
+                        ? '<span class="badge bg-primary">По настоящее время</span>'
+                        : ($project->end_date?->format('d.m.Y') ?? '—')
                     ),
 
                 TD::make('creator', 'Создатель')
@@ -143,12 +143,32 @@ class ProjectListScreen extends Screen
                 TD::make('actions', 'Действия')
                     ->align(TD::ALIGN_CENTER)
                     ->width('100px')
-                    ->render(fn (Project $project) => 
-                        Link::make('Редактировать')
+                    ->render(fn (Project $project) =>
+                        Link::make()
                             ->icon('pencil')
                             ->route('platform.projects.edit', $project)
+                            
+                        .
+                        Button::make()
+                            ->icon('trash')
+                            ->confirm('Удалить «' . $project->name . '»?')
+                            ->method('remove')
+                            ->parameters(['project' => $project->id])
+                            ->canSee(true)
                     ),
             ]),
         ];
+    }
+
+     /**
+     * Удаление проекта из списка
+     */
+    public function remove(Project $project)
+    {
+        $project->delete();
+
+        \Orchid\Support\Facades\Toast::info('Проект успешно удалён');
+
+        return redirect()->route('platform.projects');
     }
 }
