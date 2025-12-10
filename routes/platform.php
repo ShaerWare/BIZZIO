@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 use App\Orchid\Screens\CompanyListScreen;
 use App\Orchid\Screens\CompanyEditScreen;
+use App\Orchid\Screens\ProjectListScreen;
+use App\Orchid\Screens\ProjectEditScreen;
 
 /*
 |--------------------------------------------------------------------------
@@ -109,3 +111,22 @@ Route::screen('/examples/cards', ExampleCardsScreen::class)->name('platform.exam
 Route::screen('companies', CompanyListScreen::class)->name('platform.companies.list');
 Route::screen('companies/create', CompanyEditScreen::class)->name('platform.companies.create');
 Route::screen('companies/{company}/edit', CompanyEditScreen::class)->name('platform.companies.edit');
+
+// Проекты
+Route::screen('projects', ProjectListScreen::class)
+    ->name('platform.projects')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push('Проекты'));
+
+Route::screen('projects/create', ProjectEditScreen::class)
+    ->name('platform.projects.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.projects')
+        ->push('Создание проекта'));
+
+Route::screen('projects/{project}/edit', ProjectEditScreen::class)
+    ->name('platform.projects.edit')
+    ->breadcrumbs(fn (Trail $trail, Project $project) => $trail
+        ->parent('platform.projects')
+        ->push($project->name));

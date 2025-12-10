@@ -51,7 +51,10 @@ class PlatformProvider extends OrchidServiceProvider
                 ->route('platform.companies.list')
                 ->divider(),
 
-            
+            Menu::make('Проекты')
+                ->icon('rocket')
+                ->route('platform.projects')
+                ->permission('platform.projects'),            
 
             Menu::make('Get Started')
                 ->icon('bs.book')
