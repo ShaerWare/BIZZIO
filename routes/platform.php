@@ -23,6 +23,7 @@ use App\Orchid\Screens\CompanyListScreen;
 use App\Orchid\Screens\CompanyEditScreen;
 use App\Orchid\Screens\ProjectListScreen;
 use App\Orchid\Screens\ProjectEditScreen;
+use App\Models\Project;
 
 /*
 |--------------------------------------------------------------------------
@@ -112,21 +113,26 @@ Route::screen('companies', CompanyListScreen::class)->name('platform.companies.l
 Route::screen('companies/create', CompanyEditScreen::class)->name('platform.companies.create');
 Route::screen('companies/{company}/edit', CompanyEditScreen::class)->name('platform.companies.edit');
 
-// Проекты
+// Список проектов
 Route::screen('projects', ProjectListScreen::class)
     ->name('platform.projects')
     ->breadcrumbs(fn (Trail $trail) => $trail
-        ->parent('platform.index')
-        ->push('Проекты'));
+        ->parent('platform.index')           // ← от главного меню админки
+        ->push('Проекты', route('platform.projects'))
+    );
 
+// Создание проекта
 Route::screen('projects/create', ProjectEditScreen::class)
     ->name('platform.projects.create')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.projects')
-        ->push('Создание проекта'));
+        ->push('Создание проекта', route('platform.projects.create'))
+    );
 
-Route::screen('projects/{project}/edit', ProjectEditScreen::class)
+// Редактирование проекта
+Route::screen('projects/{project}', ProjectEditScreen::class)
     ->name('platform.projects.edit')
     ->breadcrumbs(fn (Trail $trail, Project $project) => $trail
         ->parent('platform.projects')
-        ->push($project->name));
+        ->push($project->name, route('platform.projects.edit', $project))
+    );

@@ -14,8 +14,6 @@ use Orchid\Screen\Fields\DateTimer;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\Picture;
 use Orchid\Screen\Fields\CheckBox;
-use Orchid\Screen\Fields\Relation;
-use Orchid\Support\Facades\Alert;
 use Orchid\Support\Facades\Toast;
 use Illuminate\Support\Str;
 
@@ -34,7 +32,7 @@ class ProjectEditScreen extends Screen
         $project->load(['company', 'participants']);
 
         return [
-            'project' => $project,
+            'project' => $project
         ];
     }
 
@@ -105,10 +103,10 @@ class ProjectEditScreen extends Screen
                     ->acceptedFiles('image/*')
                     ->help('Рекомендуемый размер: 800x600px. Максимум 2MB'),
 
-                Relation::make('project.company_id')
+                Select::make('project.company_id')
                     ->title('Компания-заказчик')
                     ->fromModel(Company::class, 'name')
-                    ->applyScope('verified')
+                    ->empty('Выберите компанию')
                     ->required()
                     ->help('Выберите компанию, от имени которой создаётся проект'),
 
@@ -137,10 +135,9 @@ class ProjectEditScreen extends Screen
             ]),
 
             Layout::rows([
-                Relation::make('project.participants.')
+                Select::make('project.participants')
                     ->title('Компании-участники')
                     ->fromModel(Company::class, 'name')
-                    ->applyScope('verified')
                     ->multiple()
                     ->help('Выберите компании, участвующие в проекте. Роли можно будет назначить после сохранения через веб-интерфейс'),
             ])->title('Участники проекта'),

@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Project extends Model implements HasMedia
+class Project extends Model
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
+    use HasFactory, SoftDeletes;
+
+    // ❌ ВРЕМЕННО УБИРАЕМ Spatie Media Library
+    // use InteractsWithMedia;
 
     protected $fillable = [
         'name',
@@ -203,20 +204,13 @@ class Project extends Model implements HasMedia
         return $query->where('name', 'like', '%' . $search . '%');
     }
 
-    /**
-     * Scope для фильтрации в Orchid
-     */
-    public function scopeFilters($query)
+    public function getContent(): string
     {
-        return $query
-            ->when(request('filter.search'), function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%");
-            })
-            ->when(request('filter.status'), function ($query, $status) {
-                $query->where('status', $status);
-            })
-            ->when(request('filter.company_id'), function ($query, $companyId) {
-                $query->where('company_id', $companyId);
-            });
+        return $this->name . ($this->company ? ' — ' . $this->company->name : '');
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'id'; // по умолчанию и так id, но на случай переопределения
     }
 }

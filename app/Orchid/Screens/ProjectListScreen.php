@@ -10,19 +10,34 @@ use Orchid\Support\Facades\Layout;
 use Orchid\Screen\TD;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\Input;
+use Illuminate\Http\Request;
 
 class ProjectListScreen extends Screen
 {
     /**
      * Query data.
      */
-    public function query(): iterable
+    public function query(Request $request): iterable
     {
+        $query = Project::with(['company', 'creator']);
+
+        // Фильтр по поиску
+        if ($request->filled('filter.search')) {
+            $query->where('name', 'like', '%' . $request->input('filter.search') . '%');
+        }
+
+        // Фильтр по статусу
+        if ($request->filled('filter.status')) {
+            $query->where('status', $request->input('filter.status'));
+        }
+
+        // Фильтр по компании
+        if ($request->filled('filter.company_id')) {
+            $query->where('company_id', $request->input('filter.company_id'));
+        }
+
         return [
-            'projects' => Project::with(['company', 'creator'])
-                ->filters()
-                ->defaultSort('created_at', 'desc')
-                ->paginate(20),
+            'projects' => $query->orderBy('created_at', 'desc')->paginate(20),
         ];
     }
 
@@ -61,18 +76,18 @@ class ProjectListScreen extends Screen
     {
         return [
             Layout::rows([
-                Input::make('filter[search]')
+                Input::make('filter.search')
                     ->title('Поиск')
                     ->placeholder('Поиск по названию проекта')
                     ->value(request('filter.search')),
 
-                Select::make('filter[status]')
+                Select::make('filter.status')
                     ->title('Статус')
                     ->options(Project::getStatuses())
                     ->empty('Все статусы')
                     ->value(request('filter.status')),
 
-                Select::make('filter[company_id]')
+                Select::make('filter.company_id')
                     ->title('Компания-заказчик')
                     ->fromModel(Company::class, 'name', 'id')
                     ->empty('Все компании')
@@ -82,16 +97,15 @@ class ProjectListScreen extends Screen
             Layout::table('projects', [
                 TD::make('id', 'ID')
                     ->sort()
-                    ->filter(Input::make()),
+                    ->cantHide(),
 
                 TD::make('name', 'Название')
                     ->sort()
-                    ->filter(Input::make())
                     ->render(fn (Project $project) => Link::make($project->name)
                         ->route('platform.projects.edit', $project)),
 
                 TD::make('company', 'Компания-заказчик')
-                    ->render(fn (Project $project) => $project->company->name),
+                    ->render(fn (Project $project) => $project->company->name ?? '—'),
 
                 TD::make('status', 'Статус')
                     ->sort()
@@ -102,9 +116,10 @@ class ProjectListScreen extends Screen
                             'cancelled' => 'danger',
                         ];
                         
-                        return "<span class='badge bg-{$badges[$project->status]}'>" . 
-                               Project::getStatuses()[$project->status] . 
-                               "</span>";
+                        $statusText = Project::getStatuses()[$project->status] ?? $project->status;
+                        $badgeClass = $badges[$project->status] ?? 'secondary';
+                        
+                        return "<span class='badge bg-{$badgeClass}'>{$statusText}</span>";
                     }),
 
                 TD::make('start_date', 'Дата начала')
@@ -119,7 +134,7 @@ class ProjectListScreen extends Screen
                     ),
 
                 TD::make('creator', 'Создатель')
-                    ->render(fn (Project $project) => $project->creator->name),
+                    ->render(fn (Project $project) => $project->creator->name ?? '—'),
 
                 TD::make('created_at', 'Создан')
                     ->sort()
