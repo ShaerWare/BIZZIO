@@ -202,4 +202,21 @@ class Project extends Model implements HasMedia
     {
         return $query->where('name', 'like', '%' . $search . '%');
     }
+
+    /**
+     * Scope для фильтрации в Orchid
+     */
+    public function scopeFilters($query)
+    {
+        return $query
+            ->when(request('filter.search'), function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->when(request('filter.status'), function ($query, $status) {
+                $query->where('status', $status);
+            })
+            ->when(request('filter.company_id'), function ($query, $companyId) {
+                $query->where('company_id', $companyId);
+            });
+    }
 }

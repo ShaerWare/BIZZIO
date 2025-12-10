@@ -93,4 +93,12 @@ class Company extends Model implements HasMedia
         $this->addMediaCollection('documents')
             ->acceptsMimeTypes(['application/pdf']);
     }
+
+    /**
+     * Только верифицированные компании
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('is_verified', true);
+    }
 }
