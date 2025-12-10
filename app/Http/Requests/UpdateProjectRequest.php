@@ -11,18 +11,88 @@ class UpdateProjectRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        $project = $this->route('project');
+        $user = auth()->user();
+        
+        // Только создатель проекта, модераторы компании-заказчика или админы могут редактировать
+        return $project->canManage($user);
     }
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:500',
+            'full_description' => 'nullable|string',
+            'avatar' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048', // 2MB
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_ongoing' => 'boolean',
+            'status' => 'required|in:active,completed,cancelled',
+            'company_id' => 'required|exists:companies,id',
+            
+            // Участники проекта
+            'participants' => 'nullable|array',
+            'participants.*.company_id' => 'required|exists:companies,id',
+            'participants.*.role' => 'required|in:customer,general_contractor,contractor,supplier,consultant',
+            'participants.*.participation_description' => 'nullable|string',
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Название проекта обязательно для заполнения.',
+            'name.max' => 'Название проекта не должно превышать 255 символов.',
+            'avatar.image' => 'Файл должен быть изображением.',
+            'avatar.mimes' => 'Допустимые форматы: JPEG, JPG, PNG, WebP.',
+            'avatar.max' => 'Размер изображения не должен превышать 2MB.',
+            'start_date.required' => 'Дата начала проекта обязательна.',
+            'end_date.after_or_equal' => 'Дата окончания должна быть не раньше даты начала.',
+            'company_id.required' => 'Компания-заказчик обязательна.',
+            'company_id.exists' => 'Выбранная компания не существует.',
+        ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('is_ongoing')) {
+            $this->merge(['is_ongoing' => false]);
+        }
+        
+        if ($this->is_ongoing) {
+            $this->merge(['end_date' => null]);
+        }
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $companyId = $this->input('company_id');
+            $user = auth()->user();
+            
+            if ($companyId) {
+                $company = \App\Models\Company::find($companyId);
+                
+                if ($company && !$company->isModerator($user) && !$user->hasRole('Admin')) {
+                    $validator->errors()->add(
+                        'company_id',
+                        'Вы не являетесь модератором этой компании.'
+                    );
+                }
+            }
+        });
     }
 }

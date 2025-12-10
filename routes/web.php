@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\SocialiteController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ProjectController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,5 +65,21 @@ Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect']
     ->name('socialite.redirect');
 Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback'])
     ->name('socialite.callback');
+
+// Проекты (публичные: index, show; приватные: create, store, edit, update, destroy)
+Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
+Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
+Route::get('/projects/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
+Route::put('/projects/{project:slug}', [ProjectController::class, 'update'])->name('projects.update');
+Route::delete('/projects/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+
+// Комментарии к проектам (требуют авторизации)
+Route::middleware('auth')->group(function () {
+    Route::post('/projects/{project:slug}/comments', [ProjectController::class, 'storeComment'])->name('projects.comments.store');
+    Route::put('/comments/{comment}', [ProjectController::class, 'updateComment'])->name('comments.update');
+    Route::delete('/comments/{comment}', [ProjectController::class, 'destroyComment'])->name('comments.destroy');
+});
 
 require __DIR__.'/auth.php';
