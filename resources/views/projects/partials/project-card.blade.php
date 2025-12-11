@@ -1,5 +1,3 @@
-@props(['project'])
-
 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-lg transition-shadow duration-300">
     <a href="{{ route('projects.show', $project->slug) }}" class="block">
         <!-- Аватар проекта -->
