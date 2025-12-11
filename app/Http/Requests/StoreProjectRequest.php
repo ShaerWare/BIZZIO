@@ -88,7 +88,8 @@ class StoreProjectRequest extends FormRequest
             if ($companyId) {
                 $company = \App\Models\Company::find($companyId);
                 
-                if ($company && !$company->isModerator($user) && !$user->hasRole('Admin')) {
+                // ИСПРАВЛЕНО: hasRole() → inRole()
+                if ($company && !$company->isModerator($user) && !$user->inRole('admin')) {
                     $validator->errors()->add(
                         'company_id',
                         'Вы не являетесь модератором этой компании и не можете создать проект от её имени.'

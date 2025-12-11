@@ -104,7 +104,7 @@ class Project extends Model
      */
     public function canManage(User $user): bool
     {
-        return $this->company->isModerator($user) || $user->hasRole('Admin');
+        return $this->company->isModerator($user) || $user->inRole('admin');
     }
 
     /**

@@ -18,7 +18,7 @@ class ProjectController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth')->except(['index', 'show']);
+        //$this->middleware('auth')->except(['index', 'show']);
     }
 
     /**
@@ -44,7 +44,7 @@ class ProjectController extends Controller
         }
 
         $projects = $query->latest()->paginate(20);
-        $companies = Company::verified()->get(); // Для фильтра
+        $companies = Company::verified()->get();
 
         return view('projects.index', compact('projects', 'companies'));
     }
@@ -57,7 +57,8 @@ class ProjectController extends Controller
         // Получаем компании, где пользователь является модератором
         $user = auth()->user();
         
-        if ($user->hasRole('Admin')) {
+        // ИСПРАВЛЕНО: hasRole() → inRole()
+        if ($user->inRole('admin')) {
             $companies = Company::verified()->get();
         } else {
             $companies = $user->moderatedCompanies()->verified()->get();
@@ -117,7 +118,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $project->load(['company', 'creator', 'participants', 'comments.user.replies.user']);
+        $project->load(['company', 'creator', 'participants', 'comments.user']);
 
         return view('projects.show', compact('project'));
     }
@@ -135,7 +136,8 @@ class ProjectController extends Controller
         // Получаем компании, где пользователь является модератором
         $user = auth()->user();
         
-        if ($user->hasRole('Admin')) {
+        // ИСПРАВЛЕНО: hasRole() → inRole()
+        if ($user->inRole('admin')) {
             $companies = Company::verified()->get();
         } else {
             $companies = $user->moderatedCompanies()->verified()->get();
@@ -196,8 +198,8 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        // Только создатель или админ может удалить проект
-        if ($project->created_by !== auth()->id() && !auth()->user()->hasRole('Admin')) {
+        // ИСПРАВЛЕНО: hasRole() → inRole()
+        if ($project->created_by !== auth()->id() && !auth()->user()->inRole('admin')) {
             abort(403, 'У вас нет прав для удаления этого проекта.');
         }
 

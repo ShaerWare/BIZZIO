@@ -3,13 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
-use Orchid\Platform\Models\User as Authenticatable;
+use Orchid\Platform\Models\User as Orchid;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Orchid 
 {
+    use HasFactory ;
+        
     /**
      * The attributes that are mass assignable.
      *
@@ -46,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'permissions'          => 'array',
         'email_verified_at'    => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**
@@ -73,4 +78,61 @@ class User extends Authenticatable implements MustVerifyEmail
         'updated_at',
         'created_at',
     ];
+
+        // ========================
+    // СВЯЗИ (RELATIONSHIPS)
+    // ========================
+
+    /**
+     * Компании, где пользователь является создателем
+     */
+    public function createdCompanies()
+    {
+        return $this->hasMany(Company::class, 'created_by');
+    }
+
+    /**
+     * Компании, где пользователь является модератором (через pivot-таблицу)
+     */
+    public function moderatedCompanies()
+    {
+        return $this->belongsToMany(Company::class, 'company_user')
+            ->withTimestamps();
+    }
+
+    /**
+     * Проекты, созданные пользователем
+     */
+    public function createdProjects()
+    {
+        return $this->hasMany(Project::class, 'created_by');
+    }
+
+    /**
+     * Комментарии пользователя
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    // ========================
+    // МЕТОДЫ
+    // ========================
+
+    /**
+     * Проверка, является ли пользователь модератором хотя бы одной компании
+     */
+    public function isModeratorOfAnyCompany(): bool
+    {
+        return $this->moderatedCompanies()->exists();
+    }
+
+    /**
+     * Проверка, является ли пользователь модератором конкретной компании
+     */
+    public function isModeratorOf(Company $company): bool
+    {
+        return $this->moderatedCompanies()->where('companies.id', $company->id)->exists();
+    }
 }
