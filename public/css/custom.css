@@ -154,10 +154,13 @@ html {
 
 /* === ЛЕВЫЙ БЛОК (Features) === */
 .features-block {
+    flex: 1;
     padding: 50px 40px;
     background: #4169E1;
     color: white;
-    margin-bottom: 20px;
+    display: flex;  
+    flex-direction: column;  
+    justify-content: center;
 }
 
 .features-block h1 {
@@ -205,10 +208,12 @@ html {
 
 /* === ПРАВЫЙ БЛОК (Login Form) === */
 .login-block {
+    flex: 1;
     padding: 50px 40px;
     background: white;
- 
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+    display: flex; /* ДОБАВЛЕНО */
+    flex-direction: column; /* ДОБАВЛЕНО */
+    justify-content: center; /* ДОБАВЛЕНО: вертикальное центрирование */
 }
 
 .login-header {
@@ -443,5 +448,97 @@ html {
     background: white;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
+    min-height: 600px;
     /* border-radius удалён — острые углы */
+}
+/* === OAUTH КНОПКИ === */
+.oauth-divider {
+    text-align: center;
+    margin: 25px 0 20px;
+    position: relative;
+}
+
+.oauth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: #e0e0e0;
+    z-index: 1;
+}
+
+.oauth-divider span {
+    position: relative;
+    z-index: 2;
+    background: white;
+    padding: 0 15px;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+.oauth-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.oauth-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e0e0e0;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.oauth-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.oauth-btn.google {
+    border-color: #DB4437;
+}
+
+.oauth-btn.google:hover {
+    background: #DB4437;
+    border-color: #DB4437;
+}
+
+.oauth-btn.google:hover svg {
+    fill: white;
+}
+
+.oauth-btn.vk {
+    border-color: #0077FF;
+}
+
+.oauth-btn.vk:hover {
+    background: #0077FF;
+    border-color: #0077FF;
+}
+
+.oauth-btn.vk:hover svg {
+    fill: white;
+}
+
+.oauth-btn svg {
+    width: 24px;
+    height: 24px;
+    transition: fill 0.3s;
+}
+
+.oauth-btn.google svg {
+    fill: #DB4437;
+}
+
+.oauth-btn.vk svg {
+    fill: #0077FF;
 }
