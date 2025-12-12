@@ -147,16 +147,15 @@ html {
 .hero-content {
     position: relative;
     z-index: 10;
-    max-width: 1200px;
-    width: 100%;
+    max-width: 900px;
+    width: 90%;
     padding: 0 20px;
 }
 
 /* === ЛЕВЫЙ БЛОК (Features) === */
 .features-block {
     padding: 50px 40px;
-    background: rgba(42, 91, 221, 0.95);
-    border-radius: 20px;
+    background: #4169E1;
     color: white;
     margin-bottom: 20px;
 }
@@ -208,7 +207,7 @@ html {
 .login-block {
     padding: 50px 40px;
     background: white;
-    border-radius: 20px;
+ 
     box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
 }
 
@@ -437,4 +436,12 @@ html {
 .features-block,
 .login-block {
     animation: fadeIn 0.6s ease-out;
+}
+
+.unified-block {
+    display: flex;
+    background: white;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    /* border-radius удалён — острые углы */
 }
