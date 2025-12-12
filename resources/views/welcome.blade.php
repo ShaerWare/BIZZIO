@@ -82,8 +82,10 @@
                 <section class="hero-section">
                     <!-- Video Background -->
                     <div class="video-container">
-                        <video autoplay muted loop playsinline>
-                            <source src="{{ asset('videos/8.mp4') }}" type="video/mp4">
+                        <video autoplay muted loop playsinline preload="auto">
+                            <source src="https://mythemestore.com/friend-finder/videos/8.mp4" type="video/mp4">
+                            <!-- Fallback изображение на случай, если видео не загрузится -->
+                            <img src="{{ asset('images/video-fallback.jpg') }}" alt="Background" style="width: 100%; height: 100%; object-fit: cover;">
                         </video>
                     </div>
 
