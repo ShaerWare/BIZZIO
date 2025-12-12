@@ -8,6 +8,7 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/dashicons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/css.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-bar.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bbpress.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buddypress.min.css') }}">
@@ -16,7 +17,7 @@
     <link rel="stylesheet" href="{{ asset('css/unicons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/beehive.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/elementor.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}"> <!-- Дополнительные стили -->
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">  
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,400,600,700,300italic,400italic,600italic,700italic|Quicksand:700&display=swap" rel="stylesheet">
