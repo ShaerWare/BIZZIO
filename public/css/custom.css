@@ -445,7 +445,7 @@ html {
 
 .unified-block {
     display: flex;
-    background: white;
+     
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     min-height: 600px;
@@ -541,4 +541,9 @@ html {
 
 .oauth-btn.vk svg {
     fill: #0077FF;
+}
+
+.reduce-10 {
+    width: 70%;           
+    height: auto;     
 }
