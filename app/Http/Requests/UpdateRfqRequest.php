@@ -11,7 +11,8 @@ class UpdateRfqRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        $rfq = $this->route('rfq');
+        return $rfq && $rfq->canManage($this->user());
     }
 
     /**
@@ -22,7 +23,21 @@ class UpdateRfqRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'end_date' => 'sometimes|required|date|after:start_date',
+            'technical_specification' => 'nullable|file|mimes:pdf|max:10240',
+        ];
+    }
+
+    /**
+     * Кастомные сообщения об ошибках
+     */
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Укажите название запроса котировок',
+            'end_date.after' => 'Дата окончания должна быть позже даты начала',
         ];
     }
 }
