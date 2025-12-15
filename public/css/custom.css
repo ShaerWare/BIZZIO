@@ -547,3 +547,73 @@ html {
     width: 70%;           
     height: auto;     
 }
+/* === HERO SECTION - ИСПРАВЛЕНИЯ === */
+/* Делаем hero-content flex-контейнером для центрирования unified-block */
+.hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px; /* Увеличили для лучшего вида на больших экранах */
+    width: 95%;
+    margin: 0 auto; /* Центрирование */
+    padding: 0 20px;
+    display: flex; /* Добавлено: flex для управления дочерними блоками */
+    justify-content: center;
+    align-items: stretch; /* Растягиваем блоки на равную высоту */
+}
+
+/* Unified block - основной контейнер для двух блоков */
+.unified-block {
+    display: flex;
+    width: 100%; /* Заполняем ширину hero-content */
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    min-height: 600px;
+    flex-direction: row; /* По умолчанию: бок о бок на десктопе */
+}
+
+/* Левый и правый блоки - равная ширина на десктопе */
+.features-block,
+.login-block {
+    flex: 1; /* Равномерное распределение */
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Мобильная адаптация: столбец вместо строки */
+@media (max-width: 991px) {
+    .unified-block {
+        flex-direction: column; /* Блоки друг под другом */
+    }
+    
+    .hero-content {
+        width: 90%; /* Чуть шире на планшетах */
+    }
+    
+    .features-block,
+    .login-block {
+        padding: 40px 30px;
+    }
+}
+
+/* Дополнительные фиксы для видео в Chrome */
+.video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    min-width: 100%;   /* Принудительное заполнение в Chrome */
+    min-height: 100%;
+    transform: translateZ(0); /* Hardware acceleration для плавности */
+}
+
+/* Overlay - убедимся в покрытии */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2;
+}

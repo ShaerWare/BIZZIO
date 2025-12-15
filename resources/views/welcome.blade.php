@@ -16,10 +16,10 @@
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    <link rel="stylesheet" href="https://bizzio.ru/css/custom.css">
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('images/favicon.svg') }}" sizes="32x32" />
+    <link rel="icon" href="https://bizzio.ru/images/favicon.svg" sizes="32x32" />
 </head>
 
 <body>
@@ -227,6 +227,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="{{ asset('js/custom.js') }}"></script>
+    <script src="https://bizzio.ru/js/custom.js"></script>
 </body>
 </html>
