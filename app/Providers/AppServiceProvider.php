@@ -4,8 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
-use Gemini\Client;
-use Gemini;
+use Illuminate\Support\Facades\Gate;
+use App\Models\Rfq;
+use App\Policies\RfqPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,8 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //  
-         
+        //
     }
 
     /**
@@ -25,10 +25,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Регистрация VK-провайдера для Socialite
         $socialite = $this->app->make(SocialiteFactory::class);
-        
         $socialite->extend('vk', function ($app) use ($socialite) {
             $config = $app['config']['services.vk'];
             return $socialite->buildProvider(\SocialiteProviders\VKontakte\Provider::class, $config);
         });
+
+        // Регистрация Policy для RFQ
+        Gate::policy(Rfq::class, RfqPolicy::class);
     }
 }
