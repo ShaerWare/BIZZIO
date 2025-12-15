@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\SocialiteController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\RfqController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,5 +82,33 @@ Route::middleware('auth')->group(function () {
     Route::put('/comments/{comment}', [ProjectController::class, 'updateComment'])->name('comments.update');
     Route::delete('/comments/{comment}', [ProjectController::class, 'destroyComment'])->name('comments.destroy');
 });
+
+// RFQ Routes
+Route::middleware(['auth'])->group(function () {
+    // Мои RFQ (организатор)
+    Route::get('/my-rfqs', [RfqController::class, 'myRfqs'])->name('rfqs.my');
+    
+    // Мои заявки (участник)
+    Route::get('/my-bids', [RfqController::class, 'myBids'])->name('bids.my');
+    
+    // Мои приглашения
+    Route::get('/my-invitations', [RfqController::class, 'myInvitations'])->name('invitations.my');
+    
+    // Создание RFQ
+    Route::get('/rfqs/create', [RfqController::class, 'create'])->name('rfqs.create');
+    Route::post('/rfqs', [RfqController::class, 'store'])->name('rfqs.store');
+    
+    // Редактирование/удаление RFQ
+    Route::get('/rfqs/{rfq}/edit', [RfqController::class, 'edit'])->name('rfqs.edit');
+    Route::put('/rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
+    Route::delete('/rfqs/{rfq}', [RfqController::class, 'destroy'])->name('rfqs.destroy');
+    
+    // Подача заявки
+    Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
+});
+
+// Публичные роуты
+Route::get('/rfqs', [RfqController::class, 'index'])->name('rfqs.index');
+Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 
 require __DIR__.'/auth.php';
