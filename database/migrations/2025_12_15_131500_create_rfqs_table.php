@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('rfqs', function (Blueprint $table) {
@@ -28,21 +25,19 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             
             // Тип процедуры
-            $table->enum('type', ['open', 'closed'])->default('open'); // открытая/закрытая
+            $table->enum('type', ['open', 'closed'])->default('open');
             
             // Сроки
-            $table->timestamp('start_date'); // Дата начала приёма заявок
-            $table->timestamp('end_date'); // Дата окончания приёма заявок
+            $table->timestamp('start_date');
+            $table->timestamp('end_date');
             
             // Критерии оценки (веса в %)
-            $table->decimal('weight_price', 5, 2)->default(50.00); // Вес "Цена" (0-100%)
-            $table->decimal('weight_deadline', 5, 2)->default(30.00); // Вес "Срок выполнения"
-            $table->decimal('weight_advance', 5, 2)->default(20.00); // Вес "Размер аванса"
+            $table->decimal('weight_price', 5, 2)->default(50.00);
+            $table->decimal('weight_deadline', 5, 2)->default(30.00);
+            $table->decimal('weight_advance', 5, 2)->default(20.00);
             
             // Статус
             $table->enum('status', ['draft', 'active', 'closed', 'cancelled'])->default('draft');
-            
-            // ⚠️ УБРАЛИ winner_bid_id (добавим позже отдельной миграцией)
             
             // Временные метки
             $table->timestamps();
@@ -56,9 +51,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('rfqs');
