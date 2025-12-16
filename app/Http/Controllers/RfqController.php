@@ -11,10 +11,13 @@ use App\Http\Requests\StoreBidRequest;
 use App\Jobs\CloseRfqJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RfqController extends Controller
 {
-    /**
+     use AuthorizesRequests;
+     
+     /**
      * Каталог RFQ
      */
     public function index(Request $request)
