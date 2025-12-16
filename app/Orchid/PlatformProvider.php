@@ -60,9 +60,9 @@ class PlatformProvider extends OrchidServiceProvider
                 ->divider(),            
 
             Menu::make('Запросы котировок')
-                ->icon('docs')
+                ->icon('stars')
                 ->route('platform.rfqs.list')
-                ->permission('platform.systems.rfqs')
+                //->permission('platform.systems.rfqs')
                 ->title('Тендеры'), 
 
             Menu::make('Статус проекта по ТЗ')
