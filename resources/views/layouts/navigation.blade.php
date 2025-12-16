@@ -23,55 +23,8 @@
     </x-nav-link>
     
     <!-- Тендеры (Dropdown) -->
-<x-nav-link
-    :href="''"
-    :active="request()->routeIs('rfqs.*', 'bids.*', 'invitations.*')"
-    class="relative"
-    x-data="{ open: false }"
-    @click.prevent="open = ! open"
-    @click.outside="open = false"
->
-    {{-- Слот: текст + стрелка вниз --}}
-    <div class="inline-flex items-center">
-        <span>Тендеры</span>
-        <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-    </div>
+                 <div class="hidden sm:flex sm:items-center sm:ms-6">
 
-    {{-- Дропдаун --}}
-    <div
-        x-show="open"
-        x-transition
-        class="absolute z-50 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 left-1/2 -translate-x-1/2"
-        style="display: none;"
-    >
-        <div class="py-1">
-            <a href="{{ route('rfqs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                Найти тендер
-            </a>
-            @auth
-                @if(auth()->user()->isModeratorOfAnyCompany())
-                    <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Разместить Запрос котировок
-                    </a>
-                @endif
-                <div class="border-t border-gray-100"></div>
-                <a href="{{ route('rfqs.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Мои тендеры
-                </a>
-                <a href="{{ route('bids.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Мои заявки
-                </a>
-                <a href="{{ route('invitations.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Мои приглашения
-                </a>
-            @endauth
-        </div>
-    </div>
-</x-nav-link>
-
-    <!-- Тендеры (Dropdown) -->
     <div class="relative" x-data="{ open: false }">
         <button @click="open = ! open" 
                 class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
@@ -111,7 +64,7 @@
             </div>
         </div>
     </div>
-</div>
+</div></div>
             </div>
 
             <!-- Settings Dropdown -->
