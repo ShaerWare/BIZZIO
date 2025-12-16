@@ -9,6 +9,8 @@ use Orchid\Platform\ItemPermission;
 use Orchid\Platform\OrchidServiceProvider;
 use Orchid\Screen\Actions\Menu;
 use Orchid\Support\Color;
+use App\Orchid\Screens\RfqListScreen;
+use App\Orchid\Screens\RfqEditScreen;
 
 class PlatformProvider extends OrchidServiceProvider
 {
@@ -57,7 +59,11 @@ class PlatformProvider extends OrchidServiceProvider
                 //->permission('platform.projects')
                 ->divider(),            
 
-             
+            Menu::make('Запросы котировок')
+                ->icon('docs')
+                ->route('platform.rfqs.list')
+                ->permission('platform.systems.rfqs')
+                ->title('Тендеры'), 
 
             Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')
