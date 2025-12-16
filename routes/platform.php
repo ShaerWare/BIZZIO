@@ -24,6 +24,8 @@ use App\Orchid\Screens\CompanyEditScreen;
 use App\Orchid\Screens\ProjectListScreen;
 use App\Orchid\Screens\ProjectEditScreen;
 use App\Models\Project;
+use App\Orchid\Screens\RfqListScreen;
+use App\Orchid\Screens\RfqEditScreen;
 
 /*
 |--------------------------------------------------------------------------
@@ -136,3 +138,22 @@ Route::screen('projects/{project}', ProjectEditScreen::class)
         ->parent('platform.projects')
         ->push($project->name, route('platform.projects.edit', $project))
     );
+
+// RFQ Routes
+Route::screen('rfqs', RfqListScreen::class)
+    ->name('platform.rfqs.list')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push('Запросы котировок', route('platform.rfqs.list')));
+
+Route::screen('rfqs/create', RfqEditScreen::class)
+    ->name('platform.rfqs.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.rfqs.list')
+        ->push('Создать', route('platform.rfqs.create')));
+
+Route::screen('rfqs/{rfq}/edit', RfqEditScreen::class)
+    ->name('platform.rfqs.edit')
+    ->breadcrumbs(fn (Trail $trail, $rfq) => $trail
+        ->parent('platform.rfqs.list')
+        ->push($rfq->number, route('platform.rfqs.edit', $rfq)));
