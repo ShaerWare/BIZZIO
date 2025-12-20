@@ -277,4 +277,39 @@ class RfqController extends Controller
 
         return view('rfqs.my-invitations', compact('invitations'));
     }
+
+    /**
+     * Активировать RFQ (перевести из черновика в активный)
+     */
+    public function activate(Rfq $rfq)
+    {
+        $this->authorize('update', $rfq);
+
+        if ($rfq->status !== 'draft') {
+            return back()->with('error', 'Можно активировать только черновики');
+        }
+
+        // Проверка готовности RFQ
+        if (!$rfq->hasMedia('technical_specification')) {
+            return back()->with('error', 'Загрузите техническое задание перед активацией');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Активируем RFQ
+            $rfq->update(['status' => 'active']);
+
+            // Планируем автозакрытие
+            CloseRfqJob::dispatch($rfq)->delay($rfq->end_date);
+
+            DB::commit();
+
+            return redirect()->route('rfqs.show', $rfq)
+                ->with('success', 'RFQ успешно активирован! Приём заявок открыт.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Ошибка при активации: ' . $e->getMessage());
+        }
+    }
 }
