@@ -34,6 +34,52 @@ class Company extends Model implements HasMedia
         'is_verified' => 'boolean',
     ];
 
+        /**
+     * Boot method для автогенерации slug
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($company) {
+            if (empty($company->slug)) {
+                $company->slug = Str::slug($company->name);
+                
+                // Проверка уникальности slug
+                $originalSlug = $company->slug;
+                $counter = 1;
+                
+                while (static::where('slug', $company->slug)->exists()) {
+                    $company->slug = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        });
+
+        static::updating(function ($company) {
+            // Если название изменилось, обновляем slug
+            if ($company->isDirty('name') && empty($company->slug)) {
+                $company->slug = Str::slug($company->name);
+                
+                $originalSlug = $company->slug;
+                $counter = 1;
+                
+                while (static::where('slug', $company->slug)->where('id', '!=', $company->id)->exists()) {
+                    $company->slug = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        });
+    }
+
+    /**
+     * Route Model Binding по slug
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+    
     /**
      * Отрасль
      */
