@@ -27,6 +27,7 @@ class StoreRfqRequest extends FormRequest
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:open,closed',
+            'status' => 'required|in:draft,active',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after:start_date',
             'weight_price' => 'required|numeric|min:0|max:100',
