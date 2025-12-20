@@ -102,7 +102,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/rfqs/{rfq}/edit', [RfqController::class, 'edit'])->name('rfqs.edit');
     Route::put('/rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
     Route::delete('/rfqs/{rfq}', [RfqController::class, 'destroy'])->name('rfqs.destroy');
-    
+    // Активация RFQ
+    Route::post('/rfqs/{rfq}/activate', [RfqController::class, 'activate'])->name('rfqs.activate');    
     // Подача заявки
     Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
 });
