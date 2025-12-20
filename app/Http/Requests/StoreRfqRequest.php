@@ -66,6 +66,7 @@ class StoreRfqRequest extends FormRequest
         return [
             'company_id.required' => 'Выберите компанию-организатора',
             'title.required' => 'Укажите название запроса котировок',
+            'status.required' => 'Выберите статус RFQ',
             'start_date.after_or_equal' => 'Дата начала не может быть в прошлом',
             'end_date.after' => 'Дата окончания должна быть позже даты начала',
             'technical_specification.required' => 'Загрузите техническое задание (PDF)',
