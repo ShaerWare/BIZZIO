@@ -97,6 +97,43 @@
                             </label>
                         </div>
                     </div>
+                    <!-- Статус -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Статус <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" 
+                                    name="status" 
+                                    value="draft" 
+                                    {{ old('status', 'draft') === 'draft' ? 'checked' : '' }}
+                                    class="mt-1 rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <div class="ml-3">
+                                    <span class="text-sm font-semibold text-gray-900">Черновик</span>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        RFQ будет сохранён, но не опубликован. Можно будет редактировать и активировать позже.
+                                    </p>
+                                </div>
+                            </label>
+                            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" 
+                                    name="status" 
+                                    value="active"
+                                    {{ old('status') === 'active' ? 'checked' : '' }}
+                                    class="mt-1 rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <div class="ml-3">
+                                    <span class="text-sm font-semibold text-gray-900">Активный (опубликовать сразу)</span>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        RFQ будет сразу опубликован, приём заявок начнётся автоматически. После активации редактирование будет ограничено.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                        @error('status')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
                     <!-- Приглашения (для закрытых процедур) -->
                     <div id="invitations-block" class="mb-6" style="display: {{ old('type') === 'closed' ? 'block' : 'none' }};">
