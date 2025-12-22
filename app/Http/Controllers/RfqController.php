@@ -134,24 +134,35 @@ class RfqController extends Controller
 
         // Проверка: может ли текущий пользователь подать заявку
         $canBid = false;
-        if (auth()->check() && $rfq->isActive()) {
-            $userCompanies = auth()->user()->moderatedCompanies->pluck('id');
+        
+        if (auth()->check() && $rfq->status === 'active' && $rfq->isActive()) {
+            $user = auth()->user();
+            $userCompanies = $user->moderatedCompanies->pluck('id');
             
-            // Проверка: пользователь модератор компании
             if ($userCompanies->isNotEmpty()) {
-                // Проверка: компания ещё не подавала заявку
+                // Проверяем, что ни одна из компаний пользователя не подавала заявку
                 $alreadyBid = $rfq->bids()->whereIn('company_id', $userCompanies)->exists();
                 
                 if (!$alreadyBid) {
-                    // Для открытых процедур или если есть приглашение
-                    $canBid = $rfq->type === 'open' 
-                        || $rfq->invitations()->whereIn('company_id', $userCompanies)->exists();
+                    // Для открытых процедур или если есть приглашение для закрытых
+                    if ($rfq->type === 'open') {
+                        $canBid = true;
+                    } else {
+                        // Для закрытых процедур проверяем наличие приглашения
+                        $hasInvitation = $rfq->invitations()
+                            ->whereIn('company_id', $userCompanies)
+                            ->exists();
+                        
+                        $canBid = $hasInvitation;
+                    }
                 }
             }
         }
 
         return view('rfqs.show', compact('rfq', 'canBid'));
     }
+
+   
 
     /**
      * Форма редактирования RFQ
