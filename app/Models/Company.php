@@ -11,6 +11,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable; 
 use Orchid\Screen\AsSource;
+use App\Models\CompanyJoinRequest;
 
 class Company extends Model implements HasMedia
 {
@@ -147,5 +148,57 @@ class Company extends Model implements HasMedia
     public function scopeVerified($query)
     {
         return $query->where('is_verified', true);
+    }
+
+    /**
+     * Запросы на присоединение к компании
+     */
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(CompanyJoinRequest::class);
+    }
+
+    /**
+     * Проверка: может ли пользователь управлять модераторами
+     */
+    public function canManageModerators(User $user): bool
+    {
+        // Админы могут всё
+        if ($user->hasAccess('platform.systems.users')) {
+            return true;
+        }
+
+        // Создатель может всегда
+        if ($this->created_by === $user->id) {
+            return true;
+        }
+
+        // Модераторы с правом управления
+        $moderator = $this->moderators()->where('user_id', $user->id)->first();
+        return $moderator && $moderator->pivot->can_manage_moderators;
+    }
+
+    /**
+     * Проверка: уже ли есть активный запрос от пользователя
+     */
+    public function hasPendingRequestFrom(User $user): bool
+    {
+        return $this->joinRequests()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->exists();
+    }
+
+    /**
+     * Улучшенный метод назначения модератора (с историей)
+     */
+    public function assignModerator(User $user, string $role = null, User $addedBy = null, bool $canManageModerators = false): void
+    {
+        $this->moderators()->attach($user->id, [
+            'role' => $role,
+            'added_by' => $addedBy?->id ?? auth()->id(),
+            'added_at' => now(),
+            'can_manage_moderators' => $canManageModerators,
+        ]);
     }
 }

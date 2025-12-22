@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use App\Models\CompanyJoinRequest;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
@@ -134,5 +134,21 @@ class User extends Orchid
     public function isModeratorOf(Company $company): bool
     {
         return $this->moderatedCompanies()->where('companies.id', $company->id)->exists();
+    }
+
+    /**
+     * Запросы на присоединение к компаниям
+     */
+    public function companyJoinRequests(): HasMany
+    {
+        return $this->hasMany(CompanyJoinRequest::class);
+    }
+
+    /**
+     * Активные запросы на присоединение
+     */
+    public function pendingCompanyRequests(): HasMany
+    {
+        return $this->hasMany(CompanyJoinRequest::class)->where('status', 'pending');
     }
 }
