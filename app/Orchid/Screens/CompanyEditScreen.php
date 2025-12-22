@@ -2,6 +2,7 @@
 
 namespace App\Orchid\Screens;
 
+use App\Http\Requests\UpdateCompanyOrchidRequest;
 use App\Models\Company;
 use App\Models\Industry;
 use App\Models\User;
@@ -80,11 +81,12 @@ class CompanyEditScreen extends Screen
                     ->title('Название компании')
                     ->placeholder('ООО "Рога и Копыта"')
                     ->required()
-                    ->help('Полное название компании'),
+                    ->help('Полное название компании')
+                    ->value(old('company.inn', $this->company->inn ?? null)),
 
                 Input::make('company.inn')
                     ->title('ИНН')
-                    ->mask('9999999999')
+                    //->mask('9999999999')
                     ->placeholder('1234567890')
                     ->required()
                     ->help('ИНН должен содержать 10 цифр'),
@@ -115,13 +117,17 @@ class CompanyEditScreen extends Screen
                     ->title('Логотип')
                     ->acceptedFiles('image/*')
                     ->maxFiles(1)
-                    ->help('Форматы: JPG, PNG. Максимальный размер: 2MB'),
+                    ->help('JPG, PNG, GIF, WebP. Макс. 2 МБ')
+                    ->target('logo') // Коллекция 'logo'
+                    ->loadStateFromModel() // Показывает текущее изображение
+                    ->placeholder($this->company?->getFirstMediaUrl('logo') ?? null),
 
                 Upload::make('company.documents')
                     ->title('Документы (PDF)')
                     ->acceptedFiles('.pdf')
                     ->maxFiles(10)
-                    ->help('Устав, ИНН, ОГРН и другие документы. Максимум 10 файлов по 10MB'),
+                    ->help('Устав, ИНН, ОГРН и другие документы. Макс. 10 файлов по 10MB')
+                    ->target('documents'),
 
                 CheckBox::make('company.is_verified')
                     ->title('Верифицирована')
@@ -141,21 +147,47 @@ class CompanyEditScreen extends Screen
     /**
      * Save company
      */
-    public function save(Company $company, Request $request)
+    public function save(Company $company, UpdateCompanyOrchidRequest $request)
     {
-        $data = $request->get('company');
+        $validated = $request->validated();
 
-        // Если создание новой компании
-        if (!$company->exists) {
-            $data['created_by'] = auth()->id();
+        $data = $validated['company'] ?? [];
+
+        // Очистка ИНН от всего лишнего (пробелы, подчёркивания, буквы)
+        if (isset($data['inn'])) {
+            $data['inn'] = preg_replace('/\D/', '', $data['inn']);
+            
+            // Если после очистки длина != 10 — возвращаем ошибку
+            if (strlen($data['inn']) !== 10) {
+                Alert::error('ИНН должен содержать ровно 10 цифр.');
+                return redirect()->back()->withInput();
+            }
         }
 
-        $company->fill($data)->save();
+        if (!$company->exists) {
+            $data['created_by'] = auth()->id();
+            $company = Company::create($data);
+        } else {
+            $company->update($data);
+        }
 
-        // Синхронизация модераторов
-        if ($request->has('company.moderators')) {
-            $moderators = $request->input('company.moderators', []);
-            $company->moderators()->sync($moderators);
+        // Логотип
+        if ($request->hasFile('company.logo')) {
+            $company->clearMediaCollection('logo');
+            $company->addMediaFromRequest('company.logo.0')
+                    ->toMediaCollection('logo');
+        }
+
+        // Документы
+        if ($request->hasFile('company.documents')) {
+            foreach ($request->file('company.documents') as $document) {
+                $company->addMedia($document)->toMediaCollection('documents');
+            }
+        }
+
+        // Модераторы
+        if (isset($validated['company']['moderators'])) {
+            $company->moderators()->sync($validated['company']['moderators']);
         }
 
         Alert::success('Компания успешно сохранена');

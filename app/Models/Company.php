@@ -220,6 +220,11 @@ class Company extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
+        $this->addMediaCollection('logo')
+         ->singleFile() // только один файл
+         ->useDisk('public')
+         ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+         
         $this->addMediaCollection('documents')
             ->acceptsMimeTypes(['application/pdf']);
     }
