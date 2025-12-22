@@ -24,7 +24,7 @@ class UpdateCompanyRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'inn' => ['sometimes', 'required', 'string', 'size:12', Rule::unique('companies')->ignore($companyId)],
+            'inn' => ['sometimes', 'required', 'string', 'size:10', Rule::unique('companies')->ignore($companyId)],
             'legal_form' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'short_description' => ['nullable', 'string', 'max:500'],
@@ -39,7 +39,7 @@ class UpdateCompanyRequest extends FormRequest
         return [
             'name.required' => 'Название компании обязательно для заполнения',
             'inn.required' => 'ИНН обязателен для заполнения',
-            'inn.size' => 'ИНН должен содержать 12 цифр',
+            'inn.size' => 'ИНН должен содержать 10 цифр',
             'inn.unique' => 'Компания с таким ИНН уже зарегистрирована',
             'logo.image' => 'Логотип должен быть изображением',
             'logo.max' => 'Размер логотипа не должен превышать 2MB',

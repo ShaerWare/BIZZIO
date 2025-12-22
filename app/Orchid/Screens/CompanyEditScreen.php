@@ -84,10 +84,10 @@ class CompanyEditScreen extends Screen
 
                 Input::make('company.inn')
                     ->title('ИНН')
-                    ->mask('999999999999')
-                    ->placeholder('123456789012')
+                    ->mask('9999999999')
+                    ->placeholder('1234567890')
                     ->required()
-                    ->help('ИНН должен содержать 12 цифр'),
+                    ->help('ИНН должен содержать 10 цифр'),
 
                 Input::make('company.legal_form')
                     ->title('Организационно-правовая форма')

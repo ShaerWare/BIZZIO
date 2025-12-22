@@ -56,12 +56,12 @@
                                name="inn" 
                                id="inn" 
                                value="{{ old('inn') }}"
-                               maxlength="12"
-                               pattern="[0-9]{12}"
+                               maxlength="10"
+                               pattern="[0-9]{10}"
                                required
-                               placeholder="123456789012"
+                               placeholder="1234567890"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('inn') border-red-500 @enderror">
-                        <p class="mt-1 text-xs text-gray-500">ИНН должен содержать 12 цифр</p>
+                        <p class="mt-1 text-xs text-gray-500">ИНН должен содержать 10 цифр</p>
                         @error('inn')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
