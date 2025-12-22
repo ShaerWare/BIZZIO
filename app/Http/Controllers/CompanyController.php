@@ -86,7 +86,17 @@ class CompanyController extends Controller
      */
     public function show(Company $company)
     {
-        $company->load(['industry', 'creator', 'moderators']);
+        $company->load([
+        'industry', 
+        'creator', 
+        'moderators',
+        'joinRequests' => function ($query) {
+            $query->where('status', 'pending')
+                  ->with('user')
+                  ->orderBy('created_at', 'desc');
+            }
+        ]);
+        
         return view('companies.show', compact('company'));
     }
 
