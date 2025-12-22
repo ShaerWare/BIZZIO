@@ -6,23 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('company_user', function (Blueprint $table) {
-            //
+            $table->foreignId('added_by')->nullable()->after('role')->constrained('users')->onDelete('set null');
+            $table->timestamp('added_at')->nullable()->after('added_by');
+            $table->boolean('can_manage_moderators')->default(false)->after('added_at');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('company_user', function (Blueprint $table) {
-            //
+            $table->dropForeign(['added_by']);
+            $table->dropColumn(['added_by', 'added_at', 'can_manage_moderators']);
         });
     }
 };
