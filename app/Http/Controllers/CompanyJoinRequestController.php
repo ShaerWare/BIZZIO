@@ -12,6 +12,19 @@ class CompanyJoinRequestController extends Controller
 {
     use AuthorizesRequests;
 
+        /**
+     * Отображение списка моих запросов на присоединение
+     */
+    public function index()
+    {
+        $requests = auth()->user()
+            ->companyJoinRequests()
+            ->with(['company.industry'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+        
+        return view('join-requests.index', compact('requests'));
+    }
     /**
      * Отправить запрос на присоединение
      */

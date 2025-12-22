@@ -26,6 +26,7 @@ use App\Orchid\Screens\ProjectEditScreen;
 use App\Models\Project;
 use App\Orchid\Screens\RfqListScreen;
 use App\Orchid\Screens\RfqEditScreen;
+use App\Models\Company;
 
 /*
 |--------------------------------------------------------------------------
@@ -157,3 +158,12 @@ Route::screen('rfqs/{rfq}/edit', RfqEditScreen::class)
     ->breadcrumbs(fn (Trail $trail, $rfq) => $trail
         ->parent('platform.rfqs.list')
         ->push($rfq->number, route('platform.rfqs.edit', $rfq)));
+
+Route::bind('company', function ($value) {
+    // Если это число - ищем по id (для админки)
+    if (is_numeric($value)) {
+        return Company::findOrFail($value);
+    }
+    // Если строка - ищем по slug (для публичных роутов)
+    return Company::where('slug', $value)->firstOrFail();
+});

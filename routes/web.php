@@ -42,7 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
     Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
 
-    // Запросы на присоединение к компании
+    // Запросы на присоединение к компании 
+    Route::get('/my-join-requests', [CompanyJoinRequestController::class, 'index'])
+        ->name('join-requests.index');
     Route::post('/companies/{company}/join-requests', [CompanyJoinRequestController::class, 'store'])
         ->name('companies.join-requests.store');
     Route::delete('/join-requests/{request}', [CompanyJoinRequestController::class, 'destroy'])

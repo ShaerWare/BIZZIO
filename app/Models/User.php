@@ -4,7 +4,8 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\CompanyJoinRequest;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
@@ -12,8 +13,8 @@ use Orchid\Platform\Models\User as Orchid;
 
 class User extends Orchid 
 {
-    use HasFactory ;
-        
+    use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -50,7 +51,7 @@ class User extends Orchid
     protected $casts = [
         'permissions'          => 'array',
         'email_verified_at'    => 'datetime',
-        'password' => 'hashed',
+        'password'             => 'hashed',
     ];
 
     /**
@@ -79,14 +80,14 @@ class User extends Orchid
         'created_at',
     ];
 
-        // ========================
+    // ========================
     // СВЯЗИ (RELATIONSHIPS)
     // ========================
 
     /**
      * Компании, где пользователь является создателем
      */
-    public function createdCompanies()
+    public function createdCompanies(): HasMany
     {
         return $this->hasMany(Company::class, 'created_by');
     }
@@ -94,16 +95,17 @@ class User extends Orchid
     /**
      * Компании, где пользователь является модератором (через pivot-таблицу)
      */
-    public function moderatedCompanies()
+    public function moderatedCompanies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class, 'company_user')
+            ->withPivot(['role', 'added_by', 'added_at', 'can_manage_moderators'])
             ->withTimestamps();
     }
 
     /**
      * Проекты, созданные пользователем
      */
-    public function createdProjects()
+    public function createdProjects(): HasMany
     {
         return $this->hasMany(Project::class, 'created_by');
     }
@@ -111,9 +113,25 @@ class User extends Orchid
     /**
      * Комментарии пользователя
      */
-    public function comments()
+    public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Запросы на присоединение к компаниям
+     */
+    public function companyJoinRequests(): HasMany
+    {
+        return $this->hasMany(CompanyJoinRequest::class);
+    }
+
+    /**
+     * Активные запросы на присоединение (pending)
+     */
+    public function pendingCompanyRequests(): HasMany
+    {
+        return $this->hasMany(CompanyJoinRequest::class)->where('status', 'pending');
     }
 
     // ========================
@@ -134,21 +152,5 @@ class User extends Orchid
     public function isModeratorOf(Company $company): bool
     {
         return $this->moderatedCompanies()->where('companies.id', $company->id)->exists();
-    }
-
-    /**
-     * Запросы на присоединение к компаниям
-     */
-    public function companyJoinRequests(): HasMany
-    {
-        return $this->hasMany(CompanyJoinRequest::class);
-    }
-
-    /**
-     * Активные запросы на присоединение
-     */
-    public function pendingCompanyRequests(): HasMany
-    {
-        return $this->hasMany(CompanyJoinRequest::class)->where('status', 'pending');
     }
 }

@@ -60,6 +60,10 @@
                                     <a href="{{ route('invitations.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         Мои приглашения
                                     </a>
+                                    <a href="{{ route('join-requests.index') }}" 
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        Мои запросы на присоединение
+                                    </a>
                                 @endauth
                             </div>
                         </div>
