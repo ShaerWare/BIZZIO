@@ -262,4 +262,196 @@
         </div>
     </div>
 </div>
+<!-- Модальное окно: Одобрить запрос -->
+<div id="approve-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Одобрить запрос</h3>
+            
+            <form id="approve-form" method="POST" action="">
+                @csrf
+                
+                <p class="text-sm text-gray-600 mb-4">
+                    Вы собираетесь добавить пользователя <strong id="approve-user-name"></strong> как модератора компании.
+                </p>
+                
+                <div class="mb-4">
+                    <label for="approve-role" class="block text-sm font-medium text-gray-700 mb-2">
+                        Роль
+                    </label>
+                    <input type="text" 
+                           name="role" 
+                           id="approve-role"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" 
+                               name="can_manage_moderators" 
+                               value="1"
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-700">Может управлять модераторами</span>
+                    </label>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" 
+                            onclick="closeApproveModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        Отмена
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                        Одобрить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Отклонить запрос -->
+<div id="reject-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Отклонить запрос</h3>
+            
+            <form id="reject-form" method="POST" action="">
+                @csrf
+                
+                <p class="text-sm text-gray-600 mb-4">
+                    Вы собираетесь отклонить запрос пользователя <strong id="reject-user-name"></strong>.
+                </p>
+                
+                <div class="mb-4">
+                    <label for="review_comment" class="block text-sm font-medium text-gray-700 mb-2">
+                        Причина отклонения (необязательно)
+                    </label>
+                    <textarea name="review_comment" 
+                              id="review_comment"
+                              rows="3"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                              placeholder="Укажите причину..."></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" 
+                            onclick="closeRejectModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        Отмена
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                        Отклонить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Изменить роль модератора -->
+<div id="edit-moderator-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Изменить роль модератора</h3>
+            
+            <form id="edit-moderator-form" method="POST" action="">
+                @csrf
+                @method('PUT')
+                
+                <p class="text-sm text-gray-600 mb-4">
+                    Изменение роли для: <strong id="edit-moderator-name"></strong>
+                </p>
+                
+                <div class="mb-4">
+                    <label for="edit-role" class="block text-sm font-medium text-gray-700 mb-2">
+                        Роль
+                    </label>
+                    <input type="text" 
+                           name="role" 
+                           id="edit-role"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" 
+                               name="can_manage_moderators" 
+                               id="edit-can-manage"
+                               value="1"
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-700">Может управлять модераторами</span>
+                    </label>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" 
+                            onclick="closeEditModeratorModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        Отмена
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+// Модальное окно: Одобрить запрос
+function showApproveModal(requestId, userName, desiredRole) {
+    document.getElementById('approve-modal').classList.remove('hidden');
+    document.getElementById('approve-user-name').textContent = userName;
+    document.getElementById('approve-role').value = desiredRole || '';
+    document.getElementById('approve-form').action = `/join-requests/${requestId}/approve`;
+}
+
+function closeApproveModal() {
+    document.getElementById('approve-modal').classList.add('hidden');
+}
+
+// Модальное окно: Отклонить запрос
+function showRejectModal(requestId, userName) {
+    document.getElementById('reject-modal').classList.remove('hidden');
+    document.getElementById('reject-user-name').textContent = userName;
+    document.getElementById('reject-form').action = `/join-requests/${requestId}/reject`;
+}
+
+function closeRejectModal() {
+    document.getElementById('reject-modal').classList.add('hidden');
+}
+
+// Модальное окно: Изменить роль модератора
+function showEditModeratorModal(userId, userName, role, canManage) {
+    document.getElementById('edit-moderator-modal').classList.remove('hidden');
+    document.getElementById('edit-moderator-name').textContent = userName;
+    document.getElementById('edit-role').value = role || '';
+    document.getElementById('edit-can-manage').checked = canManage;
+    document.getElementById('edit-moderator-form').action = `/companies/{{ $company->id }}/moderators/${userId}`;
+}
+
+function closeEditModeratorModal() {
+    document.getElementById('edit-moderator-modal').classList.add('hidden');
+}
+
+// Закрытие модальных окон по клику вне их
+window.onclick = function(event) {
+    if (event.target.id === 'approve-modal') {
+        closeApproveModal();
+    }
+    if (event.target.id === 'reject-modal') {
+        closeRejectModal();
+    }
+    if (event.target.id === 'edit-moderator-modal') {
+        closeEditModeratorModal();
+    }
+}
+</script>
+@endpush
 @endsection

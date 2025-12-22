@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable; 
 use Orchid\Screen\AsSource;
-use App\Models\CompanyJoinRequest;
 
 class Company extends Model implements HasMedia
 {
@@ -35,7 +36,7 @@ class Company extends Model implements HasMedia
         'is_verified' => 'boolean',
     ];
 
-        /**
+    /**
      * Boot method для автогенерации slug
      */
     protected static function boot()
@@ -103,51 +104,8 @@ class Company extends Model implements HasMedia
     public function moderators(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'company_user')
-            ->withPivot('role')
+            ->withPivot(['role', 'added_by', 'added_at', 'can_manage_moderators'])
             ->withTimestamps();
-    }
-
-    /**
-     * Проверка: является ли пользователь модератором компании
-     */
-    public function isModerator(User $user): bool
-    {
-        return $this->moderators()->where('user_id', $user->id)->exists();
-    }
-
-    /**
-     * Назначение модератора
-     */
-    public function assignModerator(User $user, string $role = 'moderator'): void
-    {
-        if (!$this->isModerator($user)) {
-            $this->moderators()->attach($user->id, ['role' => $role]);
-        }
-    }
-
-    /**
-     * Снятие модератора
-     */
-    public function removeModerator(User $user): void
-    {
-        $this->moderators()->detach($user->id);
-    }
-
-    /**
-     * Media Collections (для документов: Устав, ИНН, ОГРН)
-     */
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('documents')
-            ->acceptsMimeTypes(['application/pdf']);
-    }
-
-    /**
-     * Только верифицированные компании
-     */
-    public function scopeVerified($query)
-    {
-        return $query->where('is_verified', true);
     }
 
     /**
@@ -156,6 +114,48 @@ class Company extends Model implements HasMedia
     public function joinRequests(): HasMany
     {
         return $this->hasMany(CompanyJoinRequest::class);
+    }
+
+    /**
+     * Проекты компании (как заказчик)
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class, 'company_id');
+    }
+
+    /**
+     * Проекты, где компания участвует
+     */
+    public function participatedProjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'company_project')
+            ->withPivot(['role', 'participation_description'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Запросы котировок (RFQ) компании
+     */
+    public function rfqs(): HasMany
+    {
+        return $this->hasMany(Rfq::class);
+    }
+
+    /**
+     * Заявки компании на RFQ
+     */
+    public function rfqBids(): HasMany
+    {
+        return $this->hasMany(RfqBid::class);
+    }
+
+    /**
+     * Проверка: является ли пользователь модератором компании
+     */
+    public function isModerator(User $user): bool
+    {
+        return $this->moderators()->where('user_id', $user->id)->exists();
     }
 
     /**
@@ -179,7 +179,7 @@ class Company extends Model implements HasMedia
     }
 
     /**
-     * Проверка: уже ли есть активный запрос от пользователя
+     * Проверка: есть ли активный запрос от пользователя
      */
     public function hasPendingRequestFrom(User $user): bool
     {
@@ -190,12 +190,17 @@ class Company extends Model implements HasMedia
     }
 
     /**
-     * Улучшенный метод назначения модератора (с историей)
+     * Назначить модератора компании
      */
     public function assignModerator(User $user, string $role = null, User $addedBy = null, bool $canManageModerators = false): void
     {
+        // Проверяем, что пользователь ещё не модератор
+        if ($this->isModerator($user)) {
+            return;
+        }
+
         $this->moderators()->attach($user->id, [
-            'role' => $role,
+            'role' => $role ?? 'moderator',
             'added_by' => $addedBy?->id ?? auth()->id(),
             'added_at' => now(),
             'can_manage_moderators' => $canManageModerators,
@@ -203,15 +208,48 @@ class Company extends Model implements HasMedia
     }
 
     /**
-     * Назначить модератора компании
+     * Удалить модератора из компании
      */
-    public function assignModerator(User $user, string $role = null, User $addedBy = null, bool $canManageModerators = false): void
+    public function removeModerator(User $user): void
     {
-        $this->moderators()->attach($user->id, [
-            'role' => $role,
-            'added_by' => $addedBy?->id ?? auth()->id(),
-            'added_at' => now(),
-            'can_manage_moderators' => $canManageModerators,
-        ]);
+        $this->moderators()->detach($user->id);
+    }
+
+    /**
+     * Media Collections (для документов: Устав, ИНН, ОГРН)
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('documents')
+            ->acceptsMimeTypes(['application/pdf']);
+    }
+
+    /**
+     * Scope: Только верифицированные компании
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('is_verified', true);
+    }
+
+    /**
+     * Scope: Поиск по названию или ИНН
+     */
+    public function scopeSearch($query, $search)
+    {
+        return $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('inn', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Accessor: URL логотипа
+     */
+    public function getLogoUrlAttribute(): string
+    {
+        return $this->logo 
+            ? asset('storage/' . $this->logo)
+            : asset('images/default-company-logo.png');
     }
 }
