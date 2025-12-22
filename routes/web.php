@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RfqController;
+use App\Http\Controllers\CompanyJoinRequestController;
+use App\Http\Controllers\CompanyModeratorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +41,24 @@ Route::middleware('auth')->group(function () {
     Route::get('companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
     Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
     Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
+
+    // Запросы на присоединение к компании
+    Route::post('/companies/{company}/join-requests', [CompanyJoinRequestController::class, 'store'])
+        ->name('companies.join-requests.store');
+    Route::delete('/join-requests/{request}', [CompanyJoinRequestController::class, 'destroy'])
+        ->name('join-requests.destroy');
+    Route::post('/join-requests/{request}/approve', [CompanyJoinRequestController::class, 'approve'])
+        ->name('join-requests.approve');
+    Route::post('/join-requests/{request}/reject', [CompanyJoinRequestController::class, 'reject'])
+        ->name('join-requests.reject');
+    
+    // Управление модераторами компании
+    Route::post('/companies/{company}/moderators', [CompanyModeratorController::class, 'store'])
+        ->name('companies.moderators.store');
+    Route::put('/companies/{company}/moderators/{user}', [CompanyModeratorController::class, 'update'])
+        ->name('companies.moderators.update');
+    Route::delete('/companies/{company}/moderators/{user}', [CompanyModeratorController::class, 'destroy'])
+        ->name('companies.moderators.destroy');
 });
 // Публичный доступ к списку и просмотру компаний
 Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');

@@ -201,4 +201,17 @@ class Company extends Model implements HasMedia
             'can_manage_moderators' => $canManageModerators,
         ]);
     }
+
+    /**
+     * Назначить модератора компании
+     */
+    public function assignModerator(User $user, string $role = null, User $addedBy = null, bool $canManageModerators = false): void
+    {
+        $this->moderators()->attach($user->id, [
+            'role' => $role,
+            'added_by' => $addedBy?->id ?? auth()->id(),
+            'added_at' => now(),
+            'can_manage_moderators' => $canManageModerators,
+        ]);
+    }
 }
