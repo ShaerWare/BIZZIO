@@ -262,7 +262,7 @@ class RfqController extends Controller
     /**
      * Подача заявки на участие
      */
-    public function storeBid(StoreBidRequest $request, Rfq $rfq)
+    public function storeBid(Request $request, Rfq $rfq)
     {
         DB::beginTransaction();
 
@@ -272,8 +272,8 @@ class RfqController extends Controller
                 'company_id' => $request->company_id,
                 'user_id' => auth()->id(),
                 'price' => $request->price,
-                'delivery_time' => $request->delivery_time,
-                'advance_percentage' => $request->advance_percentage,
+                'deadline' => $request->deadline, 
+                'advance_percent' => $request->advance_percent,
                 'comment' => $request->comment,
                 'status' => 'pending',
             ]);
