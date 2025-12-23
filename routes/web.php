@@ -30,7 +30,7 @@ Route::get('/', function () {
 
 // Publicly accessible routes for viewing companies
 
-
+Route::post('/auth/vk/callback', [SocialiteController::class, 'vkIdCallback'])->name('vkid.callback');
 // Authenticated routes for managing companies (create, store, edit, update, delete)
 // CRUD компаний (создание, обновление, удаление только для авторизованных)
 Route::middleware('auth')->group(function () {
@@ -53,7 +53,9 @@ Route::middleware('auth')->group(function () {
         ->name('join-requests.approve');
     Route::post('/join-requests/{request}/reject', [CompanyJoinRequestController::class, 'reject'])
         ->name('join-requests.reject');
-    
+    // Мои приглашения
+    Route::get('/my-invitations', [RfqController::class, 'myInvitations'])
+    ->name('rfqs.my-invitations');
     // Управление модераторами компании
     Route::post('/companies/{company}/moderators', [CompanyModeratorController::class, 'store'])
         ->name('companies.moderators.store');

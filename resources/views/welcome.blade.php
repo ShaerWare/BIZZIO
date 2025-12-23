@@ -209,6 +209,62 @@
                     </svg>
                 </a>
             </div>
+            <!-- VK ID SDK -->
+            <script src="https://unpkg.com/@vkid/sdk@3.0.0/dist-sdk/umd/index.js"></script>
+            <script type="text/javascript">
+                if ('VKIDSDK' in window) {
+                    const VKID = window.VKIDSDK;
+
+                    VKID.Config.init({
+                        app: 'cCOT0c6jvlw0dp5feuYV', // Твой App ID из VK ID кабинета
+                        redirectUrl: 'https://bizzio.ru', // Или https://bizzio.ru/auth/vk/callback
+                        responseMode: VKID.ConfigResponseMode.Callback,
+                        source: VKID.ConfigSource.LOWCODE,
+                        scope: 'email' // Добавь нужные права, например 'email phone'
+                    });
+
+                    const oneTap = new VKID.OneTap();
+                    oneTap.render({
+                        container: document.getElementById('vkid-container'),
+                        showAlternativeLogin: true, // Показывать "Войти другим способом"
+                        styles: {
+                            width: '200px', // Ширина кнопки
+                            height: '48px',
+                            borderRadius: '8px'
+                        }
+                    })
+                    .on(VKID.WidgetEvents.ERROR, function(error) {
+                        console.error('VKID Error:', error);
+                        alert('Ошибка авторизации VK: ' + error.description);
+                    })
+                    .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function(payload) {
+                        const code = payload.code;
+                        const deviceId = payload.device_id;
+
+                        // Отправляем code и device_id на бэкенд
+                        fetch('/auth/vk/callback', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ code, device_id: deviceId })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = data.redirect || '/dashboard';
+                            } else {
+                                alert('Ошибка входа: ' + (data.error || 'Неизвестная ошибка'));
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Fetch error:', err);
+                            alert('Ошибка соединения с сервером');
+                        });
+                    });
+                }
+            </script>
 
         </div>
 

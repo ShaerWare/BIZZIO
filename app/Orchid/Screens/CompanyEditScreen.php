@@ -172,7 +172,7 @@ class CompanyEditScreen extends Screen
         }
 
         // Логотип
-        if ($request->hasFile('company.logo')) {
+        if ($request->hasFile('company.logo.0')) {
             $company->clearMediaCollection('logo');
             $company->addMediaFromRequest('company.logo.0')
                     ->toMediaCollection('logo');

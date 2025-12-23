@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Rfq;
 use App\Models\RfqBid;
+use App\Models\RfqInvitation;
 use App\Models\Company;
 use App\Http\Requests\StoreRfqRequest;
 use App\Http\Requests\UpdateRfqRequest;
@@ -15,9 +16,9 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RfqController extends Controller
 {
-     use AuthorizesRequests;
+    use AuthorizesRequests;
      
-     /**
+    /**
      * Каталог RFQ
      */
     public function index(Request $request)
@@ -83,7 +84,7 @@ class RfqController extends Controller
                 'weight_price' => $request->weight_price,
                 'weight_deadline' => $request->weight_deadline,
                 'weight_advance' => $request->weight_advance,
-                'status' => 'draft',
+                'status' => $request->status ?? 'draft', // ✅ ИСПОЛЬЗУЕМ СТАТУС ИЗ ФОРМЫ
             ]);
 
             // Загрузка технического задания (PDF)
@@ -103,13 +104,20 @@ class RfqController extends Controller
                 }
             }
 
-            // Планирование автозакрытия
-            CloseRfqJob::dispatch($rfq)->delay($rfq->end_date);
+            // ✅ ПЛАНИРОВАНИЕ АВТОЗАКРЫТИЯ ТОЛЬКО ЕСЛИ СТАТУС = ACTIVE
+            if ($rfq->status === 'active') {
+                CloseRfqJob::dispatch($rfq)->delay($rfq->end_date);
+            }
 
             DB::commit();
 
+            // ✅ РАЗНЫЕ СООБЩЕНИЯ В ЗАВИСИМОСТИ ОТ СТАТУСА
+            $message = $rfq->status === 'active' 
+                ? 'Запрос котировок создан и активирован. Приём заявок открыт!' 
+                : 'Запрос котировок создан как черновик. Активируйте его для начала приёма заявок.';
+
             return redirect()->route('rfqs.show', $rfq)
-                ->with('success', 'Запрос котировок создан успешно');
+                ->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Ошибка при создании: ' . $e->getMessage());
@@ -117,52 +125,89 @@ class RfqController extends Controller
     }
 
     /**
-     * Профиль RFQ
+     * Display the specified RFQ.
      */
     public function show(Rfq $rfq)
     {
-        $this->authorize('view', $rfq);
-
+        // Eager loading
         $rfq->load([
-            'company', 
-            'creator', 
-            'bids.company', 
-            'bids.user',
-            'invitations.company',
-            'winnerBid.company'
+            'company.industry',
+            'bids.company',
+            'invitations.company'
         ]);
 
-        // Проверка: может ли текущий пользователь подать заявку
+        // Проверка доступа к закрытым RFQ
+        $canView = $rfq->type === 'open' || 
+                   $rfq->company->isModerator(auth()->user()) ||
+                   $rfq->invitations()->whereIn('company_id', auth()->user()->moderatedCompanies->pluck('id'))->exists();
+
+        if (!$canView) {
+            abort(403, 'У вас нет доступа к этому запросу котировок.');
+        }
+
+        // Проверка: может ли пользователь подать заявку
         $canBid = false;
-        
-        if (auth()->check() && $rfq->status === 'active' && $rfq->isActive()) {
-            $user = auth()->user();
-            $userCompanies = $user->moderatedCompanies->pluck('id');
-            
-            if ($userCompanies->isNotEmpty()) {
-                // Проверяем, что ни одна из компаний пользователя не подавала заявку
-                $alreadyBid = $rfq->bids()->whereIn('company_id', $userCompanies)->exists();
-                
-                if (!$alreadyBid) {
-                    // Для открытых процедур или если есть приглашение для закрытых
-                    if ($rfq->type === 'open') {
+        $userCompanies = auth()->user()->moderatedCompanies;
+        $alreadyBid = false;
+
+        if ($rfq->isActive() && !$rfq->isExpired()) {
+            if ($rfq->type === 'open') {
+                // Открытая процедура: любая компания пользователя (кроме организатора)
+                foreach ($userCompanies as $company) {
+                    if ($company->id !== $rfq->company_id) {
+                        // Проверяем, не подана ли уже заявка от этой компании
+                        $bidExists = $rfq->bids()->where('company_id', $company->id)->exists();
+                        if (!$bidExists) {
+                            $canBid = true;
+                            break;
+                        } else {
+                            $alreadyBid = true;
+                        }
+                    }
+                }
+            } else {
+                // Закрытая процедура: только приглашённые компании
+                $invitedCompanyIds = $rfq->invitations()
+                    ->whereIn('company_id', $userCompanies->pluck('id'))
+                    ->pluck('company_id')
+                    ->toArray();
+
+                foreach ($invitedCompanyIds as $companyId) {
+                    // Проверяем, не подана ли уже заявка от этой компании
+                    $bidExists = $rfq->bids()->where('company_id', $companyId)->exists();
+                    if (!$bidExists) {
                         $canBid = true;
+                        break;
                     } else {
-                        // Для закрытых процедур проверяем наличие приглашения
-                        $hasInvitation = $rfq->invitations()
-                            ->whereIn('company_id', $userCompanies)
-                            ->exists();
-                        
-                        $canBid = $hasInvitation;
+                        $alreadyBid = true;
                     }
                 }
             }
         }
 
-        return view('rfqs.show', compact('rfq', 'canBid'));
-    }
+        // Компании пользователя для dropdown в форме заявки
+        $availableCompanies = collect();
+        if ($canBid) {
+            if ($rfq->type === 'open') {
+                $availableCompanies = $userCompanies->filter(function ($company) use ($rfq) {
+                    return $company->id !== $rfq->company_id &&
+                           !$rfq->bids()->where('company_id', $company->id)->exists();
+                });
+            } else {
+                $invitedIds = $rfq->invitations()
+                    ->whereIn('company_id', $userCompanies->pluck('id'))
+                    ->pluck('company_id')
+                    ->toArray();
+                
+                $availableCompanies = $userCompanies->filter(function ($company) use ($invitedIds, $rfq) {
+                    return in_array($company->id, $invitedIds) &&
+                           !$rfq->bids()->where('company_id', $company->id)->exists();
+                });
+            }
+        }
 
-   
+        return view('rfqs.show', compact('rfq', 'canBid', 'alreadyBid', 'availableCompanies'));
+    }
 
     /**
      * Форма редактирования RFQ
@@ -227,8 +272,8 @@ class RfqController extends Controller
                 'company_id' => $request->company_id,
                 'user_id' => auth()->id(),
                 'price' => $request->price,
-                'deadline' => $request->deadline,
-                'advance_percent' => $request->advance_percent,
+                'delivery_time' => $request->delivery_time,
+                'advance_percentage' => $request->advance_percentage,
                 'comment' => $request->comment,
                 'status' => 'pending',
             ]);
@@ -274,18 +319,20 @@ class RfqController extends Controller
     }
 
     /**
-     * Мои приглашения
+     * Мои приглашения на участие в закрытых RFQ
      */
     public function myInvitations()
     {
-        $userCompanies = auth()->user()->moderatedCompanies->pluck('id');
-
-        $invitations = \App\Models\RfqInvitation::with(['rfq.company', 'company'])
-            ->whereIn('company_id', $userCompanies)
-            ->where('status', 'pending')
+        $userCompanyIds = auth()->user()->moderatedCompanies->pluck('id');
+        
+        $invitations = RfqInvitation::with(['rfq.company', 'company'])
+            ->whereIn('company_id', $userCompanyIds)
+            ->whereHas('rfq', function ($query) {
+                $query->where('status', '!=', 'cancelled');
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-
+        
         return view('rfqs.my-invitations', compact('invitations'));
     }
 

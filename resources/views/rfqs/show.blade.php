@@ -237,80 +237,137 @@
                 <div id="content-bids" class="tab-content hidden">
                     @if($canBid)
                         <!-- Форма подачи заявки -->
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Подать заявку</h3>
-                            <form method="POST" action="{{ route('rfqs.bids.store', $rfq) }}">
-                                @csrf
+@auth
+    @if($canBid && $rfq->isActive() && !$rfq->isExpired())
+        <div id="bid-form" class="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Подать заявку
+            </h3>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <!-- Выбор компании -->
-                                    <div class="md:col-span-2">
-                                        <label for="company_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Компания <span class="text-red-500">*</span>
-                                        </label>
-                                        <select name="company_id" id="company_id" required
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                            <option value="">Выберите компанию</option>
-                                            @foreach(auth()->user()->moderatedCompanies as $company)
-                                                <option value="{{ $company->id }}">{{ $company->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+            <form method="POST" action="{{ route('rfqs.bids.store', $rfq) }}">
+                @csrf
 
-                                    <!-- Цена -->
-                                    <div>
-                                        <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Цена (руб. без НДС) <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="number" name="price" id="price" required step="0.01" min="0"
-                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    </div>
+                <!-- Выбор компании -->
+                @if($availableCompanies->count() > 1)
+                    <div class="mb-4">
+                        <label for="company_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Компания <span class="text-red-500">*</span>
+                        </label>
+                        <select name="company_id" 
+                                id="company_id" 
+                                required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                            <option value="">Выберите компанию...</option>
+                            @foreach($availableCompanies as $company)
+                                <option value="{{ $company->id }}">{{ $company->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <input type="hidden" name="company_id" value="{{ $availableCompanies->first()->id }}">
+                    <div class="mb-4 p-3 bg-white rounded border border-gray-200">
+                        <p class="text-sm text-gray-600">
+                            Заявка от компании: <strong>{{ $availableCompanies->first()->name }}</strong>
+                        </p>
+                    </div>
+                @endif
 
-                                    <!-- Срок -->
-                                    <div>
-                                        <label for="deadline" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Срок выполнения (дней) <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="number" name="deadline" id="deadline" required min="1"
-                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    </div>
+                <!-- Цена -->
+                <div class="mb-4">
+                    <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
+                        Цена (₽ без НДС) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" 
+                           name="price" 
+                           id="price" 
+                           step="0.01"
+                           min="0"
+                           required
+                           placeholder="Введите цену"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                </div>
 
-                                    <!-- Аванс -->
-                                    <div>
-                                        <label for="advance_percent" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Размер аванса (%) <span class="text-red-500">*</span>
-                                        </label>
-                                        <input type="number" name="advance_percent" id="advance_percent" required step="0.01" min="0" max="100"
-                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    </div>
+                <!-- Срок выполнения -->
+                <div class="mb-4">
+                    <label for="delivery_time" class="block text-sm font-medium text-gray-700 mb-2">
+                        Срок выполнения (календарных дней) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" 
+                           name="delivery_time" 
+                           id="delivery_time" 
+                           min="1"
+                           required
+                           placeholder="Введите срок"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                </div>
 
-                                    <!-- Комментарий -->
-                                    <div class="md:col-span-2">
-                                        <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Комментарий
-                                        </label>
-                                        <textarea name="comment" id="comment" rows="3" maxlength="1000"
-                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
-                                    </div>
-                                </div>
+                <!-- Размер аванса -->
+                <div class="mb-4">
+                    <label for="advance_percentage" class="block text-sm font-medium text-gray-700 mb-2">
+                        Размер аванса (%) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" 
+                           name="advance_percentage" 
+                           id="advance_percentage" 
+                           step="0.01"
+                           min="0"
+                           max="100"
+                           required
+                           placeholder="Введите процент аванса"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                </div>
 
-                                <!-- Уведомление -->
-                                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                                    <label class="flex items-start text-sm">
-                                        <input type="checkbox" id="bid_agreement" required
-                                               class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                        <span class="ml-2 text-gray-700">
-                                            Я уведомлён, что процедура не обязывает к заключению договора
-                                        </span>
-                                    </label>
-                                </div>
+                <!-- Комментарий -->
+                <div class="mb-4">
+                    <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">
+                        Комментарий (необязательно)
+                    </label>
+                    <textarea name="comment" 
+                              id="comment"
+                              rows="3"
+                              placeholder="Дополнительная информация к заявке..."
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"></textarea>
+                </div>
 
-                                <button type="submit" 
-                                        class="w-full px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                    Подать заявку
-                                </button>
-                            </form>
-                        </div>
+                <!-- Уведомление -->
+                <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+                    <div class="flex items-start">
+                        <input type="checkbox" 
+                               name="acknowledgement" 
+                               id="acknowledgement"
+                               required
+                               class="mt-1 rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500">
+                        <label for="acknowledgement" class="ml-3 text-sm text-gray-700">
+                            Я уведомлён, что процедура проведения Запроса котировок не является торгами и не обязывает к заключению договора. 
+                            Результаты подведения итогов носят информационный характер.
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Кнопка -->
+                <button type="submit" 
+                        class="w-full inline-flex justify-center items-center px-6 py-3 bg-green-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Подать заявку
+                </button>
+            </form>
+        </div>
+    @elseif($alreadyBid)
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-blue-800 font-medium">Вы уже подали заявку на этот запрос котировок</p>
+            </div>
+        </div>
+    @endif
+@endauth
                     @elseif(!auth()->check())
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
                             <p class="text-gray-700">

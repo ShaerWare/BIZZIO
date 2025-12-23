@@ -36,6 +36,7 @@ class StoreRfqRequest extends FormRequest
             'technical_specification' => 'required|file|mimes:pdf|max:10240', // 10MB
             'invited_companies' => 'nullable|array',
             'invited_companies.*' => 'exists:companies,id',
+            'status' => 'required|in:draft,active',
         ];
     }
 
@@ -55,6 +56,9 @@ class StoreRfqRequest extends FormRequest
             if ($this->company_id && !$this->user()->isModeratorOf(\App\Models\Company::find($this->company_id))) {
                 $validator->errors()->add('company_id', 'Вы не являетесь модератором этой компании');
             }
+            if ($this->status && !in_array($this->status, ['draft', 'active'])) {
+            $validator->errors()->add('status', 'Недопустимое значение статуса');
+        }
         });
     }
 

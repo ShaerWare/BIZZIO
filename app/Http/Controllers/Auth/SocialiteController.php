@@ -75,4 +75,62 @@ class SocialiteController extends Controller
 
         return redirect()->intended('/companies'); // Редирект в админку Orchid
     }
+
+    // SocialiteController.php
+    public function vkIdCallback(Request $request)
+    {
+        $code = $request->input('code');
+        $deviceId = $request->input('device_id');
+
+        if (!$code || !$deviceId) {
+            return response()->json(['success' => false, 'error' => 'Отсутствуют параметры']);
+        }
+
+        try {
+            $response = file_get_contents(
+                "https://id.vk.com/oauth2/auth?" . http_build_query([
+                    'grant_type'    => 'authorization_code',
+                    'code'          => $code,
+                    'device_id'     => $deviceId,
+                    'client_id'     => env('VK_APP_ID'),
+                    'client_secret' => env('VK_SECURE_KEY'), // Secure key из VK ID кабинета
+                ])
+            );
+
+            $data = json_decode($response, true);
+
+            if (isset($data['error'])) {
+                return response()->json(['success' => false, 'error' => $data['error_description']]);
+            }
+
+            // $data содержит access_token, user_id, email и т.д.
+            $accessToken = $data['access_token'];
+            $vkUserId = $data['user_id'];
+
+            // Здесь можно сделать запрос к VK API для получения email и других данных
+            // $vkData = file_get_contents("https://api.vk.com/method/users.get?access_token={$accessToken}&v=5.199&fields=email");
+
+            // Создаём/находим пользователя (аналогично твоему Socialite)
+            $user = User::updateOrCreate(
+                ['provider' => 'vk', 'provider_id' => $vkUserId],
+                [
+                    'name' => $data['first_name'] . ' ' . $data['last_name'] ?? 'VK User',
+                    'email' => $data['email'] ?? null,
+                    'avatar' => $data['avatar'] ?? null,
+                    'password' => Hash::make(Str::random(16)),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            Auth::login($user, true);
+
+            return response()->json([
+                'success' => true,
+                'redirect' => '/dashboard' // или route('dashboard')
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
 }
