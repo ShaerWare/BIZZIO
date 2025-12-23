@@ -296,8 +296,8 @@
                         Срок выполнения (календарных дней) <span class="text-red-500">*</span>
                     </label>
                     <input type="number" 
-                           name="delivery_time" 
-                           id="delivery_time" 
+                           name="deadline" 
+                           id="deadline" 
                            min="1"
                            required
                            placeholder="Введите срок"
@@ -310,8 +310,8 @@
                         Размер аванса (%) <span class="text-red-500">*</span>
                     </label>
                     <input type="number" 
-                           name="advance_percentage" 
-                           id="advance_percentage" 
+                           name="advance_percent" 
+                           id="advance_percent" 
                            step="0.01"
                            min="0"
                            max="100"
