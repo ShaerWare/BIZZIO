@@ -47,14 +47,9 @@ return new class extends Migration
             
             // Статус аукциона
             $table->enum('status', ['draft', 'active', 'trading', 'closed', 'cancelled'])->default('draft');
-            // draft - черновик
-            // active - идёт приём заявок
-            // trading - идут торги
-            // closed - завершён
-            // cancelled - отменён
             
-            // ID заявки-победителя
-            $table->foreignId('winner_bid_id')->nullable()->constrained('auction_bids')->onDelete('set null');
+            // ⚠️ ВРЕМЕННО: winner_bid_id будет добавлен в отдельной миграции
+            $table->unsignedBigInteger('winner_bid_id')->nullable();
             
             // Временные метки
             $table->timestamps();
