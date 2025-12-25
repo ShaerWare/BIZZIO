@@ -13,7 +13,26 @@ return new class extends Migration
     {
         Schema::create('auction_invitations', function (Blueprint $table) {
             $table->id();
+            
+            // Связь с аукционом
+            $table->foreignId('auction_id')->constrained()->onDelete('cascade');
+            
+            // Приглашённая компания
+            $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            
+            // Статус приглашения
+            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
+            
+            // Временные метки
             $table->timestamps();
+            
+            // Индексы
+            $table->index('auction_id');
+            $table->index('company_id');
+            $table->index('status');
+            
+            // Уникальность: одна компания = одно приглашение на аукцион
+            $table->unique(['auction_id', 'company_id']);
         });
     }
 
