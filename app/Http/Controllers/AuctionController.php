@@ -12,9 +12,12 @@ use App\Http\Requests\StoreAuctionBidRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AuctionController extends Controller
 {
+    use AuthorizesRequests;
+    
     /**
      * Display a listing of auctions.
      */
@@ -313,10 +316,15 @@ class AuctionController extends Controller
      */
     public function myAuctions()
     {
-        $userCompanies = auth()->user()->moderatedCompanies()->pluck('id');
+        // Получаем ID компаний, где пользователь является модератором
+        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
         
+        // Также добавляем аукционы, созданные лично пользователем (даже если он не модератор)
         $auctions = Auction::with(['company', 'bids'])
-            ->whereIn('company_id', $userCompanies)
+            ->where(function($query) use ($userCompanies) {
+                $query->whereIn('company_id', $userCompanies) // Аукционы компаний, где модератор
+                    ->orWhere('created_by', auth()->id());   // Или лично созданные
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(20);
         
@@ -328,7 +336,7 @@ class AuctionController extends Controller
      */
     public function myBids()
     {
-        $userCompanies = auth()->user()->moderatedCompanies()->pluck('id');
+        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
         
         $bids = AuctionBid::with(['auction.company', 'company'])
             ->whereIn('company_id', $userCompanies)
@@ -343,7 +351,7 @@ class AuctionController extends Controller
      */
     public function myInvitations()
     {
-        $userCompanies = auth()->user()->moderatedCompanies()->pluck('id');
+        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
         
         $invitations = AuctionInvitation::with(['auction.company', 'company'])
             ->whereIn('company_id', $userCompanies)

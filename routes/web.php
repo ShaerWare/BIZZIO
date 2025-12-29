@@ -141,12 +141,23 @@ Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 Route::prefix('auctions')->name('auctions.')->group(function () {
     // Публичные маршруты
     Route::get('/', [AuctionController::class, 'index'])->name('index');
-    Route::get('/{auction}', [AuctionController::class, 'show'])->name('show');
     
-    // Приватные маршруты (требуют авторизации)
+    // ⚠️ ВАЖНО: Приватные маршруты с фиксированными путями ПЕРЕД {auction}
     Route::middleware('auth')->group(function () {
+        // Личный кабинет (ДО {auction})
+        Route::get('/my/list', [AuctionController::class, 'myAuctions'])->name('my');
+        Route::get('/my/bids', [AuctionController::class, 'myBids'])->name('bids.my');
+        Route::get('/my/invitations', [AuctionController::class, 'myInvitations'])->name('invitations.my');
+        
+        // Создание (ДО {auction})
         Route::get('/create', [AuctionController::class, 'create'])->name('create');
         Route::post('/', [AuctionController::class, 'store'])->name('store');
+    });
+    
+    // Динамические маршруты с {auction} ПОСЛЕ всех фиксированных
+    Route::get('/{auction}', [AuctionController::class, 'show'])->name('show');
+    
+    Route::middleware('auth')->group(function () {
         Route::get('/{auction}/edit', [AuctionController::class, 'edit'])->name('edit');
         Route::put('/{auction}', [AuctionController::class, 'update'])->name('update');
         Route::delete('/{auction}', [AuctionController::class, 'destroy'])->name('destroy');
@@ -155,11 +166,6 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         
         // Long Polling (JSON response)
         Route::get('/{auction}/state', [AuctionController::class, 'getState'])->name('state');
-        
-        // Личный кабинет
-        Route::get('/my/auctions', [AuctionController::class, 'myAuctions'])->name('my');
-        Route::get('/my/bids', [AuctionController::class, 'myBids'])->name('bids.my');
-        Route::get('/my/invitations', [AuctionController::class, 'myInvitations'])->name('invitations.my');
     });
 });
 

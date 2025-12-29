@@ -98,6 +98,7 @@ class User extends Orchid
     public function moderatedCompanies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class, 'company_user')
+            ->select('companies.*')
             ->withPivot(['role', 'added_by', 'added_at', 'can_manage_moderators'])
             ->withTimestamps();
     }
