@@ -8,6 +8,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RfqController;
 use App\Http\Controllers\CompanyJoinRequestController;
 use App\Http\Controllers\CompanyModeratorController;
+use App\Http\Controllers\AuctionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -135,5 +136,31 @@ Route::middleware(['auth'])->group(function () {
 // Публичные роуты
 Route::get('/rfqs', [RfqController::class, 'index'])->name('rfqs.index');
 Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
+
+// Аукционы
+Route::prefix('auctions')->name('auctions.')->group(function () {
+    // Публичные маршруты
+    Route::get('/', [AuctionController::class, 'index'])->name('index');
+    Route::get('/{auction}', [AuctionController::class, 'show'])->name('show');
+    
+    // Приватные маршруты (требуют авторизации)
+    Route::middleware('auth')->group(function () {
+        Route::get('/create', [AuctionController::class, 'create'])->name('create');
+        Route::post('/', [AuctionController::class, 'store'])->name('store');
+        Route::get('/{auction}/edit', [AuctionController::class, 'edit'])->name('edit');
+        Route::put('/{auction}', [AuctionController::class, 'update'])->name('update');
+        Route::delete('/{auction}', [AuctionController::class, 'destroy'])->name('destroy');
+        Route::post('/{auction}/activate', [AuctionController::class, 'activate'])->name('activate');
+        Route::post('/{auction}/bids', [AuctionController::class, 'storeBid'])->name('bids.store');
+        
+        // Long Polling (JSON response)
+        Route::get('/{auction}/state', [AuctionController::class, 'getState'])->name('state');
+        
+        // Личный кабинет
+        Route::get('/my/auctions', [AuctionController::class, 'myAuctions'])->name('my');
+        Route::get('/my/bids', [AuctionController::class, 'myBids'])->name('bids.my');
+        Route::get('/my/invitations', [AuctionController::class, 'myInvitations'])->name('invitations.my');
+    });
+});
 
 require __DIR__.'/auth.php';

@@ -352,4 +352,70 @@ class AuctionController extends Controller
         
         return view('auctions.my-invitations', compact('invitations'));
     }
+
+    /**
+ * Get current auction state for long polling (JSON response)
+ */
+public function getState(Auction $auction)
+{
+    // Проверка доступа
+    $this->authorize('view', $auction);
+    
+    // Только для аукционов в статусе "trading"
+    if (!$auction->isTrading()) {
+        return response()->json([
+            'status' => 'not_trading',
+            'message' => 'Аукцион не находится в режиме торгов.',
+        ], 400);
+    }
+    
+    // Загружаем ставки с обезличиванием (только коды участников)
+    $bids = $auction->tradingBids()
+        ->with('company:id,name')
+        ->get()
+        ->map(function ($bid) use ($auction) {
+            $canSeeCompany = auth()->check() && $auction->canManage(auth()->user());
+            
+            // Проверка: это моя компания?
+            $userCompanies = auth()->check() 
+                ? auth()->user()->moderatedCompanies()->pluck('id')->toArray()
+                : [];
+            
+            return [
+                'id' => $bid->id,
+                'anonymous_code' => $bid->anonymous_code,
+                'company_name' => $canSeeCompany ? $bid->company->name : null, // Только для организатора
+                'price' => number_format($bid->price, 2, '.', ''),
+                'price_formatted' => number_format($bid->price, 2, '.', ' ') . ' ₽',
+                'created_at' => $bid->created_at->format('H:i:s'),
+                'is_mine' => in_array($bid->company_id, $userCompanies),
+            ];
+        });
+    
+    // Текущая минимальная цена
+    $currentPrice = $auction->getCurrentPrice();
+    
+    // Время до закрытия (если есть last_bid_at)
+    $timeRemaining = null;
+    if ($auction->last_bid_at) {
+        $closingTime = \Carbon\Carbon::parse($auction->last_bid_at)->addMinutes(20);
+        $timeRemaining = $closingTime->diffInSeconds(\Carbon\Carbon::now(), false);
+        
+        // Если время истекло, возвращаем 0
+        if ($timeRemaining < 0) {
+            $timeRemaining = 0;
+        }
+    }
+    
+    return response()->json([
+        'status' => 'trading',
+        'auction_status' => $auction->status,
+        'current_price' => number_format($currentPrice, 2, '.', ''),
+        'current_price_formatted' => number_format($currentPrice, 2, '.', ' ') . ' ₽',
+        'bids_count' => $bids->count(),
+        'bids' => $bids,
+        'time_remaining' => $timeRemaining, // В секундах
+        'last_updated' => \Carbon\Carbon::now()->toIso8601String(),
+    ]);
+}
 }
