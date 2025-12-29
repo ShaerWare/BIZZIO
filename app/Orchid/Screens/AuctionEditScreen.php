@@ -51,12 +51,12 @@ class AuctionEditScreen extends Screen
             Button::make('Обновить')
                 ->icon('note')
                 ->method('save')
-                ->canSee($this->auction->exists && $this->auction->status === 'draft'),
+                ->canSee($this->auction->exists),
 
             Button::make('Удалить')
                 ->icon('trash')
                 ->method('remove')
-                ->canSee($this->auction->exists && $this->auction->status === 'draft')
+                ->canSee($this->auction->exists)
                 ->confirm('Вы уверены, что хотите удалить этот аукцион?'),
         ];
     }

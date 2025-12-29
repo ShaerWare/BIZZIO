@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Gate;
 use App\Models\Rfq;
 use App\Policies\RfqPolicy;
 use Illuminate\Support\Facades\URL;
+use App\Models\Auction;
+use App\Policies\AuctionPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,5 +40,8 @@ class AppServiceProvider extends ServiceProvider
         URL::forceScheme('https');
         // Регистрация Policy для RFQ
         Gate::policy(Rfq::class, RfqPolicy::class);
+
+        // Регистрация Policy для Auction
+        Gate::policy(Auction::class, AuctionPolicy::class);
     }
 }

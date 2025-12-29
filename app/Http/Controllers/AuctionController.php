@@ -18,45 +18,33 @@ class AuctionController extends Controller
 {
     use AuthorizesRequests;
     
-    /**
-     * Display a listing of auctions.
-     */
     public function index(Request $request)
     {
         $query = Auction::with(['company.industry', 'creator', 'bids']);
         
-        // Фильтр: поиск по названию/номеру
         if ($request->filled('search')) {
             $query->search($request->search);
         }
         
-        // Фильтр: статус
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
-        // Фильтр: тип процедуры
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
         
-        // Сортировка по дате создания (новые первыми)
         $auctions = $query->orderBy('created_at', 'desc')->paginate(20);
         
         return view('auctions.index', compact('auctions'));
     }
 
-    /**
-     * Show the form for creating a new auction.
-     */
     public function create()
     {
         $this->authorize('create', Auction::class);
         
-        // Компании, где текущий пользователь — модератор
         $companies = auth()->user()->moderatedCompanies;
         
-        // Все компании для приглашения (кроме своих)
         $allCompanies = Company::where('is_verified', true)
             ->whereNotIn('id', $companies->pluck('id'))
             ->orderBy('name')
@@ -65,15 +53,11 @@ class AuctionController extends Controller
         return view('auctions.create', compact('companies', 'allCompanies'));
     }
 
-    /**
-     * Store a newly created auction in storage.
-     */
     public function store(StoreAuctionRequest $request)
     {
         DB::beginTransaction();
         
         try {
-            // Создаём аукцион
             $auction = Auction::create([
                 'number' => Auction::generateNumber(),
                 'title' => $request->title,
@@ -89,13 +73,11 @@ class AuctionController extends Controller
                 'status' => $request->status ?? 'draft',
             ]);
             
-            // Загрузка технического задания
             if ($request->hasFile('technical_specification')) {
                 $auction->addMedia($request->file('technical_specification'))
                     ->toMediaCollection('technical_specification');
             }
             
-            // Если закрытая процедура — создаём приглашения
             if ($request->type === 'closed' && $request->filled('invited_companies')) {
                 foreach ($request->invited_companies as $companyId) {
                     AuctionInvitation::create([
@@ -107,7 +89,6 @@ class AuctionController extends Controller
             
             DB::commit();
             
-            // Разные сообщения в зависимости от статуса
             if ($auction->status === 'active') {
                 return redirect()->route('auctions.show', $auction)
                     ->with('success', 'Аукцион успешно создан и активирован! Номер: ' . $auction->number);
@@ -124,14 +105,10 @@ class AuctionController extends Controller
         }
     }
 
-    /**
-     * Display the specified auction.
-     */
     public function show(Auction $auction)
     {
         $this->authorize('view', $auction);
         
-        // Eager loading для оптимизации
         $auction->load([
             'company.industry',
             'creator',
@@ -139,17 +116,14 @@ class AuctionController extends Controller
             'invitations.company'
         ]);
         
-        // Проверка: может ли текущий пользователь подать заявку/ставку
         $canBid = auth()->check() && auth()->user()->can('placeBid', $auction);
         
-        // Компании текущего пользователя (для выбора в форме)
         $userCompanies = auth()->check() 
             ? auth()->user()->moderatedCompanies()
-                ->where('id', '!=', $auction->company_id) // Исключаем организатора
+                ->where('companies.id', '!=', $auction->company_id) // ⚠️ ИСПРАВЛЕНО
                 ->get()
             : collect();
         
-        // Проверка: уже подана заявка/ставка от компаний пользователя
         $existingBid = null;
         if ($userCompanies->isNotEmpty()) {
             $existingBid = $auction->bids()
@@ -157,10 +131,7 @@ class AuctionController extends Controller
                 ->first();
         }
         
-        // Текущая минимальная цена
         $currentPrice = $auction->getCurrentPrice();
-        
-        // Диапазон шага
         $stepRange = $auction->getStepRange();
         
         return view('auctions.show', compact(
@@ -173,9 +144,6 @@ class AuctionController extends Controller
         ));
     }
 
-    /**
-     * Show the form for editing the specified auction.
-     */
     public function edit(Auction $auction)
     {
         $this->authorize('update', $auction);
@@ -183,9 +151,6 @@ class AuctionController extends Controller
         return view('auctions.edit', compact('auction'));
     }
 
-    /**
-     * Update the specified auction in storage.
-     */
     public function update(UpdateAuctionRequest $request, Auction $auction)
     {
         DB::beginTransaction();
@@ -193,7 +158,6 @@ class AuctionController extends Controller
         try {
             $auction->update($request->validated());
             
-            // Обновление технического задания
             if ($request->hasFile('technical_specification')) {
                 $auction->clearMediaCollection('technical_specification');
                 $auction->addMedia($request->file('technical_specification'))
@@ -213,9 +177,6 @@ class AuctionController extends Controller
         }
     }
 
-    /**
-     * Remove the specified auction from storage.
-     */
     public function destroy(Auction $auction)
     {
         $this->authorize('delete', $auction);
@@ -226,9 +187,6 @@ class AuctionController extends Controller
             ->with('success', 'Аукцион успешно удалён.');
     }
 
-    /**
-     * Activate draft auction.
-     */
     public function activate(Auction $auction)
     {
         $this->authorize('activate', $auction);
@@ -239,9 +197,6 @@ class AuctionController extends Controller
             ->with('success', 'Аукцион активирован! Теперь компании могут подавать заявки на участие.');
     }
 
-    /**
-     * Store a bid (application or trading bid).
-     */
     public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
     {
         DB::beginTransaction();
@@ -249,7 +204,6 @@ class AuctionController extends Controller
         try {
             $companyId = $request->company_id;
             
-            // Проверка: нет ли уже заявки/ставки от этой компании
             $existingBid = $auction->bids()
                 ->where('company_id', $companyId)
                 ->first();
@@ -258,13 +212,10 @@ class AuctionController extends Controller
                 return back()->with('error', 'Вы уже подали заявку на участие.');
             }
             
-            // Определяем тип ставки
             $isInitialBid = !$auction->isTrading();
             
-            // Генерация anonymous_code (если это первая ставка от компании в торгах)
             $anonymousCode = null;
             if ($auction->isTrading()) {
-                // Проверяем, есть ли уже код у этой компании
                 $firstBid = $auction->bids()
                     ->where('company_id', $companyId)
                     ->first();
@@ -274,7 +225,6 @@ class AuctionController extends Controller
                     : Auction::generateAnonymousCode();
             }
             
-            // Создаём ставку
             $bid = AuctionBid::create([
                 'auction_id' => $auction->id,
                 'company_id' => $companyId,
@@ -286,12 +236,8 @@ class AuctionController extends Controller
                 'status' => 'pending',
             ]);
             
-            // Если это ставка в торгах, обновляем last_bid_at
             if (!$isInitialBid) {
                 $auction->update(['last_bid_at' => Carbon::now()]);
-                
-                // TODO: Планируем Job для закрытия через 20 минут
-                // \App\Jobs\CloseAuctionJob::dispatch($auction)->delay(Carbon::now()->addMinutes(20));
             }
             
             DB::commit();
@@ -311,65 +257,49 @@ class AuctionController extends Controller
         }
     }
 
-    /**
-     * Show user's auctions (as organizer).
-     */
     public function myAuctions()
-    {
-        // Получаем ID компаний, где пользователь является модератором
-        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
-        
-        // Также добавляем аукционы, созданные лично пользователем (даже если он не модератор)
-        $auctions = Auction::with(['company', 'bids'])
-            ->where(function($query) use ($userCompanies) {
-                $query->whereIn('company_id', $userCompanies) // Аукционы компаний, где модератор
-                    ->orWhere('created_by', auth()->id());   // Или лично созданные
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        return view('auctions.my-auctions', compact('auctions'));
-    }
+{
+    $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
+    
+    $auctions = Auction::with(['company', 'bids'])
+        ->where(function($query) use ($userCompanies) {
+            $query->whereIn('company_id', $userCompanies)
+                ->orWhere('created_by', auth()->id());
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
+    
+    return view('auctions.my-auctions', compact('auctions'));
+}
 
-    /**
-     * Show user's bids (as participant).
-     */
     public function myBids()
-    {
-        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
-        
-        $bids = AuctionBid::with(['auction.company', 'company'])
-            ->whereIn('company_id', $userCompanies)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        return view('auctions.my-bids', compact('bids'));
-    }
+{
+    $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
+    
+    $bids = AuctionBid::with(['auction.company', 'company'])
+        ->whereIn('company_id', $userCompanies)
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
+    
+    return view('auctions.my-bids', compact('bids'));
+}
 
-    /**
-     * Show user's invitations.
-     */
     public function myInvitations()
-    {
-        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
-        
-        $invitations = AuctionInvitation::with(['auction.company', 'company'])
-            ->whereIn('company_id', $userCompanies)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        return view('auctions.my-invitations', compact('invitations'));
-    }
+{
+    $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
+    
+    $invitations = AuctionInvitation::with(['auction.company', 'company'])
+        ->whereIn('company_id', $userCompanies)
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
+    
+    return view('auctions.my-invitations', compact('invitations'));
+}
 
-    /**
- * Get current auction state for long polling (JSON response)
- */
 public function getState(Auction $auction)
 {
-    // Проверка доступа
     $this->authorize('view', $auction);
     
-    // Только для аукционов в статусе "trading"
     if (!$auction->isTrading()) {
         return response()->json([
             'status' => 'not_trading',
@@ -377,22 +307,20 @@ public function getState(Auction $auction)
         ], 400);
     }
     
-    // Загружаем ставки с обезличиванием (только коды участников)
+    $userCompanies = auth()->check() 
+        ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray() // ⚠️ ИСПРАВЛЕНО
+        : [];
+    
     $bids = $auction->tradingBids()
         ->with('company:id,name')
         ->get()
-        ->map(function ($bid) use ($auction) {
+        ->map(function ($bid) use ($auction, $userCompanies) {
             $canSeeCompany = auth()->check() && $auction->canManage(auth()->user());
-            
-            // Проверка: это моя компания?
-            $userCompanies = auth()->check() 
-                ? auth()->user()->moderatedCompanies()->pluck('id')->toArray()
-                : [];
             
             return [
                 'id' => $bid->id,
                 'anonymous_code' => $bid->anonymous_code,
-                'company_name' => $canSeeCompany ? $bid->company->name : null, // Только для организатора
+                'company_name' => $canSeeCompany ? $bid->company->name : null,
                 'price' => number_format($bid->price, 2, '.', ''),
                 'price_formatted' => number_format($bid->price, 2, '.', ' ') . ' ₽',
                 'created_at' => $bid->created_at->format('H:i:s'),
@@ -400,16 +328,13 @@ public function getState(Auction $auction)
             ];
         });
     
-    // Текущая минимальная цена
     $currentPrice = $auction->getCurrentPrice();
     
-    // Время до закрытия (если есть last_bid_at)
     $timeRemaining = null;
     if ($auction->last_bid_at) {
-        $closingTime = \Carbon\Carbon::parse($auction->last_bid_at)->addMinutes(20);
-        $timeRemaining = $closingTime->diffInSeconds(\Carbon\Carbon::now(), false);
+        $closingTime = Carbon::parse($auction->last_bid_at)->addMinutes(20);
+        $timeRemaining = $closingTime->diffInSeconds(Carbon::now(), false);
         
-        // Если время истекло, возвращаем 0
         if ($timeRemaining < 0) {
             $timeRemaining = 0;
         }
@@ -422,8 +347,8 @@ public function getState(Auction $auction)
         'current_price_formatted' => number_format($currentPrice, 2, '.', ' ') . ' ₽',
         'bids_count' => $bids->count(),
         'bids' => $bids,
-        'time_remaining' => $timeRemaining, // В секундах
-        'last_updated' => \Carbon\Carbon::now()->toIso8601String(),
+        'time_remaining' => $timeRemaining,
+        'last_updated' => Carbon::now()->toIso8601String(),
     ]);
 }
 }
