@@ -27,6 +27,8 @@ use App\Models\Project;
 use App\Orchid\Screens\RfqListScreen;
 use App\Orchid\Screens\RfqEditScreen;
 use App\Models\Company;
+use App\Orchid\Screens\AuctionListScreen;
+use App\Orchid\Screens\AuctionEditScreen;
 
 /*
 |--------------------------------------------------------------------------
@@ -167,3 +169,12 @@ Route::bind('company', function ($value) {
     // Если строка - ищем по slug (для публичных роутов)
     return Company::where('slug', $value)->firstOrFail();
 });
+// Аукционы
+Route::screen('auctions', AuctionListScreen::class)
+    ->name('platform.auctions.list');
+
+Route::screen('auctions/create', AuctionEditScreen::class)
+    ->name('platform.auctions.create');
+
+Route::screen('auctions/{auction}/edit', AuctionEditScreen::class)
+    ->name('platform.auctions.edit');

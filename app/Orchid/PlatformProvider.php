@@ -63,7 +63,14 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('stars')
                 ->route('platform.rfqs.list')
                 //->permission('platform.systems.rfqs')
-                ->title('Тендеры'), 
+                ->title('Тендеры и аукционы'), 
+
+            
+            Menu::make('Аукционы')
+                ->icon('trophy')
+                ->route('platform.auctions.list')
+                //->permission('platform.systems.auctions')
+                ,
 
             Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')
