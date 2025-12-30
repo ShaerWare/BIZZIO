@@ -169,7 +169,8 @@ class Auction extends Model implements HasMedia
     public function isAcceptingApplications(): bool
     {
         return $this->status === 'active' 
-            && Carbon::now()->between($this->start_date, $this->end_date);
+        && $this->start_date->isPast() 
+        && $this->end_date->isFuture();
     }
 
     /**

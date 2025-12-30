@@ -116,19 +116,46 @@ class AuctionController extends Controller
             'invitations.company'
         ]);
         
-        $canBid = auth()->check() && auth()->user()->can('placeBid', $auction);
-        
+        // Сначала получаем компании пользователя
         $userCompanies = auth()->check() 
             ? auth()->user()->moderatedCompanies()
-                ->where('companies.id', '!=', $auction->company_id) // ⚠️ ИСПРАВЛЕНО
+                ->where('companies.id', '!=', $auction->company_id)
                 ->get()
             : collect();
         
+        // Проверяем существующую заявку
         $existingBid = null;
         if ($userCompanies->isNotEmpty()) {
             $existingBid = $auction->bids()
                 ->whereIn('company_id', $userCompanies->pluck('id'))
                 ->first();
+        }
+        
+        // Вычисляем $canBid на основе всех условий
+        $canBid = false;
+        
+        if (auth()->check() && $userCompanies->isNotEmpty()) {
+            // 1. Проверка статуса аукциона
+            $isAcceptingOrTrading = $auction->isAcceptingApplications() || $auction->isTrading();
+            
+            if ($isAcceptingOrTrading) {
+                // 2. Для закрытых аукционов проверяем приглашение
+                if ($auction->type === 'closed') {
+                    $isInvited = $auction->invitations()
+                        ->whereIn('company_id', $userCompanies->pluck('id'))
+                        ->exists();
+                    
+                    $canBid = $isInvited;
+                } else {
+                    // 3. Для открытых аукционов — можно всем модераторам
+                    $canBid = true;
+                }
+                
+                // 4. Если уже есть заявка (для статуса 'active'), блокируем
+                if ($existingBid && !$auction->isTrading()) {
+                    $canBid = false;
+                }
+            }
         }
         
         $currentPrice = $auction->getCurrentPrice();
