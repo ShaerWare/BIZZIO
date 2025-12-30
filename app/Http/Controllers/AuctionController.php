@@ -224,65 +224,85 @@ class AuctionController extends Controller
             ->with('success', 'Аукцион активирован! Теперь компании могут подавать заявки на участие.');
     }
 
-    public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
-    {
-        DB::beginTransaction();
+public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
+{
+    DB::beginTransaction();
+    
+    try {
+        $companyId = $request->company_id;
         
-        try {
-            $companyId = $request->company_id;
-            
-            $existingBid = $auction->bids()
+        // Проверка существующей заявки
+        $existingBid = $auction->bids()
+            ->where('company_id', $companyId)
+            ->first();
+        
+        // Если заявка уже есть и это НЕ торги — запретить
+        if ($existingBid && !$auction->isTrading()) {
+            return back()->with('error', 'Вы уже подали заявку на участие в этом аукционе.');
+        }
+        
+        // Определяем тип заявки
+        $isInitialBid = !$auction->isTrading();
+        
+        // Генерация анонимного кода для торгов
+        $anonymousCode = null;
+        if ($auction->isTrading()) {
+            // Если это первая ставка от компании — генерируем код
+            // Если компания уже ставила — используем существующий код
+            $firstBid = $auction->bids()
                 ->where('company_id', $companyId)
                 ->first();
             
-            if ($existingBid && !$auction->isTrading()) {
-                return back()->with('error', 'Вы уже подали заявку на участие.');
-            }
-            
-            $isInitialBid = !$auction->isTrading();
-            
-            $anonymousCode = null;
-            if ($auction->isTrading()) {
-                $firstBid = $auction->bids()
-                    ->where('company_id', $companyId)
-                    ->first();
-                
-                $anonymousCode = $firstBid 
-                    ? $firstBid->anonymous_code 
-                    : Auction::generateAnonymousCode();
-            }
-            
-            $bid = AuctionBid::create([
-                'auction_id' => $auction->id,
-                'company_id' => $companyId,
-                'user_id' => auth()->id(),
-                'price' => $request->price ?? $auction->starting_price,
-                'anonymous_code' => $anonymousCode,
-                'comment' => $request->comment,
-                'type' => $isInitialBid ? 'initial' : 'bid',
-                'status' => 'pending',
-            ]);
-            
-            if (!$isInitialBid) {
-                $auction->update(['last_bid_at' => Carbon::now()]);
-            }
-            
-            DB::commit();
-            
-            if ($isInitialBid) {
-                return redirect()->route('auctions.show', $auction)
-                    ->with('success', 'Заявка на участие успешно подана!');
-            } else {
-                return redirect()->route('auctions.show', $auction)
-                    ->with('success', 'Ставка принята! Ваш код участника: ' . $anonymousCode);
-            }
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return back()->with('error', 'Ошибка при подаче ставки: ' . $e->getMessage());
+            $anonymousCode = $firstBid 
+                ? $firstBid->anonymous_code 
+                : Auction::generateAnonymousCode();
         }
+        
+        // Создание заявки/ставки
+        $bid = AuctionBid::create([
+            'auction_id' => $auction->id,
+            'company_id' => $companyId,
+            'user_id' => auth()->id(),
+            'price' => $request->price ?? $auction->starting_price,
+            'anonymous_code' => $anonymousCode,
+            'comment' => $request->comment,
+            'type' => $isInitialBid ? 'initial' : 'bid',
+            'status' => 'pending',
+        ]);
+        
+        // Обновление времени последней ставки (для торгов)
+        if (!$isInitialBid) {
+            $auction->update(['last_bid_at' => Carbon::now()]);
+        }
+        
+        DB::commit();
+        
+        // Редирект с соответствующим сообщением
+        if ($isInitialBid) {
+            return redirect()
+                ->route('auctions.show', $auction)
+                ->with('success', 'Заявка на участие успешно подана!');
+        } else {
+            return redirect()
+                ->route('auctions.show', $auction)
+                ->with('success', 'Ставка принята! Ваш код участника: ' . $anonymousCode);
+        }
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        \Log::error('Ошибка при подаче заявки/ставки', [
+            'auction_id' => $auction->id,
+            'user_id' => auth()->id(),
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return back()
+            ->with('error', 'Ошибка при подаче заявки: ' . $e->getMessage())
+            ->withInput();
     }
+}
 
     public function myAuctions()
 {
