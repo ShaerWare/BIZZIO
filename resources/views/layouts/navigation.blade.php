@@ -28,7 +28,7 @@
                             <button @click="open = ! open" 
                                     class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
                                         {{ request()->routeIs('rfqs.*', 'auctions.*', 'bids.*', 'invitations.*') ? 'border-indigo-400 text-gray-900 focus:border-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
-                                <span>Тендеры и аукционы</span>
+                                <span>Тендеры</span>
                                 <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -83,6 +83,37 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Новости (Dropdown) -->
+                    <div class="hidden sm:flex sm:items-center sm:ms-6">
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = ! open" 
+                                    class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
+                                        {{ request()->routeIs('news.*', 'profile.keywords.*') ? 'border-indigo-400 text-gray-900 focus:border-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
+                                <span>Новости</span>
+                                <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <div x-show="open" 
+                                @click.away="open = false"
+                                x-transition
+                                class="absolute z-50 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+                                style="display: none;">
+                                <div class="py-1">
+                                    <a href="{{ route('news.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        Лента новостей
+                                    </a>
+                                    @auth
+                                        <a href="{{ route('profile.keywords.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            Ключевые слова
+                                        </a>
+                                    @endauth
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -104,7 +135,7 @@
 
                         <x-slot name="content">
                             <x-dropdown-link :href="route('profile.edit')">
-                                {{ __('Profile') }}
+                                {{ __('Профиль') }}
                             </x-dropdown-link>
 
                             <!-- Authentication -->
@@ -114,7 +145,7 @@
                                 <x-dropdown-link :href="route('logout')"
                                         onclick="event.preventDefault();
                                                     this.closest('form').submit();">
-                                    {{ __('Log Out') }}
+                                    {{ __('Выйти') }}
                                 </x-dropdown-link>
                             </form>
                         </x-slot>
@@ -122,10 +153,10 @@
                 @else
                     <!-- Ссылки для гостей -->
                     <a href="{{ route('login') }}" class="text-sm text-gray-700 hover:text-gray-900 px-3 py-2">
-                        {{ __('Log in') }}
+                        {{ __('Войти') }}
                     </a>
                     <a href="{{ route('register') }}" class="text-sm text-gray-700 hover:text-gray-900 px-3 py-2">
-                        {{ __('Register') }}
+                        {{ __('Регистрация') }}
                     </a>
                 @endauth
             </div>
@@ -163,15 +194,15 @@
             <!-- Тендеры и Аукционы -->
             <div class="border-t border-gray-200 pt-2 mt-2">
                 <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Тендеры и аукционы
+                    {{ __('Тендеры и аукционы') }}
                 </div>
                 
                 <x-responsive-nav-link :href="route('rfqs.index')" :active="request()->routeIs('rfqs.index')">
-                    Найти тендер (RFQ)
+                    {{ __('Найти тендер (RFQ)') }}
                 </x-responsive-nav-link>
                 
                 <x-responsive-nav-link :href="route('auctions.index')" :active="request()->routeIs('auctions.index')">
-                    Найти аукцион
+                    {{ __('Найти аукцион') }}
                 </x-responsive-nav-link>
 
                 @auth
@@ -179,56 +210,62 @@
                         <div class="border-t border-gray-100 my-2"></div>
                         
                         <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create')">
-                            Разместить Запрос котировок
+                            {{ __('Разместить Запрос котировок') }}
                         </x-responsive-nav-link>
                         
                         <x-responsive-nav-link :href="route('auctions.create')" :active="request()->routeIs('auctions.create')">
-                            Разместить аукцион
+                            {{ __('Разместить аукцион') }}
                         </x-responsive-nav-link>
                     @endif
 
                     <div class="border-t border-gray-100 my-2"></div>
                     
                     <x-responsive-nav-link :href="route('rfqs.my')" :active="request()->routeIs('rfqs.my')">
-                        Мои тендеры (RFQ)
+                        {{ __('Мои тендеры (RFQ)') }}
                     </x-responsive-nav-link>
                     
                     <x-responsive-nav-link :href="route('auctions.my')" :active="request()->routeIs('auctions.my')">
-                        Мои аукционы
+                        {{ __('Мои аукционы') }}
                     </x-responsive-nav-link>
                     
                     <x-responsive-nav-link :href="route('bids.my')" :active="request()->routeIs('bids.my')">
-                        Мои заявки (RFQ)
+                        {{ __('Мои заявки (RFQ)') }}
                     </x-responsive-nav-link>
                     
                     <x-responsive-nav-link :href="route('auctions.bids.my')" :active="request()->routeIs('auctions.bids.my')">
-                        Мои заявки (Аукционы)
+                        {{ __('Мои заявки (Аукционы)') }}
                     </x-responsive-nav-link>
                     
                     <x-responsive-nav-link :href="route('invitations.my')" :active="request()->routeIs('invitations.my')">
-                        Мои приглашения (RFQ)
+                        {{ __('Мои приглашения (RFQ)') }}
                     </x-responsive-nav-link>
                     
                     <x-responsive-nav-link :href="route('auctions.invitations.my')" :active="request()->routeIs('auctions.invitations.my')">
-                        Мои приглашения (Аукционы)
+                        {{ __('Мои приглашения (Аукционы)') }}
                     </x-responsive-nav-link>
                     
                     <x-responsive-nav-link :href="route('join-requests.index')" :active="request()->routeIs('join-requests.index')">
-                        Мои запросы на присоединение
+                        {{ __('Мои запросы на присоединение') }}
                     </x-responsive-nav-link>
                 @endauth
             </div>
 
             <!-- Новости -->
-            <x-nav-link :href="route('news.index')" :active="request()->routeIs('news.*')">
-                {{ __('Новости') }}
-            </x-nav-link>
-            <!-- Ключевые слова -->
-            <x-dropdown-link :href="route('profile.keywords.index')">
-                {{ __('Ключевые слова') }}
-            </x-dropdown-link>           
+            <div class="border-t border-gray-200 pt-2 mt-2">
+                <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    {{ __('Новости') }}
+                </div>
+                
+                <x-responsive-nav-link :href="route('news.index')" :active="request()->routeIs('news.index')">
+                    {{ __('Лента новостей') }}
+                </x-responsive-nav-link>
 
-
+                @auth
+                    <x-responsive-nav-link :href="route('profile.keywords.index')" :active="request()->routeIs('profile.keywords.*')">
+                        {{ __('Ключевые слова') }}
+                    </x-responsive-nav-link>
+                @endauth
+            </div>
         </div>
 
         <!-- Responsive Settings Options -->
@@ -241,7 +278,7 @@
 
                 <div class="mt-3 space-y-1">
                     <x-responsive-nav-link :href="route('profile.edit')">
-                        {{ __('Profile') }}
+                        {{ __('Профиль') }}
                     </x-responsive-nav-link>
 
                     <!-- Authentication -->
@@ -251,7 +288,7 @@
                         <x-responsive-nav-link :href="route('logout')"
                                 onclick="event.preventDefault();
                                             this.closest('form').submit();">
-                            {{ __('Log Out') }}
+                            {{ __('Выйти') }}
                         </x-responsive-nav-link>
                     </form>
                 </div>
@@ -260,10 +297,10 @@
             <div class="pt-4 pb-1 border-t border-gray-200">
                 <div class="mt-3 space-y-1">
                     <x-responsive-nav-link :href="route('login')">
-                        {{ __('Log in') }}
+                        {{ __('Войти') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('register')">
-                        {{ __('Register') }}
+                        {{ __('Регистрация') }}
                     </x-responsive-nav-link>
                 </div>
             </div>
