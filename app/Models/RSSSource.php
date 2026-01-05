@@ -10,6 +10,9 @@ class RSSSource extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // ✅ ИСПРАВЛЕНИЕ: Явно указываем имя таблицы
+    protected $table = 'rss_sources';
+
     protected $fillable = [
         'name',
         'url',
