@@ -72,7 +72,8 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('RSS-источники')
                 ->icon('globe')
                 ->route('platform.systems.rss-sources')
-                //->permission('platform.systems.rss-sources'),
+                //->permission('platform.systems.rss-sources')
+                ,
 
             Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')
