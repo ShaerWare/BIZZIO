@@ -9,6 +9,8 @@ use App\Http\Controllers\RfqController;
 use App\Http\Controllers\CompanyJoinRequestController;
 use App\Http\Controllers\CompanyModeratorController;
 use App\Http\Controllers\AuctionController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\UserKeywordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,6 +168,20 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         
         // Long Polling (JSON response)
         Route::get('/{auction}/state', [AuctionController::class, 'getState'])->name('state');
+    });
+
+    // ==================== НОВОСТИ ====================
+    Route::get('/news', [NewsController::class, 'index'])
+        ->name('news.index');
+
+    // ==================== КЛЮЧЕВЫЕ СЛОВА (требует авторизации) ====================
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/profile/keywords', [UserKeywordController::class, 'index'])
+            ->name('profile.keywords.index');
+        Route::post('/profile/keywords', [UserKeywordController::class, 'store'])
+            ->name('profile.keywords.store');
+        Route::delete('/profile/keywords/{keyword}', [UserKeywordController::class, 'destroy'])
+            ->name('profile.keywords.destroy');
     });
 });
 
