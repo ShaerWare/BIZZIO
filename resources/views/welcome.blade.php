@@ -47,8 +47,9 @@
                         <li><a href="{{ url('/') }}" class="nav-link">Home</a></li>
                         <li><a href="{{ route('companies.index') }}" class="nav-link">Компании</a></li>
                         <li><a href="{{ route('projects.index') }}" class="nav-link">Проекты</a></li>
-                        <li><a href="{{ url('/blog') }}" class="nav-link">Blog</a></li>
-                        <li><a href="{{ url('/contact') }}" class="nav-link">Contact</a></li>
+                        
+                        <li><a href="{{ route('auctions.index') }}" class="nav-link">Тендеры и Аукционы</a></li>
+                        <li><a href="{{ route('news.index') }}" class="nav-link">Новости</a></li>
                     </ul>
                 </div>
 
