@@ -154,4 +154,12 @@ class User extends Orchid
     {
         return $this->moderatedCompanies()->where('companies.id', $company->id)->exists();
     }
+
+    /**
+     * Связь: У пользователя много ключевых слов
+     */
+    public function keywords()
+    {
+        return $this->hasMany(UserKeyword::class);
+    }
 }
