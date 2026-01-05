@@ -56,9 +56,7 @@ Route::middleware('auth')->group(function () {
         ->name('join-requests.approve');
     Route::post('/join-requests/{request}/reject', [CompanyJoinRequestController::class, 'reject'])
         ->name('join-requests.reject');
-    // Мои приглашения
-    Route::get('/my-invitations', [RfqController::class, 'myInvitations'])
-    ->name('rfqs.my-invitations');
+    
     // Управление модераторами компании
     Route::post('/companies/{company}/moderators', [CompanyModeratorController::class, 'store'])
         ->name('companies.moderators.store');
@@ -94,23 +92,35 @@ Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect']
 Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback'])
     ->name('socialite.callback');
 
+// ========================================================================
+// PROJECTS ROUTES
+// ========================================================================
+
 // Проекты (публичные: index, show; приватные: create, store, edit, update, destroy)
 Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
-Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
-Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
 Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
-Route::get('/projects/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
-Route::put('/projects/{project:slug}', [ProjectController::class, 'update'])->name('projects.update');
-Route::delete('/projects/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
-// Комментарии к проектам (требуют авторизации)
 Route::middleware('auth')->group(function () {
+    Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
+    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
+    Route::put('/projects/{project:slug}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::delete('/projects/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+
+    // Комментарии к проектам
     Route::post('/projects/{project:slug}/comments', [ProjectController::class, 'storeComment'])->name('projects.comments.store');
     Route::put('/comments/{comment}', [ProjectController::class, 'updateComment'])->name('comments.update');
     Route::delete('/comments/{comment}', [ProjectController::class, 'destroyComment'])->name('comments.destroy');
 });
 
-// RFQ Routes
+// ========================================================================
+// RFQ ROUTES
+// ========================================================================
+
+// Публичные роуты
+Route::get('/rfqs', [RfqController::class, 'index'])->name('rfqs.index');
+Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
+
 Route::middleware(['auth'])->group(function () {
     // Мои RFQ (организатор)
     Route::get('/my-rfqs', [RfqController::class, 'myRfqs'])->name('rfqs.my');
@@ -129,17 +139,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/rfqs/{rfq}/edit', [RfqController::class, 'edit'])->name('rfqs.edit');
     Route::put('/rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
     Route::delete('/rfqs/{rfq}', [RfqController::class, 'destroy'])->name('rfqs.destroy');
+    
     // Активация RFQ
-    Route::post('/rfqs/{rfq}/activate', [RfqController::class, 'activate'])->name('rfqs.activate');    
+    Route::post('/rfqs/{rfq}/activate', [RfqController::class, 'activate'])->name('rfqs.activate');
+    
     // Подача заявки
     Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
 });
 
-// Публичные роуты
-Route::get('/rfqs', [RfqController::class, 'index'])->name('rfqs.index');
-Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
+// ========================================================================
+// AUCTIONS ROUTES
+// ========================================================================
 
-// Аукционы
 Route::prefix('auctions')->name('auctions.')->group(function () {
     // Публичные маршруты
     Route::get('/', [AuctionController::class, 'index'])->name('index');
@@ -169,20 +180,27 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         // Long Polling (JSON response)
         Route::get('/{auction}/state', [AuctionController::class, 'getState'])->name('state');
     });
-
-    // ==================== НОВОСТИ ====================
-    Route::get('/news', [NewsController::class, 'index'])
-        ->name('news.index');
-
-    // ==================== КЛЮЧЕВЫЕ СЛОВА (требует авторизации) ====================
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/profile/keywords', [UserKeywordController::class, 'index'])
-            ->name('profile.keywords.index');
-        Route::post('/profile/keywords', [UserKeywordController::class, 'store'])
-            ->name('profile.keywords.store');
-        Route::delete('/profile/keywords/{keyword}', [UserKeywordController::class, 'destroy'])
-            ->name('profile.keywords.destroy');
-    });
 });
+
+// ========================================================================
+// NEWS ROUTES
+// ========================================================================
+
+// Публичный доступ к новостям
+Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+
+// Управление ключевыми словами (требует авторизации)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile/keywords', [UserKeywordController::class, 'index'])
+        ->name('profile.keywords.index');
+    Route::post('/profile/keywords', [UserKeywordController::class, 'store'])
+        ->name('profile.keywords.store');
+    Route::delete('/profile/keywords/{keyword}', [UserKeywordController::class, 'destroy'])
+        ->name('profile.keywords.destroy');
+});
+
+// ========================================================================
+// AUTH ROUTES
+// ========================================================================
 
 require __DIR__.'/auth.php';

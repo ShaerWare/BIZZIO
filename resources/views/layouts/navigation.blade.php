@@ -218,6 +218,17 @@
                     </x-responsive-nav-link>
                 @endauth
             </div>
+
+            <!-- Новости -->
+            <x-nav-link :href="route('news.index')" :active="request()->routeIs('news.*')">
+                {{ __('Новости') }}
+            </x-nav-link>
+            <!-- Ключевые слова -->
+            <x-dropdown-link :href="route('profile.keywords.index')">
+                {{ __('Ключевые слова') }}
+            </x-dropdown-link>           
+
+
         </div>
 
         <!-- Responsive Settings Options -->
