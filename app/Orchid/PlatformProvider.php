@@ -9,8 +9,6 @@ use Orchid\Platform\ItemPermission;
 use Orchid\Platform\OrchidServiceProvider;
 use Orchid\Screen\Actions\Menu;
 use Orchid\Support\Color;
-use App\Orchid\Screens\RfqListScreen;
-use App\Orchid\Screens\RfqEditScreen;
 
 class PlatformProvider extends OrchidServiceProvider
 {
@@ -36,7 +34,6 @@ class PlatformProvider extends OrchidServiceProvider
     public function menu(): array
     {
         return [
-
             Menu::make(__('Юзеры'))
                 ->icon('bs.people')
                 ->route('platform.systems.users')
@@ -51,26 +48,31 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make(__('Компании'))
                 ->icon('briefcase')
                 ->route('platform.companies.list'),
-                
 
             Menu::make(__('Проекты'))
                 ->icon('rocket')
                 ->route('platform.projects')
-                //->permission('platform.projects')
-                ->divider(),            
+                ->divider(),
 
             Menu::make('Запросы котировок')
                 ->icon('stars')
                 ->route('platform.rfqs.list')
-                //->permission('platform.systems.rfqs')
-                ->title('Тендеры и аукционы'), 
+                ->title('Тендеры и аукционы'),
 
-            
             Menu::make('Аукционы')
                 ->icon('trophy')
-                ->route('platform.auctions.list')
-                //->permission('platform.systems.auctions')
-                ,
+                ->route('platform.auctions.list'),
+
+            Menu::make('Новости')
+                ->icon('feed')
+                ->route('platform.systems.news')
+                //->permission('platform.systems.news')
+                ->title('Контент'),
+
+            Menu::make('RSS-источники')
+                ->icon('globe')
+                ->route('platform.systems.rss-sources')
+                //->permission('platform.systems.rss-sources'),
 
             Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')
@@ -82,8 +84,6 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('bs.box-arrow-up-right')
                 ->url('https://github.com/ShaerWare/BIZZIO')
                 ->target('_blank'),
-
-            
         ];
     }
 
@@ -98,6 +98,10 @@ class PlatformProvider extends OrchidServiceProvider
             ItemPermission::group(__('System'))
                 ->addPermission('platform.systems.roles', __('Roles'))
                 ->addPermission('platform.systems.users', __('Users')),
+
+            ItemPermission::group(__('Новости'))
+                ->addPermission('platform.systems.news', __('Просмотр и управление новостями'))
+                ->addPermission('platform.systems.rss-sources', __('Управление RSS-источниками')),
         ];
     }
 }

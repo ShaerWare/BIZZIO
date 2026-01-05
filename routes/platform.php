@@ -29,6 +29,9 @@ use App\Orchid\Screens\RfqEditScreen;
 use App\Models\Company;
 use App\Orchid\Screens\AuctionListScreen;
 use App\Orchid\Screens\AuctionEditScreen;
+use App\Orchid\Screens\RSSSourceListScreen;
+use App\Orchid\Screens\RSSSourceEditScreen;
+use App\Orchid\Screens\NewsListScreen;
 
 /*
 |--------------------------------------------------------------------------
