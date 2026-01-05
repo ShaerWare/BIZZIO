@@ -120,22 +120,26 @@ class Auction extends Model implements HasMedia
      */
     public static function generateNumber(): string
     {
-        $date = Carbon::now()->format('ymd'); // ГГММДД
-        $prefix = 'А-' . $date . '-';
+        $prefix = 'А';
+        $date = now()->format('ymd'); // ГГММДД
         
-        // Находим последний номер за сегодня
-        $lastAuction = self::where('number', 'like', $prefix . '%')
+        // Найти последний номер за сегодня (включая удалённые)
+        $lastNumber = static::withTrashed()
+            ->where('number', 'like', "{$prefix}-{$date}-%")
             ->orderBy('number', 'desc')
-            ->first();
+            ->value('number');
         
-        if ($lastAuction) {
-            $lastNumber = (int) substr($lastAuction->number, -4);
-            $newNumber = $lastNumber + 1;
+        if ($lastNumber) {
+            // Извлечь последний порядковый номер
+            $lastSequence = (int) substr($lastNumber, -4);
+            $newSequence = $lastSequence + 1;
         } else {
-            $newNumber = 1;
+            // Первый аукцион за сегодня
+            $newSequence = 1;
         }
         
-        return $prefix . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        // Формат: А-ГГММДД-0001
+        return sprintf('%s-%s-%04d', $prefix, $date, $newSequence);
     }
 
     /**
