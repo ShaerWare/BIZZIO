@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   # Сервис приложения Laravel
@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: my_project_app
     restart: unless-stopped
-    #ports:  
+    # ports:  
     #  - "80:80" 
     working_dir: /var/www
     volumes:
