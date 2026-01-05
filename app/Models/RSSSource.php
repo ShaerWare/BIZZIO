@@ -10,7 +10,9 @@ class RSSSource extends Model
 {
     use HasFactory, SoftDeletes;
 
-    // ✅ ИСПРАВЛЕНИЕ: Явно указываем имя таблицы
+    /**
+     * Имя таблицы (явно указываем)
+     */
     protected $table = 'rss_sources';
 
     protected $fillable = [
@@ -30,7 +32,7 @@ class RSSSource extends Model
      */
     public function news()
     {
-        return $this->hasMany(News::class);
+        return $this->hasMany(News::class, 'rss_source_id');
     }
 
     /**

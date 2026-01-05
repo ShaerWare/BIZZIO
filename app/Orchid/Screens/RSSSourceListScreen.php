@@ -7,6 +7,7 @@ use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
 use Orchid\Support\Facades\Layout;
+use Illuminate\Support\Str; 
 
 class RSSSourceListScreen extends Screen
 {
@@ -17,8 +18,8 @@ class RSSSourceListScreen extends Screen
     {
         return [
             'sources' => RSSSource::withCount('news')
-                ->orderBy('name')
-                ->paginate(20),
+            ->orderBy('name')
+            ->paginate(20),
         ];
     }
 

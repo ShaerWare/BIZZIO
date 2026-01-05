@@ -28,7 +28,7 @@ class News extends Model
      */
     public function rssSource()
     {
-        return $this->belongsTo(RSSSource::class);
+        return $this->belongsTo(RSSSource::class, 'rss_source_id');
     }
 
     /**
