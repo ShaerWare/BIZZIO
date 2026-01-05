@@ -41,60 +41,60 @@ use App\Orchid\Screens\AuctionEditScreen;
 |
 */
 
-// Main
+//  ==================== Main ==================== 
 Route::screen('/main', PlatformScreen::class)
     ->name('platform.main');
 
-// Platform > Profile
+//  ==================== Platform > Profile ==================== 
 Route::screen('profile', UserProfileScreen::class)
     ->name('platform.profile')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push(__('Profile'), route('platform.profile')));
 
-// Platform > System > Users > User
+//  ==================== Platform > System > Users > User ==================== 
 Route::screen('users/{user}/edit', UserEditScreen::class)
     ->name('platform.systems.users.edit')
     ->breadcrumbs(fn (Trail $trail, $user) => $trail
         ->parent('platform.systems.users')
         ->push($user->name, route('platform.systems.users.edit', $user)));
 
-// Platform > System > Users > Create
+//  ==================== Platform > System > Users > Create ==================== 
 Route::screen('users/create', UserEditScreen::class)
     ->name('platform.systems.users.create')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.systems.users')
         ->push(__('Create'), route('platform.systems.users.create')));
 
-// Platform > System > Users
+//  ==================== Platform > System > Users ==================== 
 Route::screen('users', UserListScreen::class)
     ->name('platform.systems.users')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push(__('Users'), route('platform.systems.users')));
 
-// Platform > System > Roles > Role
+//  ==================== Platform > System > Roles > Role ==================== 
 Route::screen('roles/{role}/edit', RoleEditScreen::class)
     ->name('platform.systems.roles.edit')
     ->breadcrumbs(fn (Trail $trail, $role) => $trail
         ->parent('platform.systems.roles')
         ->push($role->name, route('platform.systems.roles.edit', $role)));
 
-// Platform > System > Roles > Create
+//  ==================== Platform > System > Roles > Create ==================== 
 Route::screen('roles/create', RoleEditScreen::class)
     ->name('platform.systems.roles.create')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.systems.roles')
         ->push(__('Create'), route('platform.systems.roles.create')));
 
-// Platform > System > Roles
+//  ==================== Platform > System > Roles ==================== 
 Route::screen('roles', RoleListScreen::class)
     ->name('platform.systems.roles')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push(__('Roles'), route('platform.systems.roles')));
 
-// Example...
+//  ==================== Example... ==================== 
 Route::screen('example', ExampleScreen::class)
     ->name('platform.example')
     ->breadcrumbs(fn (Trail $trail) => $trail
@@ -113,12 +113,12 @@ Route::screen('/examples/cards', ExampleCardsScreen::class)->name('platform.exam
 
 // Route::screen('idea', Idea::class, 'platform.screens.idea');
 
-// Компании
+// ==================== Компании ====================
 Route::screen('companies', CompanyListScreen::class)->name('platform.companies.list');
 Route::screen('companies/create', CompanyEditScreen::class)->name('platform.companies.create');
 Route::screen('companies/{company}/edit', CompanyEditScreen::class)->name('platform.companies.edit');
 
-// Список проектов
+// ==================== Список проектов ====================
 Route::screen('projects', ProjectListScreen::class)
     ->name('platform.projects')
     ->breadcrumbs(fn (Trail $trail) => $trail
@@ -126,7 +126,7 @@ Route::screen('projects', ProjectListScreen::class)
         ->push('Проекты', route('platform.projects'))
     );
 
-// Создание проекта
+// ==================== Создание проекта ====================
 Route::screen('projects/create', ProjectEditScreen::class)
     ->name('platform.projects.create')
     ->breadcrumbs(fn (Trail $trail) => $trail
@@ -134,7 +134,7 @@ Route::screen('projects/create', ProjectEditScreen::class)
         ->push('Создание проекта', route('platform.projects.create'))
     );
 
-// Редактирование проекта
+// ==================== Редактирование проекта ====================
 Route::screen('projects/{project}', ProjectEditScreen::class)
     ->name('platform.projects.edit')
     ->breadcrumbs(fn (Trail $trail, Project $project) => $trail
@@ -142,7 +142,7 @@ Route::screen('projects/{project}', ProjectEditScreen::class)
         ->push($project->name, route('platform.projects.edit', $project))
     );
 
-// RFQ Routes
+// ==================== RFQ Routes ====================
 Route::screen('rfqs', RfqListScreen::class)
     ->name('platform.rfqs.list')
     ->breadcrumbs(fn (Trail $trail) => $trail
@@ -169,7 +169,7 @@ Route::bind('company', function ($value) {
     // Если строка - ищем по slug (для публичных роутов)
     return Company::where('slug', $value)->firstOrFail();
 });
-// Аукционы
+// ==================== Аукционы ====================
 Route::screen('auctions', AuctionListScreen::class)
     ->name('platform.auctions.list');
 
@@ -178,3 +178,29 @@ Route::screen('auctions/create', AuctionEditScreen::class)
 
 Route::screen('auctions/{auction}/edit', AuctionEditScreen::class)
     ->name('platform.auctions.edit');
+
+// ==================== RSS-ИСТОЧНИКИ ====================
+Route::screen('rss-sources', RSSSourceListScreen::class)
+    ->name('platform.systems.rss-sources')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push('RSS-источники', route('platform.systems.rss-sources')));
+
+Route::screen('rss-sources/create', RSSSourceEditScreen::class)
+    ->name('platform.systems.rss-sources.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.systems.rss-sources')
+        ->push('Создание', route('platform.systems.rss-sources.create')));
+
+Route::screen('rss-sources/{source}/edit', RSSSourceEditScreen::class)
+    ->name('platform.systems.rss-sources.edit')
+    ->breadcrumbs(fn (Trail $trail, $source) => $trail
+        ->parent('platform.systems.rss-sources')
+        ->push('Редактирование', route('platform.systems.rss-sources.edit', $source)));
+
+// ==================== НОВОСТИ ====================
+Route::screen('news', NewsListScreen::class)
+    ->name('platform.systems.news')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push('Новости', route('platform.systems.news')));
