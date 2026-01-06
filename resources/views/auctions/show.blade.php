@@ -70,28 +70,64 @@
                     <div class="flex-1">
                         <!-- Статус -->
                         @php
-                            $statusColors = [
-                                'active' => 'bg-green-100 text-green-800',
-                                'trading' => 'bg-blue-100 text-blue-800',
-                                'closed' => 'bg-gray-100 text-gray-800',
-                                'cancelled' => 'bg-red-100 text-red-800',
-                                'draft' => 'bg-yellow-100 text-yellow-800',
-                            ];
-                            $statusLabels = [
-                                'active' => 'Приём заявок',
-                                'trading' => 'Торги',
-                                'closed' => 'Завершён',
-                                'cancelled' => 'Отменён',
-                                'draft' => 'Черновик',
-                            ];
+                            $now = now();
+                            $displayStatus = $auction->status;
+                            $displayLabel = '';
+                            $displayColor = '';
+                            
+                            // Определяем отображаемый статус
+                            if ($auction->status === 'active') {
+                                if ($auction->start_date->isFuture()) {
+                                    $displayLabel = 'Ожидание начала приёма заявок';
+                                    $displayColor = 'bg-yellow-100 text-yellow-800';
+                                } elseif ($auction->end_date->isPast()) {
+                                    $displayLabel = 'Приём заявок завершён';
+                                    $displayColor = 'bg-orange-100 text-orange-800';
+                                } else {
+                                    $displayLabel = 'Приём заявок';
+                                    $displayColor = 'bg-green-100 text-green-800';
+                                }
+                            } elseif ($auction->status === 'trading') {
+                                $displayLabel = 'Торги';
+                                $displayColor = 'bg-blue-100 text-blue-800';
+                            } elseif ($auction->status === 'closed') {
+                                $displayLabel = 'Завершён';
+                                $displayColor = 'bg-gray-100 text-gray-800';
+                            } elseif ($auction->status === 'cancelled') {
+                                $displayLabel = 'Отменён';
+                                $displayColor = 'bg-red-100 text-red-800';
+                            } elseif ($auction->status === 'draft') {
+                                $displayLabel = 'Черновик';
+                                $displayColor = 'bg-yellow-100 text-yellow-800';
+                            }
                         @endphp
+
                         <div class="flex items-center space-x-2 mb-4">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$auction->status] }}">
-                                {{ $statusLabels[$auction->status] }}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $displayColor }}">
+                                {{ $displayLabel }}
                             </span>
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $auction->type === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $auction->type === 'open' ? 'Открытая процедура' : 'Закрытая процедура' }}
                             </span>
+                            
+                            <!-- Дополнительная информация о времени -->
+                            @if($auction->status === 'active')
+                                @if($auction->start_date->isFuture())
+                                    <span class="text-xs text-gray-500">
+                                        Начало через {{ $auction->start_date->diffForHumans() }}
+                                    </span>
+                                @elseif($auction->end_date->isFuture())
+                                    <span class="text-xs text-gray-500">
+                                        Завершится {{ $auction->end_date->diffForHumans() }}
+                                    </span>
+                                @endif
+                            @endif
+                            
+                            @if($auction->status === 'trading' && $auction->last_bid_at)
+                                <span class="text-xs text-gray-500">
+                                    Закрытие через {{ Carbon\Carbon::parse($auction->last_bid_at)->addMinutes(20)->diffForHumans() }}
+                                </span>
+                            @endif
                         </div>
 
                         <!-- Компания-организатор -->

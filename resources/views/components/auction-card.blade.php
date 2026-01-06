@@ -3,20 +3,39 @@
 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-md transition-shadow duration-200">
     <div class="p-6">
         <!-- Статус -->
-        <div class="flex justify-between items-start mb-3">
-            <span class="text-xs font-semibold text-gray-500">{{ $auction->number }}</span>
-            @if($auction->status === 'draft')
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Черновик</span>
-            @elseif($auction->status === 'active')
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Приём заявок</span>
-            @elseif($auction->status === 'trading')
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Торги</span>
-            @elseif($auction->status === 'closed')
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Завершён</span>
-            @elseif($auction->status === 'cancelled')
-                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Отменён</span>
-            @endif
-        </div>
+        @php
+            $now = now();
+            
+            // Определяем отображаемый статус
+            if ($auction->status === 'active') {
+                if ($auction->start_date->isFuture()) {
+                    $statusLabel = 'Скоро';
+                    $statusColor = 'bg-yellow-100 text-yellow-800';
+                } elseif ($auction->end_date->isPast()) {
+                    $statusLabel = 'Завершён приём';
+                    $statusColor = 'bg-orange-100 text-orange-800';
+                } else {
+                    $statusLabel = 'Приём заявок';
+                    $statusColor = 'bg-green-100 text-green-800';
+                }
+            } elseif ($auction->status === 'trading') {
+                $statusLabel = 'Торги';
+                $statusColor = 'bg-blue-100 text-blue-800';
+            } elseif ($auction->status === 'closed') {
+                $statusLabel = 'Завершён';
+                $statusColor = 'bg-gray-100 text-gray-800';
+            } elseif ($auction->status === 'cancelled') {
+                $statusLabel = 'Отменён';
+                $statusColor = 'bg-red-100 text-red-800';
+            } elseif ($auction->status === 'draft') {
+                $statusLabel = 'Черновик';
+                $statusColor = 'bg-yellow-100 text-yellow-800';
+            }
+        @endphp
+
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
+            {{ $statusLabel }}
+        </span>
 
         <!-- Название -->
         <h3 class="text-lg font-semibold text-gray-900 mb-2">
