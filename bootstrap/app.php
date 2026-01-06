@@ -26,6 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('news:clean-old')
             ->dailyAt('02:00')
             ->withoutOverlapping();
+
+            // Обновление статусов аукционов (каждую минуту)
+        $schedule->job(new \App\Jobs\UpdateAuctionStatuses())
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground();
+    
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
