@@ -28,7 +28,7 @@
                             <button @click="open = ! open" 
                                     class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
                                         {{ request()->routeIs('rfqs.*', 'auctions.*', 'bids.*', 'invitations.*') ? 'border-indigo-400 text-gray-900 focus:border-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
-                                <span>Тендеры</span>
+                                <span>{{ __('Тендеры и Аукционы') }}</span>
                                 <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -41,42 +41,42 @@
                                 style="display: none;">
                                 <div class="py-1">
                                     <a href="{{ route('rfqs.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        Найти тендер (RFQ)
+                                        {{ __('Найти тендер (RFQ)') }}
                                     </a>
                                     <a href="{{ route('auctions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        Найти аукцион
+                                        {{ __('Найти аукцион') }}
                                     </a>
                                     @auth
                                         @if(auth()->user()->isModeratorOfAnyCompany())
                                             <div class="border-t border-gray-100"></div>
                                             <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                Разместить Запрос котировок
+                                                {{ __('Разместить Запрос котировок') }}
                                             </a>
                                             <a href="{{ route('auctions.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                Разместить аукцион
+                                                {{ __('Разместить аукцион') }}
                                             </a>
                                         @endif
                                         <div class="border-t border-gray-100"></div>
                                         <a href="{{ route('rfqs.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои тендеры (RFQ)
+                                            {{ __('Мои тендеры (RFQ)') }}
                                         </a>
                                         <a href="{{ route('auctions.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои аукционы
+                                            {{ __('Мои аукционы') }}
                                         </a>
                                         <a href="{{ route('bids.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои заявки (RFQ)
+                                            {{ __('Мои заявки (RFQ)') }}
                                         </a>
                                         <a href="{{ route('auctions.bids.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои заявки (Аукционы)
+                                            {{ __('Мои заявки (Аукционы)') }}
                                         </a>
                                         <a href="{{ route('invitations.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои приглашения (RFQ)
+                                            {{ __('Мои приглашения (RFQ)') }}
                                         </a>
                                         <a href="{{ route('auctions.invitations.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои приглашения (Аукционы)
+                                            {{ __('Мои приглашения (Аукционы)') }}
                                         </a>
                                         <a href="{{ route('join-requests.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Мои запросы на присоединение
+                                            {{ __('Мои запросы на присоединение') }}
                                         </a>
                                     @endauth
                                 </div>
@@ -90,7 +90,7 @@
                             <button @click="open = ! open" 
                                     class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
                                         {{ request()->routeIs('news.*', 'profile.keywords.*') ? 'border-indigo-400 text-gray-900 focus:border-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
-                                <span>Новости</span>
+                                <span>{{ __('Новости') }}</span>
                                 <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -103,11 +103,11 @@
                                 style="display: none;">
                                 <div class="py-1">
                                     <a href="{{ route('news.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        Лента новостей
+                                        {{ __('Лента новостей') }}
                                     </a>
                                     @auth
                                         <a href="{{ route('profile.keywords.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Ключевые слова
+                                            {{ __('Ключевые слова') }}
                                         </a>
                                     @endauth
                                 </div>
