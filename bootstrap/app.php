@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
 
             // Обновление статусов аукционов (каждую минуту)
-        $schedule->job(new \App\Jobs\UpdateAuctionStatuses())
+        $schedule->command('auctions:update-statuses')
             ->everyMinute()
             ->withoutOverlapping()
             ->runInBackground();
