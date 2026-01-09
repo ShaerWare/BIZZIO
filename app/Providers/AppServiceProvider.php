@@ -5,11 +5,27 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
+
 use App\Models\Rfq;
 use App\Policies\RfqPolicy;
-use Illuminate\Support\Facades\URL;
 use App\Models\Auction;
 use App\Policies\AuctionPolicy;
+
+// Events
+use App\Events\ProjectInvitationSent;
+use App\Events\TenderInvitationSent;
+use App\Events\CommentCreated;
+use App\Events\TenderClosed;
+use App\Events\AuctionTradingStarted;
+
+// Listeners
+use App\Listeners\SendProjectInvitationNotification;
+use App\Listeners\SendTenderInvitationNotification;
+use App\Listeners\SendCommentNotification;
+use App\Listeners\SendTenderClosedNotification;
+use App\Listeners\SendAuctionTradingStartedNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,5 +59,31 @@ class AppServiceProvider extends ServiceProvider
 
         // Регистрация Policy для Auction
         Gate::policy(Auction::class, AuctionPolicy::class);
+
+                // ========== EVENT LISTENERS ==========
+        Event::listen(
+            ProjectInvitationSent::class,
+            SendProjectInvitationNotification::class
+        );
+
+        Event::listen(
+            TenderInvitationSent::class,
+            SendTenderInvitationNotification::class
+        );
+
+        Event::listen(
+            CommentCreated::class,
+            SendCommentNotification::class
+        );
+
+        Event::listen(
+            TenderClosed::class,
+            SendTenderClosedNotification::class
+        );
+
+        Event::listen(
+            AuctionTradingStarted::class,
+            SendAuctionTradingStartedNotification::class
+        );
     }
 }
