@@ -13,11 +13,13 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable; 
 use Orchid\Screen\AsSource;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Company extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia;
-    use AsSource, Filterable;
+    use AsSource, Filterable, LogsActivity;
 
     protected $fillable = [
         'name',
@@ -256,5 +258,22 @@ class Company extends Model implements HasMedia
         return $this->logo 
             ? asset('storage/' . $this->logo)
             : asset('images/default-company-logo.png');
+    }
+
+    /**
+     * Настройки логирования активности
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'inn', 'industry_id', 'is_verified'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+                'created' => 'создал(а) компанию',
+                'updated' => 'обновил(а) компанию',
+                'deleted' => 'удалил(а) компанию',
+                default => $eventName,
+            });
     }
 }

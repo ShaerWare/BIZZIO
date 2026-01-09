@@ -13,11 +13,13 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable;
 use Orchid\Screen\AsSource;
 use Carbon\Carbon;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Rfq extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia;
-    use AsSource, Filterable;
+    use AsSource, Filterable, LogsActivity;
 
     protected $fillable = [
         'number',
@@ -185,5 +187,22 @@ class Rfq extends Model implements HasMedia
             $q->where('title', 'like', "%{$search}%")
               ->orWhere('number', 'like', "%{$search}%");
         });
+    }
+
+        /**
+     * Настройки логирования активности
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'number', 'status', 'type'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+                'created' => 'разместил(а) запрос котировок',
+                'updated' => 'обновил(а) запрос котировок',
+                'deleted' => 'удалил(а) запрос котировок',
+                default => $eventName,
+            });
     }
 }

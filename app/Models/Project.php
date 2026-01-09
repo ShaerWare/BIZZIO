@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Project extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     // ❌ ВРЕМЕННО УБИРАЕМ Spatie Media Library
     // use InteractsWithMedia;
@@ -212,5 +216,22 @@ class Project extends Model
     public function getRouteKeyName()
     {
         return 'id'; // по умолчанию и так id, но на случай переопределения
+    }
+
+        /**
+     * Настройки логирования активности
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'status', 'start_date', 'end_date'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+                'created' => 'создал(а) проект',
+                'updated' => 'обновил(а) проект',
+                'deleted' => 'удалил(а) проект',
+                default => $eventName,
+            });
     }
 }
