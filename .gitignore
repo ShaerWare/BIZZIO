@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local Docker override (standard practice)
+docker-compose.override.yml

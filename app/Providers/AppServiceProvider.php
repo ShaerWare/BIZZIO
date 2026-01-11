@@ -48,12 +48,10 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']['services.vk'];
             return $socialite->buildProvider(\SocialiteProviders\VKontakte\Provider::class, $config);
         });
-        /*
-        if ($this->app->environment('production')) {
+        // HTTPS только для продакшена или если APP_URL начинается с https
+        if ($this->app->environment('production') || str_starts_with(config('app.url'), 'https')) {
             URL::forceScheme('https');
         }
-            */
-        URL::forceScheme('https');
         // Регистрация Policy для RFQ
         Gate::policy(Rfq::class, RfqPolicy::class);
 
