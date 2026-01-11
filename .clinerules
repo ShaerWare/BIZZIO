@@ -1,0 +1,23 @@
+# .clinerules
+
+## Стек проекта
+- Laravel 11, PHP 8.3, Orchid
+- PostgreSQL, Redis
+- Passport (API auth), Swagger
+
+## Правила разработки
+- Всегда `declare(strict_types=1);`
+- Типизация везде (properties, params, returns)
+- PSR-12, Laravel conventions
+- Feature-тесты для API
+- Swagger для всех эндпоинтов
+
+## Команды для миграций/моделей
+php artisan make:model -mfc
+php artisan make:test --feature
+
+## Структура CRUD-ответа
+1. Команды для терминала
+2. Код модели/миграции/контроллера
+3. Swagger-аннотации
+4. Feature-тесты
