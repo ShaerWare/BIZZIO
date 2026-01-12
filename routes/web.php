@@ -11,6 +11,8 @@ use App\Http\Controllers\CompanyModeratorController;
 use App\Http\Controllers\AuctionController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserKeywordController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,14 +75,26 @@ Route::get('companies/{company}', [CompanyController::class, 'show'])->name('com
 // DASHBOARD & PROFILE ROUTES
 // ========================================================================
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/activities', [DashboardController::class, 'loadMoreActivities'])->name('dashboard.activities');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// ========================================================================
+// NOTIFICATIONS ROUTES
+// ========================================================================
+
+Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
+    Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('read-all');
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
 });
 
 // ========================================================================

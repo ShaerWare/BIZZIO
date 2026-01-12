@@ -23,10 +23,15 @@ return new class extends Migration
             $table->index('rss_source_id');
             $table->index('published_at');
             $table->index('created_at');
-            
-            // FULLTEXT индекс для быстрого поиска по ключевым словам
-            $table->fullText(['title', 'description']);
         });
+
+        // FULLTEXT индекс для быстрого поиска по ключевым словам
+        // Только для MySQL/PostgreSQL (SQLite не поддерживает)
+        if (in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb', 'pgsql'])) {
+            Schema::table('news', function (Blueprint $table) {
+                $table->fullText(['title', 'description']);
+            });
+        }
     }
 
     public function down(): void
