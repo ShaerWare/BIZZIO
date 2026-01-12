@@ -36,10 +36,10 @@ class ProjectInvitationNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Приглашение в проект: ' . $this->project->title)
+            ->subject('Приглашение в проект: ' . $this->project->name)
             ->greeting('Здравствуйте!')
             ->line('Вашу компанию пригласили принять участие в проекте.')
-            ->line('**Проект:** ' . $this->project->title)
+            ->line('**Проект:** ' . $this->project->name)
             ->line('**Заказчик:** ' . $this->project->company->name)
             ->action('Просмотреть проект', route('projects.show', $this->project))
             ->line('Спасибо за использование Bizzo.ru!');
@@ -53,7 +53,7 @@ class ProjectInvitationNotification extends Notification
         return [
             'type' => 'project_invitation',
             'project_id' => $this->project->id,
-            'project_title' => $this->project->title,
+            'project_title' => $this->project->name,
             'company_name' => $this->project->company->name,
             'url' => route('projects.show', $this->project),
         ];
