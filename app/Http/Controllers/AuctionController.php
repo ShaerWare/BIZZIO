@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Services\AuctionProtocolService;
 
 class AuctionController extends Controller
 {
@@ -398,4 +399,26 @@ public function getState(Auction $auction)
         'last_updated' => Carbon::now()->toIso8601String(),
     ]);
 }
+
+    /**
+     * Генерация протокола аукциона (вручную)
+     */
+    public function generateProtocol(Auction $auction, AuctionProtocolService $protocolService)
+    {
+        $this->authorize('update', $auction);
+
+        // Проверяем, что аукцион завершён
+        if ($auction->status !== 'closed') {
+            return back()->with('error', 'Протокол можно сгенерировать только для завершённого аукциона.');
+        }
+
+        // Генерируем протокол
+        $filename = $protocolService->generate($auction);
+
+        if ($filename) {
+            return back()->with('success', 'Протокол успешно сгенерирован: ' . $filename);
+        } else {
+            return back()->with('error', 'Ошибка при генерации протокола. Проверьте логи.');
+        }
+    }
 }

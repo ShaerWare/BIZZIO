@@ -309,11 +309,11 @@
                                                     
                                                     <!-- Кнопки действий -->
                                                     <div class="flex space-x-2 ml-4">
-                                                        <button onclick="showApproveModal({{ $joinRequest->id }}, '{{ $joinRequest->user->name }}', '{{ $joinRequest->desired_role }}')" 
+                                                        <button onclick="showApproveModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->name) }}, {{ Js::from($joinRequest->desired_role) }})"
                                                                 class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                                             Одобрить
                                                         </button>
-                                                        <button onclick="showRejectModal({{ $joinRequest->id }}, '{{ $joinRequest->user->name }}')" 
+                                                        <button onclick="showRejectModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->name) }})"
                                                                 class="inline-flex items-center px-3 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
                                                             Отклонить
                                                         </button>
@@ -566,11 +566,11 @@
                 </p>
 
                 <div class="mb-4">
-                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="review_comment" class="block text-sm font-medium text-gray-700 mb-2">
                         Причина отклонения (необязательно)
                     </label>
-                    <textarea name="rejection_reason"
-                              id="rejection_reason"
+                    <textarea name="review_comment"
+                              id="review_comment"
                               rows="3"
                               placeholder="Укажите причину..."
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
@@ -649,7 +649,7 @@ function showRejectModal(requestId, userName) {
 
 function closeRejectModal() {
     document.getElementById('reject-modal').classList.add('hidden');
-    document.getElementById('rejection_reason').value = '';
+    document.getElementById('review_comment').value = '';
 }
 
 // Закрытие по клику вне окна

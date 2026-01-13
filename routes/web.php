@@ -190,7 +190,10 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::delete('/{auction}', [AuctionController::class, 'destroy'])->name('destroy');
         Route::post('/{auction}/activate', [AuctionController::class, 'activate'])->name('activate');
         Route::post('/{auction}/bids', [AuctionController::class, 'storeBid'])->name('bids.store');
-        
+
+        // Генерация протокола (для организатора)
+        Route::post('/{auction}/protocol', [AuctionController::class, 'generateProtocol'])->name('protocol.generate');
+
         // Long Polling (JSON response)
         Route::get('/{auction}/state', [AuctionController::class, 'getState'])->name('state');
     });

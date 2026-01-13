@@ -202,15 +202,32 @@
                         @endif
 
                         <!-- Протокол (если завершён) -->
-                        @if($auction->status === 'closed' && $auction->hasMedia('protocol'))
-                            <a href="{{ $auction->getFirstMediaUrl('protocol') }}" 
-                               target="_blank"
-                               class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
-                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Скачать протокол (PDF)
-                            </a>
+                        @if($auction->status === 'closed')
+                            @if($auction->hasMedia('protocol'))
+                                <a href="{{ $auction->getFirstMediaUrl('protocol') }}"
+                                   target="_blank"
+                                   class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
+                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Скачать протокол (PDF)
+                                </a>
+                            @elseif(auth()->check() && $auction->canManage(auth()->user()))
+                                <form method="POST" action="{{ route('auctions.protocol.generate', $auction) }}" class="mb-4">
+                                    @csrf
+                                    <button type="submit"
+                                            class="block w-full text-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
+                                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Сгенерировать протокол
+                                    </button>
+                                </form>
+                            @else
+                                <div class="mb-4 p-3 bg-gray-100 rounded text-center text-sm text-gray-600">
+                                    Протокол ещё не сгенерирован
+                                </div>
+                            @endif
                         @endif
 
                         <!-- Служба поддержки -->
@@ -406,6 +423,60 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     <p class="text-blue-800 font-medium">Вы уже подали заявку на этот аукцион</p>
+                                </div>
+                            </div>
+                        @elseif($auction->status === 'draft')
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <p class="text-gray-700">Аукцион находится в режиме черновика. Приём заявок начнётся после его активации.</p>
+                                </div>
+                            </div>
+                        @elseif($auction->status === 'active' && $auction->start_date->isFuture())
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-yellow-800">Приём заявок начнётся <strong>{{ $auction->start_date->format('d.m.Y в H:i') }}</strong></p>
+                                </div>
+                            </div>
+                        @elseif($auction->status === 'active' && $auction->end_date->isPast())
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-orange-800">Приём заявок завершён <strong>{{ $auction->end_date->format('d.m.Y в H:i') }}</strong></p>
+                                </div>
+                            </div>
+                        @elseif($auction->status === 'closed')
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <p class="text-gray-700">Аукцион завершён</p>
+                                </div>
+                            </div>
+                        @elseif($auction->type === 'closed' && $userCompanies->isNotEmpty())
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                    </svg>
+                                    <p class="text-red-800">Это закрытый аукцион. Подать заявку могут только приглашённые компании.</p>
+                                </div>
+                            </div>
+                        @elseif($userCompanies->isEmpty())
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                    <p class="text-blue-800">Для подачи заявки необходимо быть модератором компании. <a href="{{ route('companies.create') }}" class="underline font-semibold">Создайте компанию</a> или получите права модератора.</p>
                                 </div>
                             </div>
                         @endif
