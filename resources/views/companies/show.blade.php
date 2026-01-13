@@ -497,8 +497,100 @@
     </div>
 </div>
 
-<!-- Модальные окна для одобрения/отклонения -->
-<!-- (аналогично предыдущей версии, код опущен для краткости) -->
+<!-- Модальное окно: Одобрить запрос -->
+<div id="approve-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Одобрить запрос</h3>
+                <button onclick="closeApproveModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="approve-form" method="POST" action="">
+                @csrf
+
+                <p class="text-sm text-gray-600 mb-4">
+                    Одобрить запрос от <strong id="approve-user-name"></strong>?
+                </p>
+
+                <div class="mb-4">
+                    <label for="approve_role" class="block text-sm font-medium text-gray-700 mb-2">
+                        Назначить роль
+                    </label>
+                    <input type="text"
+                           name="role"
+                           id="approve_role"
+                           placeholder="Например: Менеджер"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <p class="text-xs text-gray-500 mt-1">Оставьте пустым, чтобы использовать роль из запроса</p>
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button"
+                            onclick="closeApproveModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        Отмена
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                        Одобрить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Отклонить запрос -->
+<div id="reject-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Отклонить запрос</h3>
+                <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="reject-form" method="POST" action="">
+                @csrf
+
+                <p class="text-sm text-gray-600 mb-4">
+                    Отклонить запрос от <strong id="reject-user-name"></strong>?
+                </p>
+
+                <div class="mb-4">
+                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                        Причина отклонения (необязательно)
+                    </label>
+                    <textarea name="rejection_reason"
+                              id="rejection_reason"
+                              rows="3"
+                              placeholder="Укажите причину..."
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button"
+                            onclick="closeRejectModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        Отмена
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                        Отклонить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script>
@@ -533,10 +625,43 @@ function closeJoinModal() {
     document.getElementById('join-modal').classList.add('hidden');
 }
 
+// Модальное окно одобрения
+function showApproveModal(requestId, userName, desiredRole) {
+    document.getElementById('approve-form').action = '/join-requests/' + requestId + '/approve';
+    document.getElementById('approve-user-name').textContent = userName;
+    if (desiredRole) {
+        document.getElementById('approve_role').value = desiredRole;
+    }
+    document.getElementById('approve-modal').classList.remove('hidden');
+}
+
+function closeApproveModal() {
+    document.getElementById('approve-modal').classList.add('hidden');
+    document.getElementById('approve_role').value = '';
+}
+
+// Модальное окно отклонения
+function showRejectModal(requestId, userName) {
+    document.getElementById('reject-form').action = '/join-requests/' + requestId + '/reject';
+    document.getElementById('reject-user-name').textContent = userName;
+    document.getElementById('reject-modal').classList.remove('hidden');
+}
+
+function closeRejectModal() {
+    document.getElementById('reject-modal').classList.add('hidden');
+    document.getElementById('rejection_reason').value = '';
+}
+
 // Закрытие по клику вне окна
 window.onclick = function(event) {
     if (event.target.id === 'join-modal') {
         closeJoinModal();
+    }
+    if (event.target.id === 'approve-modal') {
+        closeApproveModal();
+    }
+    if (event.target.id === 'reject-modal') {
+        closeRejectModal();
     }
 }
 </script>

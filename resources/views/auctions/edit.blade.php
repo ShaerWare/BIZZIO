@@ -87,10 +87,10 @@
                         </p>
                     </div>
 
-                    <!-- Стартовая цена -->
+                    <!-- Начальная максимальная цена -->
                     <div class="mb-6">
                         <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
-                            Стартовая цена (₽) <span class="text-red-500">*</span>
+                            Начальная максимальная цена (₽) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" 
                                name="starting_price" 

@@ -16,7 +16,7 @@ class StoreCompanyRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'inn' => ['required', 'string', 'size:10', 'unique:companies,inn'],
+            'inn' => ['required', 'string', 'regex:/^\d{10}(\d{2})?$/', 'unique:companies,inn'],
             'legal_form' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'], // max 2MB
             'short_description' => ['nullable', 'string', 'max:500'],
@@ -31,7 +31,7 @@ class StoreCompanyRequest extends FormRequest
         return [
             'name.required' => 'Название компании обязательно для заполнения',
             'inn.required' => 'ИНН обязателен для заполнения',
-            'inn.size' => 'ИНН должен содержать 10 цифр',
+            'inn.regex' => 'ИНН должен содержать 10 цифр (для ИП/юрлица) или 12 цифр (для физлица)',
             'inn.unique' => 'Компания с таким ИНН уже зарегистрирована',
             'logo.image' => 'Логотип должен быть изображением',
             'logo.max' => 'Размер логотипа не должен превышать 2MB',

@@ -137,12 +137,13 @@
                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Начало приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local" 
-                                   name="start_date" 
-                                   id="start_date" 
+                            <input type="datetime-local"
+                                   name="start_date"
+                                   id="start_date"
                                    required
                                    value="{{ old('start_date', now()->addDay()->format('Y-m-d\TH:i')) }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -153,12 +154,13 @@
                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Окончание приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local" 
-                                   name="end_date" 
-                                   id="end_date" 
+                            <input type="datetime-local"
+                                   name="end_date"
+                                   id="end_date"
                                    required
                                    value="{{ old('end_date', now()->addWeek()->format('Y-m-d\TH:i')) }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -176,7 +178,7 @@
                                required
                                value="{{ old('trading_start', now()->addWeek()->addDay()->format('Y-m-d\TH:i')) }}"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('trading_start') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Торги начнутся автоматически после окончания приёма заявок</p>
+                        <p class="mt-1 text-sm text-gray-500">Время указывается по UTC +3 (Москва)</p>
                         @error('trading_start')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -184,19 +186,19 @@
 
                     <!-- Параметры аукциона -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <!-- Стартовая цена -->
+                        <!-- Начальная максимальная цена -->
                         <div>
                             <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
-                                Стартовая цена (₽) <span class="text-red-500">*</span>
+                                Начальная максимальная цена (₽) <span class="text-red-500">*</span>
                             </label>
-                            <input type="number" 
-                                   name="starting_price" 
-                                   id="starting_price" 
+                            <input type="number"
+                                   name="starting_price"
+                                   id="starting_price"
                                    step="0.01"
                                    min="0"
                                    required
                                    value="{{ old('starting_price') }}"
-                                   placeholder="Введите стартовую цену"
+                                   placeholder="Введите начальную максимальную цену"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('starting_price') border-red-500 @enderror">
                             @error('starting_price')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
