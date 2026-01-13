@@ -160,12 +160,13 @@
                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Дата начала приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local" 
-                                   name="start_date" 
-                                   id="start_date" 
+                            <input type="datetime-local"
+                                   name="start_date"
+                                   id="start_date"
                                    required
                                    value="{{ old('start_date') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -174,12 +175,13 @@
                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Дата окончания приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local" 
-                                   name="end_date" 
-                                   id="end_date" 
+                            <input type="datetime-local"
+                                   name="end_date"
+                                   id="end_date"
                                    required
                                    value="{{ old('end_date') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror

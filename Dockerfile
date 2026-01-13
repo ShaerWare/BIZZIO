@@ -77,6 +77,9 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Копируем PHP конфигурацию (увеличение лимитов загрузки)
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Открываем порт
 EXPOSE 80
 

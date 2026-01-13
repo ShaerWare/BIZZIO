@@ -109,3 +109,7 @@ All project docs in `docs/`:
 - `00_ТЕХНИЧЕСКОЕ_ЗАДАНИЕ.md` — Original requirements
 - `01_ПЛАН_РАЗРАБОТКИ.md` — Development plan (10 sprints)
 - `sprints/*.md` — Sprint reports (1-6 completed)
+
+# Claude Code Instructions
+- После каждого успешного выполнения задачи записывай краткий отчет (что сделано, какие файлы изменены) в конец файла `docs/CHANGELOG_CLAUDE.md`.
+- Если возникла ошибка в терминале, которую ты фиксишь, запиши её причину в этот же файл.

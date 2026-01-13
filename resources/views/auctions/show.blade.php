@@ -181,7 +181,7 @@
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
-                                <li>• Стартовая цена — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} ₽</strong></li>
+                                <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} ₽</strong></li>
                                 <li>• Шаг аукциона — <strong>{{ $auction->step_percent }}%</strong></li>
                                 @if($auction->isTrading())
                                     <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</strong></li>
@@ -292,32 +292,6 @@
 
                 <!-- Вкладка: Заявки/Ставки -->
                 <div id="content-bids" class="tab-content hidden">
-
-                    <!-- ==================== DEBUG ==================== -->
-                    @auth
-                        <div class="bg-yellow-100 border border-yellow-400 rounded p-4 mb-4 text-xs">
-                            <strong>🐛 DEBUG INFO:</strong><br>
-                            • Залогинен: <strong>{{ auth()->check() ? 'ДА' : 'НЕТ' }}</strong><br>
-                            • User ID: <strong>{{ auth()->id() }}</strong><br>
-                            • User Name: <strong>{{ auth()->user()->name }}</strong><br>
-                            • Статус аукциона: <strong>{{ $auction->status }}</strong><br>
-                            • Тип аукциона: <strong>{{ $auction->type }}</strong><br>
-                            • isAcceptingApplications: <strong>{{ $auction->isAcceptingApplications() ? 'true' : 'false' }}</strong><br>
-                            • isTrading: <strong>{{ $auction->isTrading() ? 'true' : 'false' }}</strong><br>
-                            • Компаний у пользователя: <strong>{{ $userCompanies->count() }}</strong><br>
-                            @if($userCompanies->count() > 0)
-                                • Компании: <strong>{{ $userCompanies->pluck('name')->join(', ') }}</strong><br>
-                            @endif
-                            • Существующая заявка: <strong>{{ $existingBid ? 'ДА (ID: ' . $existingBid->id . ')' : 'НЕТ' }}</strong><br>
-                            • <span class="text-lg font-bold {{ $canBid ? 'text-green-600' : 'text-red-600' }}">$canBid = {{ $canBid ? 'TRUE ✅' : 'FALSE ❌' }}</span>
-                        </div>
-                    @else
-                        <div class="bg-red-100 border border-red-400 rounded p-4 mb-4 text-xs">
-                            <strong>⚠️ Пользователь НЕ залогинен</strong>
-                        </div>
-                    @endauth
-                    <!-- ==================== /DEBUG ==================== -->
-
 
                     <!-- Форма подачи заявки/ставки -->
                     @auth

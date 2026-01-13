@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -76,7 +77,9 @@ class SocialiteController extends Controller
         return redirect()->intended('/companies'); // Редирект в админку Orchid
     }
 
-    // SocialiteController.php
+    /**
+     * Handle VK ID callback (альтернативный метод для VK ID SDK)
+     */
     public function vkIdCallback(Request $request)
     {
         $code = $request->input('code');
@@ -92,29 +95,34 @@ class SocialiteController extends Controller
                     'grant_type'    => 'authorization_code',
                     'code'          => $code,
                     'device_id'     => $deviceId,
-                    'client_id'     => env('VK_APP_ID'),
-                    'client_secret' => env('VK_SECURE_KEY'), // Secure key из VK ID кабинета
+                    'client_id'     => config('services.vk.client_id'),
+                    'client_secret' => config('services.vk.client_secret'),
                 ])
             );
 
             $data = json_decode($response, true);
 
             if (isset($data['error'])) {
-                return response()->json(['success' => false, 'error' => $data['error_description']]);
+                return response()->json(['success' => false, 'error' => $data['error_description'] ?? $data['error']]);
             }
 
             // $data содержит access_token, user_id, email и т.д.
-            $accessToken = $data['access_token'];
-            $vkUserId = $data['user_id'];
+            $vkUserId = $data['user_id'] ?? null;
 
-            // Здесь можно сделать запрос к VK API для получения email и других данных
-            // $vkData = file_get_contents("https://api.vk.com/method/users.get?access_token={$accessToken}&v=5.199&fields=email");
+            if (!$vkUserId) {
+                return response()->json(['success' => false, 'error' => 'Не удалось получить user_id']);
+            }
 
-            // Создаём/находим пользователя (аналогично твоему Socialite)
+            // Формируем имя пользователя
+            $firstName = $data['first_name'] ?? '';
+            $lastName = $data['last_name'] ?? '';
+            $userName = trim($firstName . ' ' . $lastName) ?: 'VK User';
+
+            // Создаём/находим пользователя
             $user = User::updateOrCreate(
                 ['provider' => 'vk', 'provider_id' => $vkUserId],
                 [
-                    'name' => $data['first_name'] . ' ' . $data['last_name'] ?? 'VK User',
+                    'name' => $userName,
                     'email' => $data['email'] ?? null,
                     'avatar' => $data['avatar'] ?? null,
                     'password' => Hash::make(Str::random(16)),
@@ -122,14 +130,23 @@ class SocialiteController extends Controller
                 ]
             );
 
+            // Назначаем роль Subscriber если новый пользователь
+            if ($user->wasRecentlyCreated) {
+                $role = \Orchid\Platform\Models\Role::where('slug', 'subscriber')->first();
+                if ($role) {
+                    $user->roles()->syncWithoutDetaching([$role->id]);
+                }
+            }
+
             Auth::login($user, true);
 
             return response()->json([
                 'success' => true,
-                'redirect' => '/dashboard' // или route('dashboard')
+                'redirect' => route('dashboard')
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('VK ID Callback Error: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
