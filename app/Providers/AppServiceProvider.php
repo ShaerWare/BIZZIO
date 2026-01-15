@@ -42,7 +42,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Регистрация VK-провайдера для Socialite
+        // Регистрация VK ID провайдера для Socialite (новый API VK)
+        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('vkid', \SocialiteProviders\VKID\Provider::class);
+        });
+
+        // Регистрация старого VK-провайдера (для обратной совместимости)
         $socialite = $this->app->make(SocialiteFactory::class);
         $socialite->extend('vk', function ($app) use ($socialite) {
             $config = $app['config']['services.vk'];

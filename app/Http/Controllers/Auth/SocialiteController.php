@@ -32,11 +32,15 @@ class SocialiteController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Exception $e) {
-            return redirect('/login')->withErrors(['msg' => 'Ошибка авторизации через ' . $provider]);
+            \Log::error("OAuth callback error for {$provider}: " . $e->getMessage());
+            return redirect('/login')->withErrors(['msg' => 'Ошибка авторизации через ' . $provider . ': ' . $e->getMessage()]);
         }
 
+        // Нормализуем provider name (vkid -> vk для хранения в БД)
+        $providerName = $provider === 'vkid' ? 'vk' : $provider;
+
         // Ищем пользователя по provider + provider_id
-        $user = User::where('provider', $provider)
+        $user = User::where('provider', $providerName)
             ->where('provider_id', $socialUser->getId())
             ->first();
 
@@ -50,7 +54,7 @@ class SocialiteController extends Controller
             $user = User::create([
                 'name' => $socialUser->getName(),
                 'email' => $socialUser->getEmail(),
-                'provider' => $provider,
+                'provider' => $providerName,
                 'provider_id' => $socialUser->getId(),
                 'avatar' => $socialUser->getAvatar(),
                 'password' => Hash::make(Str::random(16)), // Случайный пароль
@@ -65,7 +69,7 @@ class SocialiteController extends Controller
         } else {
             // Обновляем данные OAuth (если пользователь уже был)
             $user->update([
-                'provider' => $provider,
+                'provider' => $providerName,
                 'provider_id' => $socialUser->getId(),
                 'avatar' => $socialUser->getAvatar(),
             ]);

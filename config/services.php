@@ -47,4 +47,10 @@ return [
         'redirect' => env('VK_REDIRECT_URI'),
     ],
 
+    'vkid' => [
+        'client_id' => env('VK_CLIENT_ID'),
+        'client_secret' => env('VK_CLIENT_SECRET'),
+        'redirect' => env('VK_REDIRECT_URI'),
+    ],
+
 ];
