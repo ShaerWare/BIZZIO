@@ -2,12 +2,12 @@
 
 namespace App\Socialite;
 
-use RuntimeException;
-use Illuminate\Support\Arr;
 use GuzzleHttp\RequestOptions;
-use Laravel\Socialite\Two\User;
+use Illuminate\Support\Arr;
 use Laravel\Socialite\Two\AbstractProvider;
 use Laravel\Socialite\Two\ProviderInterface;
+use Laravel\Socialite\Two\User;
+use RuntimeException;
 
 /**
  * VK ID OAuth2 Provider for Laravel Socialite
@@ -64,7 +64,7 @@ class VKIDProvider extends AbstractProvider implements ProviderInterface
         $contents = (string) $response->getBody();
         $response = json_decode($contents, true);
 
-        if (!is_array($response) || !isset($response['user'])) {
+        if (! is_array($response) || ! isset($response['user'])) {
             throw new RuntimeException(sprintf(
                 'Invalid JSON response from VK ID: %s',
                 $contents
@@ -79,11 +79,11 @@ class VKIDProvider extends AbstractProvider implements ProviderInterface
      */
     protected function mapUserToObject(array $user): User
     {
-        return (new User())->setRaw($user)->map([
-            'id'       => Arr::get($user, 'user_id'),
-            'name'     => trim(Arr::get($user, 'first_name') . ' ' . Arr::get($user, 'last_name')),
-            'email'    => Arr::get($user, 'email'),
-            'avatar'   => Arr::get($user, 'avatar'),
+        return (new User)->setRaw($user)->map([
+            'id' => Arr::get($user, 'user_id'),
+            'name' => trim(Arr::get($user, 'first_name').' '.Arr::get($user, 'last_name')),
+            'email' => Arr::get($user, 'email'),
+            'avatar' => Arr::get($user, 'avatar'),
             'nickname' => null,
         ]);
     }

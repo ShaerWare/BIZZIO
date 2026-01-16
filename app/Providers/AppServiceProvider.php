@@ -2,31 +2,28 @@
 
 namespace App\Providers;
 
+use App\Events\AuctionTradingStarted;
+use App\Events\CommentCreated;
+use App\Events\ProjectInvitationSent;
+use App\Events\TenderClosed;
+use App\Events\TenderInvitationSent;
+use App\Listeners\SendAuctionTradingStartedNotification;
+use App\Listeners\SendCommentNotification;
+use App\Listeners\SendProjectInvitationNotification;
+use App\Listeners\SendTenderClosedNotification;
+use App\Listeners\SendTenderInvitationNotification;
+// Events
+use App\Models\Auction;
+use App\Models\Rfq;
+use App\Policies\AuctionPolicy;
+use App\Policies\RfqPolicy;
+use App\Socialite\VKIDProvider;
+// Listeners
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\URL;
-
-use App\Models\Rfq;
-use App\Policies\RfqPolicy;
-use App\Models\Auction;
-use App\Policies\AuctionPolicy;
-use App\Socialite\VKIDProvider;
-
-// Events
-use App\Events\ProjectInvitationSent;
-use App\Events\TenderInvitationSent;
-use App\Events\CommentCreated;
-use App\Events\TenderClosed;
-use App\Events\AuctionTradingStarted;
-
-// Listeners
-use App\Listeners\SendProjectInvitationNotification;
-use App\Listeners\SendTenderInvitationNotification;
-use App\Listeners\SendCommentNotification;
-use App\Listeners\SendTenderClosedNotification;
-use App\Listeners\SendAuctionTradingStartedNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,8 +54,9 @@ class AppServiceProvider extends ServiceProvider
         $socialite = $this->app->make(SocialiteFactory::class);
 
         // VK ID провайдер (новый API VK) - собственная реализация
-        $socialite->extend('vkid', function ($app) use ($socialite) {
+        $socialite->extend('vkid', function ($app) {
             $config = $app['config']['services.vkid'];
+
             return new VKIDProvider(
                 $app['request'],
                 $config['client_id'],
@@ -70,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         // Старый VK-провайдер (для обратной совместимости)
         $socialite->extend('vk', function ($app) use ($socialite) {
             $config = $app['config']['services.vk'];
+
             return $socialite->buildProvider(\SocialiteProviders\VKontakte\Provider::class, $config);
         });
     }

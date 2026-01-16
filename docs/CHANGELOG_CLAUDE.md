@@ -49,3 +49,42 @@
 - `docker/nginx.conf`
 - `docker/uploads.ini`
 - `docs/04_БЭКЛОГ_ФИКСОВ.md`
+
+---
+
+## 16.01.2026
+
+### Исправление конфигурации VK ID и унификация env для prod/local
+
+**Проблема:**
+Ошибка на сервере `SocialiteProviders\VKID\Provider doesn't exist` — пакет `socialiteproviders/vkid` версии 5.0.0 требует PHP 8.4, а на сервере PHP 8.2/8.3.
+
+**Решение:**
+1. Создан собственный VK ID провайдер `App\Socialite\VKIDProvider` без зависимости от внешнего пакета
+2. Удалён пакет `socialiteproviders/vkid` из composer.json
+3. Переписан `AppServiceProvider`:
+   - Разделение на методы: `configureSocialite()`, `configureHttps()`, `registerPolicies()`, `registerEventListeners()`
+   - VK ID провайдер регистрируется через наш собственный класс
+4. Обновлён `.env.example` с документированными настройками для local/production
+
+**Изменённые файлы:**
+- `app/Socialite/VKIDProvider.php` (создан)
+- `app/Providers/AppServiceProvider.php` (переписан)
+- `composer.json` (удалён socialiteproviders/vkid)
+- `.env.example` (обновлён)
+
+**Для сервера выполнить:**
+```bash
+cd /path/to/project
+git pull
+composer update --no-dev
+php artisan config:clear && php artisan cache:clear
+```
+
+**Настройки .env для production:**
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://bizzio.ru
+SESSION_SECURE_COOKIE=true
+```
