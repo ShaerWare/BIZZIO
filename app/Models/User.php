@@ -6,14 +6,15 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Laravel\Scout\Searchable;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
 use Orchid\Platform\Models\User as Orchid;
 
-class User extends Orchid 
+class User extends Orchid
 {
-    use HasFactory;
+    use HasFactory, Searchable;
 
     /**
      * The attributes that are mass assignable.
@@ -161,5 +162,23 @@ class User extends Orchid
     public function keywords()
     {
         return $this->hasMany(UserKeyword::class);
+    }
+
+    // ========================
+    // ПОИСК (SCOUT)
+    // ========================
+
+    /**
+     * Поля для индексации поиска
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'position' => $this->position,
+            'bio' => $this->bio,
+        ];
     }
 }
