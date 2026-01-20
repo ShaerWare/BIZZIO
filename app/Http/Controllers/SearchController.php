@@ -158,13 +158,15 @@ class SearchController extends Controller
      */
     protected function getSearchCounts(string $query): array
     {
+        // Scout database driver doesn't support count() on builder,
+        // so we need to get results and count them
         return [
-            'all' => 0, // Будет рассчитано на основе суммы
-            'users' => User::search($query)->count(),
-            'companies' => Company::search($query)->count(),
-            'projects' => Project::search($query)->count(),
-            'rfqs' => Rfq::search($query)->count(),
-            'auctions' => Auction::search($query)->count(),
+            'all' => 0,
+            'users' => User::search($query)->get()->count(),
+            'companies' => Company::search($query)->get()->count(),
+            'projects' => Project::search($query)->get()->count(),
+            'rfqs' => Rfq::search($query)->get()->count(),
+            'auctions' => Auction::search($query)->get()->count(),
         ];
     }
 

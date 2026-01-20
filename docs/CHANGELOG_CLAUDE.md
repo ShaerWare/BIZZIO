@@ -88,3 +88,64 @@ APP_DEBUG=false
 APP_URL=https://bizzio.ru
 SESSION_SECURE_COOKIE=true
 ```
+
+---
+
+## 20.01.2026
+
+### Спринт 8: Поиск + Фото (завершён 100%)
+
+**Что сделано:**
+
+#### 1. Глобальный поиск (Laravel Scout)
+- Установлен `laravel/scout` с `database` драйвером
+- Добавлен трейт `Searchable` к моделям: User, Company, Project, Rfq, Auction
+- Реализованы методы `toSearchableArray()` и `shouldBeSearchable()`
+- Создан `SearchController` с методами `index()` и `quick()`
+- Создана страница результатов поиска с фильтрами по типам
+- Добавлен AJAX-поиск в хедере с dropdown (Alpine.js)
+
+#### 2. Загрузка аватаров
+- Добавлен аксессор `getAvatarUrlAttribute()` в модель User
+- Добавлены методы `updateAvatar()` и `destroyAvatar()` в ProfileController
+- Создан partial `update-avatar-form.blade.php`
+- Поддержка OAuth аватаров (VK, Google)
+
+#### 3. Галерея фотографий компаний
+- Добавлена MediaCollection 'photos' в модель Company
+- Добавлены методы `uploadPhotos()` и `deletePhoto()` в CompanyController
+- Добавлена вкладка "Фото" на странице компании
+- Сетка фотографий с возможностью удаления (для модераторов)
+
+#### 4. Оптимизация изображений
+- Добавлены конверсии: thumb (300x300), medium (800x600), webp
+- Настроены оптимизаторы в `config/media-library.php`
+
+#### 5. Feature-тесты
+- Создан `SearchTest.php` — 9 тестов, все пройдены
+
+**Созданные файлы:**
+- `app/Http/Controllers/SearchController.php`
+- `resources/views/search/index.blade.php`
+- `resources/views/profile/partials/update-avatar-form.blade.php`
+- `config/scout.php`
+- `tests/Feature/SearchTest.php`
+- `docs/sprints/08.md`
+
+**Изменённые файлы:**
+- `app/Models/User.php` — +Searchable, +avatar accessor
+- `app/Models/Company.php` — +Searchable, +media conversions
+- `app/Models/Project.php` — +Searchable
+- `app/Models/Rfq.php` — +Searchable
+- `app/Models/Auction.php` — +Searchable
+- `app/Http/Controllers/ProfileController.php` — +avatar methods
+- `app/Http/Controllers/CompanyController.php` — +photo methods
+- `resources/views/layouts/navigation.blade.php` — +search form
+- `resources/views/profile/edit.blade.php` — +avatar section
+- `resources/views/companies/show.blade.php` — +photos tab
+- `routes/web.php` — +search, avatar, photo routes
+- `.env` — +SCOUT_DRIVER=database
+
+**Исправленные ошибки:**
+- Scout `Builder::count()` не работает с database driver → заменено на `->get()->count()`
+- vendor/socialiteproviders/vkid permission denied → полная переустановка vendor через Docker

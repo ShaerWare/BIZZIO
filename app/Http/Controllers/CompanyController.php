@@ -163,4 +163,53 @@ class CompanyController extends Controller
         return redirect()->route('companies.index')
             ->with('success', 'Компания успешно удалена!');
     }
+
+    /**
+     * Upload photos to company gallery.
+     */
+    public function uploadPhotos(Request $request, Company $company)
+    {
+        // Проверка прав доступа
+        if (!$company->isModerator(auth()->user())) {
+            abort(403, 'У вас нет прав для загрузки фото');
+        }
+
+        $request->validate([
+            'photos' => ['required', 'array', 'max:10'],
+            'photos.*' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+        ]);
+
+        foreach ($request->file('photos') as $photo) {
+            $company->addMedia($photo)->toMediaCollection('photos');
+        }
+
+        return redirect()->route('companies.show', $company)
+            ->with('success', 'Фотографии успешно загружены!');
+    }
+
+    /**
+     * Delete a photo from company gallery.
+     */
+    public function deletePhoto(Request $request, Company $company, int $mediaId)
+    {
+        // Проверка прав доступа
+        if (!$company->isModerator(auth()->user())) {
+            abort(403, 'У вас нет прав для удаления фото');
+        }
+
+        $media = $company->getMedia('photos')->firstWhere('id', $mediaId);
+
+        if (!$media) {
+            abort(404, 'Фото не найдено');
+        }
+
+        $media->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('companies.show', $company)
+            ->with('success', 'Фото успешно удалено!');
+    }
 }
