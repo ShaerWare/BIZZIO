@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
@@ -13,7 +14,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Project extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivity, Searchable;
 
     // ❌ ВРЕМЕННО УБИРАЕМ Spatie Media Library
     // use InteractsWithMedia;
@@ -218,7 +219,7 @@ class Project extends Model
         return 'id'; // по умолчанию и так id, но на случай переопределения
     }
 
-        /**
+    /**
      * Настройки логирования активности
      */
     public function getActivitylogOptions(): LogOptions
@@ -233,5 +234,22 @@ class Project extends Model
                 'deleted' => 'удалил(а) проект',
                 default => $eventName,
             });
+    }
+
+    // ========================
+    // ПОИСК (SCOUT)
+    // ========================
+
+    /**
+     * Поля для индексации поиска
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'description' => $this->description,
+            'full_description' => $this->full_description,
+        ];
     }
 }

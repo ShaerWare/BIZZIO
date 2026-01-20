@@ -126,6 +126,63 @@
 
             <!-- Settings Dropdown (Desktop) -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Global Search -->
+                <div class="relative mr-4" x-data="{ open: false, query: '', results: [], loading: false }">
+                    <div class="relative">
+                        <input
+                            type="text"
+                            x-model="query"
+                            @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = d.results || []; loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
+                            @focus="if(results.length > 0) open = true"
+                            @keydown.escape="open = false"
+                            placeholder="Поиск..."
+                            class="w-48 lg:w-64 pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <div x-show="loading" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Search Results Dropdown -->
+                    <div
+                        x-show="open && results.length > 0"
+                        @click.away="open = false"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="transform opacity-0 scale-95"
+                        x-transition:enter-end="transform opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="transform opacity-100 scale-100"
+                        x-transition:leave-end="transform opacity-0 scale-95"
+                        class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+                        style="display: none;"
+                    >
+                        <div class="py-2 max-h-96 overflow-y-auto">
+                            <template x-for="result in results" :key="result.type + '-' + result.id">
+                                <a :href="result.url" class="flex items-center px-4 py-2 hover:bg-gray-100">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 mr-3 text-xs font-medium" x-text="result.type_label.substring(0, 1)"></span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate" x-text="result.title"></p>
+                                        <p class="text-xs text-gray-500 truncate" x-text="result.subtitle || result.type_label"></p>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+                        <div class="px-4 py-2 border-t border-gray-100 bg-gray-50">
+                            <a :href="'{{ route('search.index') }}?q=' + encodeURIComponent(query)" class="block text-center text-sm text-indigo-600 hover:text-indigo-800">
+                                {{ __('Все результаты') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 @auth
                     <!-- Notifications Bell -->
                     <div class="relative mr-4" x-data="{ open: false, notifications: [], loading: false }">

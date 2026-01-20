@@ -217,6 +217,15 @@ Route::middleware('auth')->group(function () {
 });
 
 // ========================================================================
+// SEARCH ROUTES
+// ========================================================================
+
+use App\Http\Controllers\SearchController;
+
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+Route::get('/search/quick', [SearchController::class, 'quick'])->name('search.quick');
+
+// ========================================================================
 // AUTH ROUTES
 // ========================================================================
 

@@ -9,16 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Orchid\Filters\Filterable; 
+use Orchid\Filters\Filterable;
 use Orchid\Screen\AsSource;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class Company extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
+    use HasFactory, SoftDeletes, InteractsWithMedia, Searchable;
     use AsSource, Filterable, LogsActivity;
 
     protected $fillable = [
@@ -275,5 +276,32 @@ class Company extends Model implements HasMedia
                 'deleted' => 'удалил(а) компанию',
                 default => $eventName,
             });
+    }
+
+    // ========================
+    // ПОИСК (SCOUT)
+    // ========================
+
+    /**
+     * Поля для индексации поиска
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'inn' => $this->inn,
+            'short_description' => $this->short_description,
+            'full_description' => $this->full_description,
+        ];
+    }
+
+    /**
+     * Определяет, должна ли модель индексироваться
+     */
+    public function shouldBeSearchable(): bool
+    {
+        // Индексируем только верифицированные компании
+        return $this->is_verified === true;
     }
 }

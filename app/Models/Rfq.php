@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable;
@@ -18,7 +19,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Rfq extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
+    use HasFactory, SoftDeletes, InteractsWithMedia, Searchable;
     use AsSource, Filterable, LogsActivity;
 
     protected $fillable = [
@@ -189,7 +190,7 @@ class Rfq extends Model implements HasMedia
         });
     }
 
-        /**
+    /**
      * Настройки логирования активности
      */
     public function getActivitylogOptions(): LogOptions
@@ -204,5 +205,31 @@ class Rfq extends Model implements HasMedia
                 'deleted' => 'удалил(а) запрос котировок',
                 default => $eventName,
             });
+    }
+
+    // ========================
+    // ПОИСК (SCOUT)
+    // ========================
+
+    /**
+     * Поля для индексации поиска
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'number' => $this->number,
+            'title' => $this->title,
+            'description' => $this->description,
+        ];
+    }
+
+    /**
+     * Определяет, должна ли модель индексироваться
+     */
+    public function shouldBeSearchable(): bool
+    {
+        // Индексируем только активные и закрытые RFQ (не черновики)
+        return in_array($this->status, ['active', 'closed']);
     }
 }
