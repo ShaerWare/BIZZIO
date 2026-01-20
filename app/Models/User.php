@@ -165,6 +165,28 @@ class User extends Orchid
     }
 
     // ========================
+    // АВАТАР
+    // ========================
+
+    /**
+     * URL аватара пользователя
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar) {
+            // Если это внешний URL (например, от OAuth)
+            if (str_starts_with($this->avatar, 'http')) {
+                return $this->avatar;
+            }
+            // Если это локальный файл
+            return asset('storage/' . $this->avatar);
+        }
+
+        // Дефолтный аватар (генерация по инициалам)
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+    }
+
+    // ========================
     // ПОИСК (SCOUT)
     // ========================
 

@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::get('companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
     Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
     Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
+    Route::post('companies/{company}/photos', [CompanyController::class, 'uploadPhotos'])->name('companies.photos.upload');
+    Route::delete('companies/{company}/photos/{media}', [CompanyController::class, 'deletePhoto'])->name('companies.photos.delete');
 
     // Запросы на присоединение к компании 
     Route::get('/my-join-requests', [CompanyJoinRequestController::class, 'index'])
@@ -84,6 +86,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+    Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
 });
 
 // ========================================================================

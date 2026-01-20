@@ -146,10 +146,20 @@
                             class="tab-button border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
-                    <button onclick="showTab('documents')" 
+                    <button onclick="showTab('documents')"
                             id="tab-documents"
                             class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Документы
+                    </button>
+                    <button onclick="showTab('photos')"
+                            id="tab-photos"
+                            class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        Фото
+                        @if($company->getMedia('photos')->count() > 0)
+                            <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-600 rounded-full">
+                                {{ $company->getMedia('photos')->count() }}
+                            </span>
+                        @endif
                     </button>
                     <button onclick="showTab('people')" 
                             id="tab-people"
@@ -198,7 +208,7 @@
                     @if($company->getMedia('documents')->count() > 0)
                         <div class="space-y-2">
                             @foreach($company->getMedia('documents') as $document)
-                                <a href="{{ $document->getUrl() }}" 
+                                <a href="{{ $document->getUrl() }}"
                                    target="_blank"
                                    class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                     <svg class="w-8 h-8 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -216,6 +226,94 @@
                         </div>
                     @else
                         <p class="text-gray-500 text-center py-8">Документы не загружены</p>
+                    @endif
+                </div>
+
+                <!-- Вкладка: Фото -->
+                <div id="content-photos" class="tab-content hidden">
+                    <!-- Форма загрузки фото (только для модераторов) -->
+                    @auth
+                        @if($company->isModerator(auth()->user()))
+                            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                                <form action="{{ route('companies.photos.upload', $company) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                    @csrf
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Загрузить фотографии</label>
+                                        <input
+                                            type="file"
+                                            name="photos[]"
+                                            multiple
+                                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                                            class="block w-full text-sm text-gray-500
+                                                file:mr-4 file:py-2 file:px-4
+                                                file:rounded-md file:border-0
+                                                file:text-sm file:font-semibold
+                                                file:bg-indigo-50 file:text-indigo-700
+                                                hover:file:bg-indigo-100 cursor-pointer"
+                                        >
+                                        @error('photos.*')
+                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
+                                        <p class="mt-1 text-xs text-gray-500">Можно выбрать несколько файлов. JPG, PNG, GIF или WebP. Максимум 5 МБ каждый.</p>
+                                    </div>
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        Загрузить
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+                    @endauth
+
+                    <!-- Галерея фото -->
+                    @if($company->getMedia('photos')->count() > 0)
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            @foreach($company->getMedia('photos') as $photo)
+                                <div class="relative group aspect-square">
+                                    <a href="{{ $photo->getUrl() }}" target="_blank" class="block w-full h-full">
+                                        <img
+                                            src="{{ $photo->hasGeneratedConversion('thumb') ? $photo->getUrl('thumb') : $photo->getUrl() }}"
+                                            alt="Фото компании"
+                                            class="w-full h-full object-cover rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                                            loading="lazy"
+                                        >
+                                    </a>
+                                    @auth
+                                        @if($company->isModerator(auth()->user()))
+                                            <form action="{{ route('companies.photos.delete', [$company, $photo->id]) }}" method="POST" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" onclick="return confirm('Удалить это фото?')" class="p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endauth
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">Нет фотографий</h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                @auth
+                                    @if($company->isModerator(auth()->user()))
+                                        Загрузите фотографии компании выше.
+                                    @else
+                                        Компания пока не добавила фотографии.
+                                    @endif
+                                @else
+                                    Компания пока не добавила фотографии.
+                                @endauth
+                            </p>
+                        </div>
                     @endif
                 </div>
 

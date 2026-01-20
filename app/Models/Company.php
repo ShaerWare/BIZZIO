@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Image\Enums\Fit;
 use Orchid\Filters\Filterable;
 use Orchid\Screen\AsSource;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -224,12 +226,40 @@ class Company extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('logo')
-         ->singleFile() // только один файл
-         ->useDisk('public')
-         ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-         
+            ->singleFile()
+            ->useDisk('public')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
         $this->addMediaCollection('documents')
             ->acceptsMimeTypes(['application/pdf']);
+
+        $this->addMediaCollection('photos')
+            ->useDisk('public')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+    }
+
+    /**
+     * Конверсии изображений (thumbnails, WebP)
+     */
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        // Thumbnail для галереи (300x300)
+        $this->addMediaConversion('thumb')
+            ->fit(Fit::Crop, 300, 300)
+            ->nonQueued()
+            ->performOnCollections('photos', 'logo');
+
+        // Средний размер (800x600)
+        $this->addMediaConversion('medium')
+            ->fit(Fit::Contain, 800, 600)
+            ->nonQueued()
+            ->performOnCollections('photos');
+
+        // WebP версия для современных браузеров
+        $this->addMediaConversion('webp')
+            ->format('webp')
+            ->nonQueued()
+            ->performOnCollections('photos', 'logo');
     }
 
     /**
