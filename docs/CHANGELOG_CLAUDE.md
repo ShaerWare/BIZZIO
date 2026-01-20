@@ -149,3 +149,10 @@ SESSION_SECURE_COOKIE=true
 **Исправленные ошибки:**
 - Scout `Builder::count()` не работает с database driver → заменено на `->get()->count()`
 - vendor/socialiteproviders/vkid permission denied → полная переустановка vendor через Docker
+
+### Подготовка документации для следующей сессии
+
+**Обновлены файлы:**
+- `CLAUDE.md` — обновлён статус (8/10 спринтов, 80% MVP), добавлен `laravel/scout` в пакеты
+- `docs/README.md` — добавлен спринт 8, обновлён статус, следующий спринт 9
+- `docs/claude/start_message.md` — полностью переписан для спринта 9 (Тестирование + Багфиксы)

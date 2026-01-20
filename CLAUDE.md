@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Bizzo.ru — B2B business network for the construction industry. Laravel 12 + Orchid admin panel.
 
-**Status:** 6/10 sprints completed (60% MVP), ~300 hours of development.
+**Status:** 8/10 sprints completed (80% MVP), ~360 hours of development.
 
 ## Development Commands
 
@@ -101,6 +101,7 @@ Events are registered in `AppServiceProvider@registerEventListeners()`. Key even
 - `barryvdh/laravel-dompdf` — PDF generation for protocols
 - `willvincent/feeds` — RSS parsing
 - `google-gemini-php/client` — Gemini AI API client
+- `laravel/scout` — Full-text search (database driver for MVP)
 
 ### VK ID OAuth
 VK authentication uses a custom provider at `app/Socialite/VKIDProvider.php` (not an external package). Registered in `AppServiceProvider@configureSocialite()`. Requires `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI` in `.env`.
@@ -123,7 +124,7 @@ All project docs in `docs/`:
 - `00_ТЕХНИЧЕСКОЕ_ЗАДАНИЕ.md` — Original requirements
 - `01_ПЛАН_РАЗРАБОТКИ.md` — Development plan (10 sprints)
 - `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities
-- `sprints/*.md` — Sprint reports (1-6 completed)
+- `sprints/*.md` — Sprint reports (1-8 completed)
 - `CHANGELOG_CLAUDE.md` — Log of Claude Code changes
 
 ## Claude Code Instructions
