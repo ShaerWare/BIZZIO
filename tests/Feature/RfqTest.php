@@ -142,6 +142,8 @@ class RfqTest extends TestCase
 
     public function test_company_moderator_can_create_rfq_as_draft(): void
     {
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
+
         $rfqData = [
             'title' => 'Новый RFQ',
             'description' => 'Описание нового RFQ',
@@ -153,6 +155,7 @@ class RfqTest extends TestCase
             'weight_deadline' => 30,
             'weight_advance' => 30,
             'status' => 'draft',
+            'technical_specification' => $pdf,
         ];
 
         $response = $this->actingAs($this->user)
@@ -169,6 +172,8 @@ class RfqTest extends TestCase
 
     public function test_rfq_number_is_auto_generated(): void
     {
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
+
         $rfqData = [
             'title' => 'RFQ с автономером',
             'description' => 'Описание',
@@ -180,6 +185,7 @@ class RfqTest extends TestCase
             'weight_deadline' => 30,
             'weight_advance' => 30,
             'status' => 'draft',
+            'technical_specification' => $pdf,
         ];
 
         $this->actingAs($this->user)
@@ -193,6 +199,8 @@ class RfqTest extends TestCase
 
     public function test_active_rfq_schedules_close_job(): void
     {
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
+
         $rfqData = [
             'title' => 'Активный RFQ',
             'description' => 'Описание',
@@ -204,6 +212,7 @@ class RfqTest extends TestCase
             'weight_deadline' => 30,
             'weight_advance' => 30,
             'status' => 'active',
+            'technical_specification' => $pdf,
         ];
 
         $this->actingAs($this->user)
@@ -214,6 +223,8 @@ class RfqTest extends TestCase
 
     public function test_draft_rfq_does_not_schedule_close_job(): void
     {
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
+
         $rfqData = [
             'title' => 'Черновик RFQ',
             'description' => 'Описание',
@@ -225,6 +236,7 @@ class RfqTest extends TestCase
             'weight_deadline' => 30,
             'weight_advance' => 30,
             'status' => 'draft',
+            'technical_specification' => $pdf,
         ];
 
         $this->actingAs($this->user)
@@ -301,6 +313,7 @@ class RfqTest extends TestCase
     public function test_closed_rfq_can_have_invitations(): void
     {
         $participantCompany = Company::factory()->create(['is_verified' => true]);
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
 
         $rfqData = [
             'title' => 'Закрытый RFQ',
@@ -314,6 +327,7 @@ class RfqTest extends TestCase
             'weight_advance' => 30,
             'status' => 'draft',
             'invited_companies' => [$participantCompany->id],
+            'technical_specification' => $pdf,
         ];
 
         $this->actingAs($this->user)
@@ -573,7 +587,7 @@ class RfqTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)
-            ->get(route('rfqs.my-bids'));
+            ->get(route('bids.my'));
 
         $response->assertStatus(200);
         $response->assertViewIs('rfqs.my-bids');
@@ -623,9 +637,11 @@ class RfqTest extends TestCase
     {
         $rfq = $this->createRfq(['status' => 'draft']);
 
-        // Добавляем техническое задание (требуется для активации)
-        $pdf = UploadedFile::fake()->create('tz.pdf', 100, 'application/pdf');
-        $rfq->addMedia($pdf)->toMediaCollection('technical_specification');
+        // Добавляем техническое задание напрямую через модель (требуется для активации)
+        // Используем реальный путь к файлу чтобы Media Library принял его
+        $tempFile = tempnam(sys_get_temp_dir(), 'tz_') . '.pdf';
+        file_put_contents($tempFile, '%PDF-1.4 test technical specification content');
+        $rfq->addMedia($tempFile)->toMediaCollection('technical_specification');
 
         $response = $this->actingAs($this->user)
             ->post(route('rfqs.activate', $rfq));
