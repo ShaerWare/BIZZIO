@@ -62,25 +62,26 @@ php artisan news:clean-old           # Clean old news entries
 ## Architecture
 
 ### Core Modules
-- **Companies** — Company profiles with verification, document upload, moderator assignment
+- **Companies** — Company profiles with verification, document upload, moderator assignment, join requests
 - **Projects** — Project management with company invitations, comments, participant roles
 - **RFQ (Request for Quotation)** — Tender system with weighted scoring criteria, auto-calculation, PDF protocols
-- **Auction** — Real-time online trading (long-polling), anonymized participants, configurable bid step
+- **Auction** — Real-time online trading (long-polling), anonymized participants, configurable bid step, PDF protocols
 - **News** — RSS aggregator with keyword filtering, personalized feed
+- **Search** — Global search via Laravel Scout (database driver) across User, Company, Project, Rfq, Auction
 
 ### Key Directories
 ```
 app/
-├── Events/         # Domain events (5): ProjectInvitationSent, TenderClosed, etc.
-├── Listeners/      # Event handlers (5): Send*Notification classes
-├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, etc.
+├── Events/         # Domain events: ProjectInvitationSent, TenderClosed, etc.
+├── Listeners/      # Event handlers: Send*Notification classes
+├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, RfqProtocolService, etc.
 ├── Policies/       # Authorization: RfqPolicy, AuctionPolicy
-├── Socialite/      # Custom OAuth providers: VKIDProvider
-├── Jobs/           # Queue jobs: CloseAuctionJob, CloseRfqJob, etc.
+├── Socialite/      # Custom OAuth: VKIDProvider (new VK ID API)
+├── Jobs/           # Queue jobs: CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, etc.
 └── Orchid/         # Admin panel screens and layouts
 
 routes/
-├── web.php         # Main web routes
+├── web.php         # Main web routes (companies, projects, rfqs, auctions, news, search)
 ├── platform.php    # Orchid admin routes
 └── api.php         # API routes (v1: POST /api/v1/chat for Gemini proxy)
 ```
@@ -93,24 +94,36 @@ Events are registered in `AppServiceProvider@registerEventListeners()`. Key even
 - `AuctionTradingStarted` → `SendAuctionTradingStartedNotification`
 - `CommentCreated` → `SendCommentNotification`
 
+### Services Layer
+Business logic is encapsulated in `app/Services/`:
+- `RfqScoringService` — Weighted scoring calculation for RFQ bids
+- `RfqProtocolService` — PDF protocol generation for RFQ results
+- `AuctionWinnerService` — Winner determination logic for auctions
+- `AuctionProtocolService` — PDF protocol generation for auction results
+- `NewsFilterService` — Keyword-based news filtering for personalized feeds
+
 ### Key Packages
 - `orchid/platform` — Admin panel
 - `spatie/laravel-activitylog` — Action logging for activity feed
-- `spatie/laravel-medialibrary` — File/image management
-- `laravel/socialite` — OAuth (Google via built-in, VK via custom `app/Socialite/VKIDProvider.php`)
+- `spatie/laravel-medialibrary` — File/image management with conversions
+- `laravel/socialite` — OAuth (Google built-in, VK via custom provider)
 - `barryvdh/laravel-dompdf` — PDF generation for protocols
 - `willvincent/feeds` — RSS parsing
 - `google-gemini-php/client` — Gemini AI API client
 - `laravel/scout` — Full-text search (database driver for MVP)
 
 ### VK ID OAuth
-VK authentication uses a custom provider at `app/Socialite/VKIDProvider.php` (not an external package). Registered in `AppServiceProvider@configureSocialite()`. Requires `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI` in `.env`.
+Two VK providers are registered in `AppServiceProvider@configureSocialite()`:
+- `vkid` — Custom provider at `app/Socialite/VKIDProvider.php` for new VK ID API
+- `vk` — `socialiteproviders/vkontakte` package for legacy compatibility
+
+Requires in `.env`: `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI`
 
 ## Docker Setup
 
-- **app** container: PHP 8.2-FPM + Nginx on port 8080
-- **db** container: PostgreSQL 14 on port 5435
-- Production override (`docker-compose.override.yml.prod`): nginx-proxy + Let's Encrypt
+- **app** container: PHP 8.2-FPM + Nginx + Supervisor (single container), internally exposes port 80
+- **db** container: PostgreSQL 14 Alpine, exposed on host port 5435
+- Use `docker-compose.override.yml.prod` for production with nginx-proxy + Let's Encrypt
 
 ## Environment Notes
 
