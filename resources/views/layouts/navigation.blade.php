@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/assembly-icon.png') }}" alt="Icon" class="reduce-10">
+                        <img src="{{ asset('images/apple-touch-icon.png') }}" alt="Icon" class="reduce-10 h-10 w-auto max-h-12 object-contain">
                     </a>
                 </div>
 

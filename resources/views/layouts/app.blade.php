@@ -18,6 +18,11 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     @stack('styles')
+    
+    <!-- Favicon – современный минимальный набор 2025–2026 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16x16.png') }}">
+    
 </head>
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100">
