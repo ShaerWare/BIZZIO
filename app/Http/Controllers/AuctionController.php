@@ -405,12 +405,7 @@ public function getState(Auction $auction)
      */
     public function generateProtocol(Auction $auction, AuctionProtocolService $protocolService)
     {
-        $this->authorize('update', $auction);
-
-        // Проверяем, что аукцион завершён
-        if ($auction->status !== 'closed') {
-            return back()->with('error', 'Протокол можно сгенерировать только для завершённого аукциона.');
-        }
+        $this->authorize('generateProtocol', $auction);
 
         // Генерируем протокол
         $filename = $protocolService->generate($auction);
