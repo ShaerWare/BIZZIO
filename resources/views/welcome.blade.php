@@ -18,8 +18,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="https://bizzio.ru/css/custom.css">
 
-    <!-- Favicon -->
-    <link rel="icon" href="https://bizzio.ru/images/favicon.svg" sizes="32x32" />
+    <!-- Favicon – современный минимальный набор 2025–2026 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16x16.png') }}">
 </head>
 
 <body>
@@ -31,7 +32,7 @@
             <nav class="navbar">
                 <!-- Logo -->
                 <a href="{{ url('/') }}" class="navbar-brand">
-                    <img src="{{ asset('images/white-logo.svg') }}" alt="{{ config('app.name') }}">
+                    <img src="{{ asset('images/bizzio_horizontal_logo_color_blackbg.svg') }}" alt="{{ config('app.name') }}">
                 </a>
 
                 <!-- Mobile Toggle -->
@@ -144,7 +145,7 @@
         <!-- Right Part: Login Form -->
         <div class="login-block">
             <div class="login-header">
-                <img src="{{ asset('images/assembly-icon.png') }}" alt="Icon">
+                <img src="{{ asset('images/apple-touch-icon.png') }}" alt="Icon">
                 <p>Присоединяйтесь к бизнес-сообществу</p>
             </div>
 
