@@ -22,21 +22,38 @@ class AuctionController extends Controller
     public function index(Request $request)
     {
         $query = Auction::with(['company.industry', 'creator', 'bids']);
-        
+
+        // Скрываем черновики от посторонних (C3)
+        // Черновики видны только модераторам компании-организатора
+        if (auth()->check()) {
+            $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
+            $query->where(function ($q) use ($userCompanies) {
+                $q->where('status', '!=', 'draft')
+                  ->orWhereIn('company_id', $userCompanies);
+            });
+        } else {
+            $query->where('status', '!=', 'draft');
+        }
+
         if ($request->filled('search')) {
             $query->search($request->search);
         }
-        
-        if ($request->filled('status')) {
+
+        if ($request->filled('status') && $request->status !== 'draft') {
+            // Не позволяем фильтровать по draft напрямую (только свои)
             $query->where('status', $request->status);
+        } elseif ($request->filled('status') && $request->status === 'draft' && auth()->check()) {
+            // Для draft показываем только свои
+            $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
+            $query->where('status', 'draft')->whereIn('company_id', $userCompanies);
         }
-        
+
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
-        
+
         $auctions = $query->orderBy('created_at', 'desc')->paginate(20);
-        
+
         return view('auctions.index', compact('auctions'));
     }
 
@@ -239,12 +256,22 @@ public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
         
         // Если заявка уже есть и это НЕ торги — запретить
         if ($existingBid && !$auction->isTrading()) {
+            DB::rollBack();
             return back()->with('error', 'Вы уже подали заявку на участие в этом аукционе.');
         }
         
         // Определяем тип заявки
         $isInitialBid = !$auction->isTrading();
-        
+
+        // A6: Запретить две ставки подряд от одного участника (только в режиме торгов)
+        if ($auction->isTrading()) {
+            $lastBid = $auction->tradingBids()->first(); // Последняя ставка (сортировка по desc)
+            if ($lastBid && $lastBid->company_id == $companyId) {
+                DB::rollBack();
+                return back()->with('error', 'Нельзя делать две ставки подряд. Дождитесь ставки другого участника.');
+            }
+        }
+
         // Генерация анонимного кода для торгов
         $anonymousCode = null;
         if ($auction->isTrading()) {

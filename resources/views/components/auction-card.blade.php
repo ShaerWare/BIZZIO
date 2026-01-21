@@ -82,7 +82,13 @@
         <!-- Даты -->
         <div class="pt-3 border-t border-gray-200 text-xs text-gray-500">
             @if($auction->status === 'active')
-                <p>Приём заявок до: <span class="font-medium">{{ $auction->end_date->format('d.m.Y H:i') }}</span></p>
+                @if($auction->start_date->isFuture())
+                    <p>Приём заявок с: <span class="font-medium">{{ $auction->start_date->format('d.m.Y H:i') }}</span></p>
+                @elseif($auction->end_date->isPast())
+                    <p>Приём заявок завершён: <span class="font-medium">{{ $auction->end_date->format('d.m.Y H:i') }}</span></p>
+                @else
+                    <p>Приём заявок до: <span class="font-medium">{{ $auction->end_date->format('d.m.Y H:i') }}</span></p>
+                @endif
             @elseif($auction->status === 'trading')
                 <p>Торги начались: <span class="font-medium">{{ $auction->trading_start->format('d.m.Y H:i') }}</span></p>
             @else

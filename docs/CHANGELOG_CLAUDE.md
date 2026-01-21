@@ -6,7 +6,36 @@
 
 ## 21.01.2026
 
-### Спринт 9: Feature-тесты + багфиксы
+### Спринт 9: Feature-тесты + багфиксы (продолжение)
+
+**Что сделано:**
+
+#### Тесты (расширение)
+- Создан `tests/Feature/RfqTest.php` — 34 теста для модуля тендеров (CRUD, заявки, scoring, активация, типы, веса критериев)
+- Создан `tests/Feature/AuctionTest.php` — 46 тестов для модуля аукционов (CRUD, ставки, статусы, цены, протоколы, scopes)
+- **Итого: 185 тестов, 377 assertions** (было 105)
+
+#### Исправленные баги (найдены при написании тестов)
+1. **Порядок маршрутов RFQ** — `routes/web.php`: `/rfqs/{rfq}` перехватывал `/rfqs/create` → перенесён после auth-группы (аналогично projects)
+2. **Незакрытая транзакция в AuctionController** — `app/Http/Controllers/AuctionController.php:241`: при раннем возврате с ошибкой "уже подали заявку" транзакция не закрывалась → добавлен `DB::rollBack()`
+3. **Неверный policy для протокола** — `app/Http/Controllers/AuctionController.php`: `authorize('update', $auction)` требовал status='draft', но протокол генерируется для status='closed' → создан новый метод `generateProtocol` в AuctionPolicy
+
+#### P2 багфиксы
+4. **C3 — Скрытие черновиков от посторонних** — `app/Http/Controllers/RfqController.php` и `app/Http/Controllers/AuctionController.php`: добавлен фильтр, черновики видны только модераторам компании-организатора
+5. **G2 — Валидация ИНН** — уже была реализована (regex `/^\d{10}(\d{2})?$/`)
+
+#### Изменённые файлы (сессия 2)
+- `tests/Feature/RfqTest.php` (создан)
+- `tests/Feature/AuctionTest.php` (создан)
+- `routes/web.php` — исправлен порядок маршрутов RFQ
+- `app/Http/Controllers/AuctionController.php` — исправлена транзакция, изменён authorize, добавлен фильтр черновиков
+- `app/Http/Controllers/RfqController.php` — добавлен фильтр черновиков
+- `app/Policies/AuctionPolicy.php` — добавлен метод generateProtocol()
+- `docs/04_БЭКЛОГ_ФИКСОВ.md` — обновлён статус C3, G2
+
+---
+
+### Спринт 9: Feature-тесты + багфиксы (начало)
 
 **Что сделано:**
 

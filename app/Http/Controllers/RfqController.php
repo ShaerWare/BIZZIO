@@ -26,13 +26,30 @@ class RfqController extends Controller
         $query = Rfq::with(['company', 'creator', 'bids'])
             ->orderBy('created_at', 'desc');
 
+        // Скрываем черновики от посторонних (C3)
+        // Черновики видны только модераторам компании-организатора
+        if (auth()->check()) {
+            $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
+            $query->where(function ($q) use ($userCompanies) {
+                $q->where('status', '!=', 'draft')
+                  ->orWhereIn('company_id', $userCompanies);
+            });
+        } else {
+            $query->where('status', '!=', 'draft');
+        }
+
         // Фильтры
         if ($request->filled('search')) {
             $query->search($request->search);
         }
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->status !== 'draft') {
+            // Не позволяем фильтровать по draft напрямую (только свои)
             $query->where('status', $request->status);
+        } elseif ($request->filled('status') && $request->status === 'draft' && auth()->check()) {
+            // Для draft показываем только свои
+            $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
+            $query->where('status', 'draft')->whereIn('company_id', $userCompanies);
         }
 
         if ($request->filled('type')) {
