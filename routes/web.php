@@ -138,35 +138,33 @@ Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name
 // RFQ ROUTES
 // ========================================================================
 
-// Публичные роуты
+// Публичный список
 Route::get('/rfqs', [RfqController::class, 'index'])->name('rfqs.index');
-Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 
 Route::middleware(['auth'])->group(function () {
-    // Мои RFQ (организатор)
+    // Личный кабинет
     Route::get('/my-rfqs', [RfqController::class, 'myRfqs'])->name('rfqs.my');
-    
-    // Мои заявки (участник)
     Route::get('/my-bids', [RfqController::class, 'myBids'])->name('bids.my');
-    
-    // Мои приглашения
     Route::get('/my-invitations', [RfqController::class, 'myInvitations'])->name('invitations.my');
-    
-    // Создание RFQ
+
+    // ВАЖНО: create должен быть ДО {rfq}, иначе Laravel пытается найти RFQ со slug "create"
     Route::get('/rfqs/create', [RfqController::class, 'create'])->name('rfqs.create');
     Route::post('/rfqs', [RfqController::class, 'store'])->name('rfqs.store');
-    
+
     // Редактирование/удаление RFQ
     Route::get('/rfqs/{rfq}/edit', [RfqController::class, 'edit'])->name('rfqs.edit');
     Route::put('/rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
     Route::delete('/rfqs/{rfq}', [RfqController::class, 'destroy'])->name('rfqs.destroy');
-    
+
     // Активация RFQ
     Route::post('/rfqs/{rfq}/activate', [RfqController::class, 'activate'])->name('rfqs.activate');
-    
+
     // Подача заявки
     Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
 });
+
+// Публичный просмотр RFQ (после auth-группы, чтобы create не конфликтовал)
+Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 
 // ========================================================================
 // AUCTIONS ROUTES
