@@ -80,6 +80,11 @@ class CompanyJoinRequest extends Model
      */
     public function canReview(User $user): bool
     {
-        return $this->company->canManageModerators($user) && $this->status === 'pending';
+        // Загружаем связь company если она ещё не загружена
+        if (!$this->relationLoaded('company')) {
+            $this->load('company');
+        }
+
+        return $this->company && $this->company->canManageModerators($user) && $this->status === 'pending';
     }
 }

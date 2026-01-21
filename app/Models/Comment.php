@@ -62,7 +62,7 @@ class Comment extends Model
      */
     public function canManage(User $user): bool
     {
-        return $this->user_id === $user->id || $user->hasRole('Admin');
+        return $this->user_id === $user->id || $user->inRole('admin');
     }
 
         /**

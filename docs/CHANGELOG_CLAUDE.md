@@ -6,17 +6,35 @@
 
 ## 21.01.2026
 
-### Исправление названия бренда в PDF-протоколах + документация тестирования
+### Спринт 9: Feature-тесты + багфиксы
 
 **Что сделано:**
-- Исправлено написание "Bizzo.ru" → "Bizzio.ru" в PDF-протоколах тендеров и аукционов
-- Добавлена секция "Testing PDF Generation" в CLAUDE.md с инструкциями тестирования на сервере
-- Обновлена секция Architecture в CLAUDE.md (добавлен модуль Search, Services Layer)
+
+#### Тесты
+- Создан `tests/Feature/CompanyTest.php` — 28 тестов для модуля компаний (CRUD, верификация, модераторы, запросы на присоединение, фотогалерея)
+- Создан `tests/Feature/ProjectTest.php` — 28 тестов для модуля проектов (CRUD, участники, комментарии, права доступа)
+- Общее покрытие: **105 тестов, 232 assertions**
+
+#### Исправленные баги (найдены при написании тестов)
+1. **Конфликт параметров маршрута** — `routes/web.php`: параметр `{request}` конфликтовал с `Request $request` в контроллере → переименован в `{joinRequest}`
+2. **Не загружалась связь company** — `app/Models/CompanyJoinRequest.php`: метод `canReview()` падал с null error → добавлена lazy-загрузка связи
+3. **Порядок маршрутов projects** — `routes/web.php`: `/projects/{project:slug}` перехватывал `/projects/create` → перенесён после auth-группы
+4. **Неверный метод hasRole()** — `app/Models/Comment.php`: `hasRole('Admin')` → `inRole('admin')` (Orchid использует `inRole`)
+5. **Написание бренда в PDF** — `resources/views/pdfs/rfq-protocol.blade.php`, `resources/views/pdf/auction-protocol.blade.php`: "Bizzo.ru" → "Bizzio.ru"
+
+#### Документация
+- Обновлён `CLAUDE.md` — добавлены инструкции тестирования PDF на сервере, улучшена секция архитектуры
 
 **Изменённые файлы:**
+- `tests/Feature/CompanyTest.php` (создан)
+- `tests/Feature/ProjectTest.php` (создан)
+- `routes/web.php` — исправлен порядок маршрутов и имена параметров
+- `app/Models/CompanyJoinRequest.php` — исправлен метод canReview()
+- `app/Models/Comment.php` — исправлен метод canManage()
+- `app/Http/Controllers/CompanyJoinRequestController.php` — переименован параметр $request → $joinRequest
 - `resources/views/pdfs/rfq-protocol.blade.php` — исправлен footer
 - `resources/views/pdf/auction-protocol.blade.php` — исправлен footer
-- `CLAUDE.md` — добавлены инструкции тестирования PDF и улучшена документация архитектуры
+- `CLAUDE.md` — добавлена документация
 
 ---
 

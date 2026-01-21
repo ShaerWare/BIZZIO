@@ -54,11 +54,11 @@ Route::middleware('auth')->group(function () {
         ->name('join-requests.index');
     Route::post('/companies/{company}/join-requests', [CompanyJoinRequestController::class, 'store'])
         ->name('companies.join-requests.store');
-    Route::delete('/join-requests/{request}', [CompanyJoinRequestController::class, 'destroy'])
+    Route::delete('/join-requests/{joinRequest}', [CompanyJoinRequestController::class, 'destroy'])
         ->name('join-requests.destroy');
-    Route::post('/join-requests/{request}/approve', [CompanyJoinRequestController::class, 'approve'])
+    Route::post('/join-requests/{joinRequest}/approve', [CompanyJoinRequestController::class, 'approve'])
         ->name('join-requests.approve');
-    Route::post('/join-requests/{request}/reject', [CompanyJoinRequestController::class, 'reject'])
+    Route::post('/join-requests/{joinRequest}/reject', [CompanyJoinRequestController::class, 'reject'])
         ->name('join-requests.reject');
     
     // Управление модераторами компании
@@ -116,9 +116,9 @@ Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback']
 
 // Проекты (публичные: index, show; приватные: create, store, edit, update, destroy)
 Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
-Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
 
 Route::middleware('auth')->group(function () {
+    // ВАЖНО: create должен быть ДО {project:slug}, иначе Laravel пытается найти проект со slug "create"
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
@@ -130,6 +130,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/comments/{comment}', [ProjectController::class, 'updateComment'])->name('comments.update');
     Route::delete('/comments/{comment}', [ProjectController::class, 'destroyComment'])->name('comments.destroy');
 });
+
+// Публичный просмотр проекта (после auth-группы, чтобы create не конфликтовал)
+Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
 
 // ========================================================================
 // RFQ ROUTES

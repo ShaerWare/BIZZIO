@@ -61,13 +61,13 @@ class CompanyJoinRequestController extends Controller
     /**
      * Отозвать запрос
      */
-    public function destroy(CompanyJoinRequest $request)
+    public function destroy(CompanyJoinRequest $joinRequest)
     {
-        if (!$request->canCancel(auth()->user())) {
+        if (!$joinRequest->canCancel(auth()->user())) {
             abort(403, 'Вы не можете отозвать этот запрос');
         }
 
-        $request->delete();
+        $joinRequest->delete();
 
         return back()->with('success', 'Запрос отозван');
     }
