@@ -59,6 +59,58 @@ php artisan rss:parse                # Parse RSS news sources
 php artisan news:clean-old           # Clean old news entries
 ```
 
+### Testing PDF Generation (RFQ & Auctions)
+
+**Prerequisites:**
+- Queue worker must be running: `php artisan queue:work`
+- For production: cron must be configured for scheduler
+
+**Testing RFQ (Тендеры):**
+```bash
+# 1. Create a test RFQ with end_date in ~2 minutes
+# 2. Activate it (dispatches CloseRfqJob with delay)
+# 3. Wait for end_date to pass
+# 4. Queue worker will execute CloseRfqJob → generates PDF
+
+# Or dispatch job manually via tinker:
+php artisan tinker
+>>> App\Jobs\CloseRfqJob::dispatch(App\Models\Rfq::find(ID));
+```
+
+**Testing Auction (Аукционы):**
+```bash
+# 1. Create auction, activate, start trading
+# 2. Wait 20+ min after last bid (or set last_bid_at manually)
+# 3. Run: php artisan auctions:check-expired
+# 4. Queue worker will execute CloseAuctionJob → generates PDF
+
+# Or dispatch job manually:
+php artisan tinker
+>>> App\Jobs\CloseAuctionJob::dispatch(AUCTION_ID);
+```
+
+**On Production Server (Docker):**
+```bash
+# Check queue status
+docker exec my_project_app php artisan queue:work --once
+
+# Run auction check manually
+docker exec my_project_app php artisan auctions:check-expired
+
+# Test RFQ job manually
+docker exec my_project_app php artisan tinker --execute="App\Jobs\CloseRfqJob::dispatch(App\Models\Rfq::find(ID));"
+
+# View generated PDFs
+docker exec my_project_app ls -la storage/app/public/rfq-protocols/
+
+# Check logs for errors
+docker exec my_project_app tail -f storage/logs/laravel.log
+```
+
+**PDF Files Location:**
+- RFQ protocols: `storage/app/public/rfq-protocols/protocol_RFQ-XXXX_timestamp.pdf`
+- Auction protocols: stored via Media Library (check `media` table)
+
 ## Architecture
 
 ### Core Modules

@@ -4,6 +4,22 @@
 
 ---
 
+## 21.01.2026
+
+### Исправление названия бренда в PDF-протоколах + документация тестирования
+
+**Что сделано:**
+- Исправлено написание "Bizzo.ru" → "Bizzio.ru" в PDF-протоколах тендеров и аукционов
+- Добавлена секция "Testing PDF Generation" в CLAUDE.md с инструкциями тестирования на сервере
+- Обновлена секция Architecture в CLAUDE.md (добавлен модуль Search, Services Layer)
+
+**Изменённые файлы:**
+- `resources/views/pdfs/rfq-protocol.blade.php` — исправлен footer
+- `resources/views/pdf/auction-protocol.blade.php` — исправлен footer
+- `CLAUDE.md` — добавлены инструкции тестирования PDF и улучшена документация архитектуры
+
+---
+
 ## 13.01.2026
 
 ### Создание бэклога фиксов
