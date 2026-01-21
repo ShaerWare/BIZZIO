@@ -81,6 +81,16 @@ class AuctionPolicy
     }
 
     /**
+     * Determine if the user can generate/download protocol.
+     */
+    public function generateProtocol(User $user, Auction $auction): bool
+    {
+        // Протокол можно сгенерировать только для закрытого аукциона
+        // и только организатору
+        return $auction->status === 'closed' && $auction->canManage($user);
+    }
+
+    /**
      * Determine if the user can place a bid.
      */
     public function placeBid(User $user, Auction $auction): bool

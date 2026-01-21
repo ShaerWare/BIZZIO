@@ -72,9 +72,9 @@ php artisan news:clean-old           # Clean old news entries
 # 3. Wait for end_date to pass
 # 4. Queue worker will execute CloseRfqJob → generates PDF
 
-# Or dispatch job manually via tinker:
+# Or dispatch job manually via tinker (replace 123 with actual RFQ ID):
 php artisan tinker
->>> App\Jobs\CloseRfqJob::dispatch(App\Models\Rfq::find(ID));
+>>> App\Jobs\CloseRfqJob::dispatch(App\Models\Rfq::find(123));
 ```
 
 **Testing Auction (Аукционы):**
@@ -84,27 +84,30 @@ php artisan tinker
 # 3. Run: php artisan auctions:check-expired
 # 4. Queue worker will execute CloseAuctionJob → generates PDF
 
-# Or dispatch job manually:
+# Or dispatch job manually (replace 123 with actual Auction ID):
 php artisan tinker
->>> App\Jobs\CloseAuctionJob::dispatch(AUCTION_ID);
+>>> App\Jobs\CloseAuctionJob::dispatch(123);
 ```
 
-**On Production Server (Docker):**
+**On Production Server (docker compose):**
 ```bash
 # Check queue status
-docker exec my_project_app php artisan queue:work --once
+docker compose exec app php artisan queue:work --once
 
 # Run auction check manually
-docker exec my_project_app php artisan auctions:check-expired
+docker compose exec app php artisan auctions:check-expired
 
-# Test RFQ job manually
-docker exec my_project_app php artisan tinker --execute="App\Jobs\CloseRfqJob::dispatch(App\Models\Rfq::find(ID));"
+# Test RFQ job manually (replace 123 with actual RFQ ID)
+docker compose exec app php artisan tinker --execute="App\\Jobs\\CloseRfqJob::dispatch(App\\Models\\Rfq::find(123));"
+
+# Test Auction job manually (replace 123 with actual Auction ID)
+docker compose exec app php artisan tinker --execute="App\\Jobs\\CloseAuctionJob::dispatch(123);"
 
 # View generated PDFs
-docker exec my_project_app ls -la storage/app/public/rfq-protocols/
+docker compose exec app ls -la storage/app/public/rfq-protocols/
 
 # Check logs for errors
-docker exec my_project_app tail -f storage/logs/laravel.log
+docker compose exec app tail -f storage/logs/laravel.log
 ```
 
 **PDF Files Location:**
