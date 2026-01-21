@@ -15,21 +15,35 @@
         <div class="flex items-center space-x-2 mb-4">
             <span class="text-sm text-gray-500 font-mono">{{ $rfq->number }}</span>
             @php
-                $statusColors = [
-                    'active' => 'bg-green-100 text-green-800',
-                    'closed' => 'bg-gray-100 text-gray-800',
-                    'cancelled' => 'bg-red-100 text-red-800',
-                    'draft' => 'bg-yellow-100 text-yellow-800',
-                ];
-                $statusLabels = [
-                    'active' => 'Активный',
-                    'closed' => 'Завершён',
-                    'cancelled' => 'Отменён',
-                    'draft' => 'Черновик',
-                ];
+                // Определяем статус с учётом дат
+                if ($rfq->status === 'active') {
+                    if ($rfq->start_date->isFuture()) {
+                        $statusColor = 'bg-yellow-100 text-yellow-800';
+                        $statusLabel = 'Скоро';
+                    } elseif ($rfq->end_date->isPast()) {
+                        $statusColor = 'bg-orange-100 text-orange-800';
+                        $statusLabel = 'Подведение итогов';
+                    } else {
+                        $statusColor = 'bg-green-100 text-green-800';
+                        $statusLabel = 'Приём заявок';
+                    }
+                } else {
+                    $statusColors = [
+                        'closed' => 'bg-gray-100 text-gray-800',
+                        'cancelled' => 'bg-red-100 text-red-800',
+                        'draft' => 'bg-yellow-100 text-yellow-800',
+                    ];
+                    $statusLabels = [
+                        'closed' => 'Завершён',
+                        'cancelled' => 'Отменён',
+                        'draft' => 'Черновик',
+                    ];
+                    $statusColor = $statusColors[$rfq->status] ?? 'bg-gray-100 text-gray-800';
+                    $statusLabel = $statusLabels[$rfq->status] ?? $rfq->status;
+                }
             @endphp
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$rfq->status] }}">
-                {{ $statusLabels[$rfq->status] }}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
+                {{ $statusLabel }}
             </span>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $rfq->type === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
                 {{ $rfq->type === 'open' ? 'Открытая' : 'Закрытая' }}
@@ -70,7 +84,13 @@
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
-                <span>До {{ $rfq->end_date->format('d.m.Y') }}</span>
+                @if($rfq->status === 'active' && $rfq->start_date->isFuture())
+                    <span>С {{ $rfq->start_date->format('d.m.Y') }}</span>
+                @elseif($rfq->status === 'active' && $rfq->end_date->isPast())
+                    <span>Завершён {{ $rfq->end_date->format('d.m.Y') }}</span>
+                @else
+                    <span>До {{ $rfq->end_date->format('d.m.Y') }}</span>
+                @endif
             </div>
             <div class="flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
