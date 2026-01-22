@@ -13,10 +13,11 @@ use App\Jobs\CloseRfqJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Traits\HandlesTempUploads;
 
 class RfqController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, HandlesTempUploads;
      
     /**
      * Каталог RFQ
@@ -104,11 +105,8 @@ class RfqController extends Controller
                 'status' => $request->status ?? 'draft', // ✅ ИСПОЛЬЗУЕМ СТАТУС ИЗ ФОРМЫ
             ]);
 
-            // Загрузка технического задания (PDF)
-            if ($request->hasFile('technical_specification')) {
-                $rfq->addMediaFromRequest('technical_specification')
-                    ->toMediaCollection('technical_specification');
-            }
+            // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
+            $this->addFileToModel($rfq, $request, 'technical_specification', 'technical_specification');
 
             // Отправка приглашений (для закрытых процедур)
             if ($request->type === 'closed' && $request->filled('invited_companies')) {

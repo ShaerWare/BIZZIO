@@ -14,10 +14,11 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Services\AuctionProtocolService;
+use App\Traits\HandlesTempUploads;
 
 class AuctionController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, HandlesTempUploads;
     
     public function index(Request $request)
     {
@@ -87,15 +88,13 @@ class AuctionController extends Controller
                 'end_date' => $request->end_date,
                 'trading_start' => $request->trading_start,
                 'starting_price' => $request->starting_price,
-                'step_percent' => $request->step_percent,
+                'step_percent' => 2.5, // A4: Фиксированный диапазон 0.5-5%, среднее значение для совместимости
                 'status' => $request->status ?? 'draft',
             ]);
             
-            if ($request->hasFile('technical_specification')) {
-                $auction->addMedia($request->file('technical_specification'))
-                    ->toMediaCollection('technical_specification');
-            }
-            
+            // F3: Загрузка технического задания с поддержкой temp-файлов
+            $this->addFileToModel($auction, $request, 'technical_specification', 'technical_specification');
+
             if ($request->type === 'closed' && $request->filled('invited_companies')) {
                 foreach ($request->invited_companies as $companyId) {
                     AuctionInvitation::create([

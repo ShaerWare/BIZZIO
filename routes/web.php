@@ -13,6 +13,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserKeywordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\TempUploadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,11 @@ Route::post('/auth/vk/callback', [SocialiteController::class, 'vkIdCallback'])->
 // Authenticated routes for managing companies (create, store, edit, update, delete)
 // CRUD компаний (создание, обновление, удаление только для авторизованных)
 Route::middleware('auth')->group(function () {
+    // F3: Временная загрузка файлов
+    Route::post('/temp-upload', [TempUploadController::class, 'store'])->name('temp-upload.store');
+    Route::delete('/temp-upload', [TempUploadController::class, 'destroy'])->name('temp-upload.destroy');
+    Route::get('/temp-upload', [TempUploadController::class, 'index'])->name('temp-upload.index');
+
     // Using resource routes for authenticated actions (create, store, edit, update, destroy)
     // 'index' and 'show' are excluded here as they are defined above as public.
     Route::get('companies/create', [CompanyController::class, 'create'])->name('companies.create');

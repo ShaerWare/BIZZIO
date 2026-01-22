@@ -30,7 +30,6 @@ class UpdateAuctionRequest extends FormRequest
             'end_date' => ['required', 'date', 'after:start_date'],
             'trading_start' => ['required', 'date', 'after:end_date'],
             'starting_price' => ['required', 'numeric', 'min:1'],
-            'step_percent' => ['required', 'numeric', 'min:0.5', 'max:5'],
             'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ];
     }
@@ -48,9 +47,6 @@ class UpdateAuctionRequest extends FormRequest
             'trading_start.after' => 'Дата начала торгов должна быть после окончания приёма заявок.',
             'starting_price.required' => 'Укажите начальную (максимальную) цену.',
             'starting_price.min' => 'Начальная цена должна быть больше нуля.',
-            'step_percent.required' => 'Укажите шаг аукциона.',
-            'step_percent.min' => 'Минимальный шаг — 0.5%.',
-            'step_percent.max' => 'Максимальный шаг — 5%.',
             'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
             'technical_specification.max' => 'Размер файла не должен превышать 10 МБ.',
         ];

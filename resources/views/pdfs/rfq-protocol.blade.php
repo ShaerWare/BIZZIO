@@ -70,6 +70,17 @@
             <li>Срок выполнения (календарные дни) — {{ $rfq->weight_deadline }}%</li>
             <li>Размер аванса (%) — {{ $rfq->weight_advance }}%</li>
         </ul>
+
+        {{-- T5: Формула расчёта балла --}}
+        <h4 style="margin-top: 15px;">Формула расчёта итогового балла:</h4>
+        <ul style="font-size: 11px;">
+            <li><em>Балл за цену</em> = 100 × (минимальная цена / цена заявки)</li>
+            <li><em>Балл за срок</em> = 100 × (минимальный срок / срок заявки)</li>
+            <li><em>Балл за аванс</em> = 100 − (аванс заявки / максимальный аванс) × 100</li>
+        </ul>
+        <p style="font-size: 11px; margin-top: 5px;">
+            <strong>Итоговый балл</strong> = (Б<sub>цена</sub> × {{ $rfq->weight_price }}% + Б<sub>срок</sub> × {{ $rfq->weight_deadline }}% + Б<sub>аванс</sub> × {{ $rfq->weight_advance }}%) / 100
+        </p>
     </div>
 
     @if($rfq->bids->isNotEmpty())

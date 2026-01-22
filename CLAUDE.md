@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Bizzo.ru — B2B business network for the construction industry. Laravel 12 + Orchid admin panel.
+Bizzio.ru — B2B business network for the construction industry. Laravel 12 + Orchid admin panel + PostgreSQL.
 
-**Status:** 8/10 sprints completed (80% MVP), ~360 hours of development.
+**Status:** 9/10 sprints completed (90% MVP), ~380 hours of development.
+**Tests:** 185 feature tests, 377 assertions.
 
 ## Development Commands
 
@@ -20,9 +21,9 @@ docker exec my_project_app composer install       # Install dependencies
 
 ### Local Development
 ```bash
-composer run dev          # Start dev server (Laravel + Queue + Logs + Vite)
+composer run dev          # Start all: Laravel + Queue + Logs + Vite (uses concurrently)
 php artisan serve         # Start Laravel server only
-php artisan queue:work    # Process queue jobs
+php artisan queue:work    # Process queue jobs (use queue:listen for auto-reload on code changes)
 ```
 
 ### Testing
@@ -46,9 +47,16 @@ php artisan migrate --seed       # Run migrations with seeders
 php artisan migrate:rollback     # Rollback last migration
 ```
 
+### Frontend
+```bash
+npm install                  # Install Node dependencies
+npm run dev                  # Start Vite dev server
+npm run build               # Build for production
+```
+
 ### Cache (clear all)
 ```bash
-php artisan config:clear && php artisan cache:clear && php artisan route:clear
+php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear
 ```
 
 ### Custom Artisan Commands
@@ -133,6 +141,7 @@ app/
 ├── Policies/       # Authorization: RfqPolicy, AuctionPolicy
 ├── Socialite/      # Custom OAuth: VKIDProvider (new VK ID API)
 ├── Jobs/           # Queue jobs: CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, etc.
+├── Traits/         # Reusable traits: HandlesTempUploads (file persistence on validation errors)
 └── Orchid/         # Admin panel screens and layouts
 
 routes/
@@ -191,9 +200,10 @@ Requires in `.env`: `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI`
 All project docs in `docs/`:
 - `00_ТЕХНИЧЕСКОЕ_ЗАДАНИЕ.md` — Original requirements
 - `01_ПЛАН_РАЗРАБОТКИ.md` — Development plan (10 sprints)
-- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities
-- `sprints/*.md` — Sprint reports (1-8 completed)
+- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities (21/38 completed)
+- `sprints/*.md` — Sprint reports (1-9 completed)
 - `CHANGELOG_CLAUDE.md` — Log of Claude Code changes
+- `claude/start_message.md` — Context for new Claude Code sessions
 
 ## Claude Code Instructions
 - После каждого успешного выполнения задачи записывай краткий отчет (что сделано, какие файлы изменены) в конец файла `docs/CHANGELOG_CLAUDE.md`.

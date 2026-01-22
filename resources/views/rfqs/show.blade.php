@@ -147,6 +147,21 @@
                                 <li>• Срок выполнения — <strong>{{ $rfq->weight_deadline }}%</strong></li>
                                 <li>• Размер аванса — <strong>{{ $rfq->weight_advance }}%</strong></li>
                             </ul>
+
+                            {{-- T5: Формула расчёта балла --}}
+                            <details class="mt-3">
+                                <summary class="text-xs text-indigo-600 cursor-pointer hover:text-indigo-800">
+                                    Как рассчитывается итоговый балл?
+                                </summary>
+                                <div class="mt-2 p-3 bg-white rounded border border-gray-200 text-xs text-gray-600">
+                                    <p class="mb-2"><strong>Формула расчёта:</strong></p>
+                                    <p class="mb-1">• Балл за цену = 100 × (мин. цена / ваша цена)</p>
+                                    <p class="mb-1">• Балл за срок = 100 × (мин. срок / ваш срок)</p>
+                                    <p class="mb-1">• Балл за аванс = 100 − (ваш аванс / макс. аванс) × 100</p>
+                                    <p class="mt-2 font-medium">Итоговый балл = (Б<sub>цена</sub> × {{ $rfq->weight_price }}% + Б<sub>срок</sub> × {{ $rfq->weight_deadline }}% + Б<sub>аванс</sub> × {{ $rfq->weight_advance }}%) / 100</p>
+                                    <p class="mt-2 text-gray-500">Чем выше итоговый балл — тем лучше заявка. Побеждает заявка с максимальным баллом.</p>
+                                </div>
+                            </details>
                         </div>
 
                         <!-- Техническое задание -->
@@ -161,11 +176,31 @@
                             </a>
                         @endif
 
+                        {{-- T1: Кнопка копирования ссылки --}}
+                        @can('update', $rfq)
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <h3 class="text-sm font-semibold text-gray-900 mb-2">Поделиться RFQ</h3>
+                                <div class="flex items-center space-x-2">
+                                    <input type="text" readonly
+                                           id="rfq-link"
+                                           value="{{ route('rfqs.show', $rfq) }}"
+                                           class="flex-1 text-xs rounded border-gray-300 bg-white focus:ring-indigo-500">
+                                    <button type="button" onclick="copyRfqLink()"
+                                            class="px-3 py-2 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p id="copy-success" class="text-xs text-green-600 mt-1 hidden">Ссылка скопирована!</p>
+                            </div>
+                        @endcan
+
                         <!-- Служба поддержки -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Служба поддержки</h3>
                             <p class="text-xs text-gray-600 mb-3">Возникли вопросы по процедуре?</p>
-                            <a href="mailto:support@bizzo.ru?subject=RFQ {{ $rfq->number }}" 
+                            <a href="mailto:support@bizzio.ru?subject=RFQ {{ $rfq->number }}"
                                class="block w-full text-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition">
                                 Написать в поддержку
                             </a>
@@ -332,16 +367,24 @@
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"></textarea>
                 </div>
 
+                {{-- T5: Информация о формуле расчёта в форме заявки --}}
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                    <p class="font-medium mb-1">Как оценивается ваша заявка:</p>
+                    <p>• Чем ниже цена — тем больше баллов (вес {{ $rfq->weight_price }}%)</p>
+                    <p>• Чем короче срок — тем больше баллов (вес {{ $rfq->weight_deadline }}%)</p>
+                    <p>• Чем меньше аванс — тем больше баллов (вес {{ $rfq->weight_advance }}%)</p>
+                </div>
+
                 <!-- Уведомление -->
                 <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
                     <div class="flex items-start">
-                        <input type="checkbox" 
-                               name="acknowledgement" 
+                        <input type="checkbox"
+                               name="acknowledgement"
                                id="acknowledgement"
                                required
                                class="mt-1 rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500">
                         <label for="acknowledgement" class="ml-3 text-sm text-gray-700">
-                            Я уведомлён, что процедура проведения Запроса котировок не является торгами и не обязывает к заключению договора. 
+                            Я уведомлён, что процедура проведения Запроса котировок не является торгами и не обязывает к заключению договора.
                             Результаты подведения итогов носят информационный характер.
                         </label>
                     </div>
@@ -381,12 +424,18 @@
 
                     <!-- Список заявок -->
                     @if($rfq->bids->count() > 0)
+                        @php
+                            // T2: Определяем компании текущего пользователя для подсветки его заявок
+                            $userCompanyIds = auth()->check() && isset($availableCompanies) ? $availableCompanies->pluck('id')->toArray() : [];
+                            // Обезличиваем заявки на активном этапе (кроме организатора)
+                            $canSeeNames = $rfq->status === 'closed' || (auth()->check() && $rfq->canManage(auth()->user()));
+                        @endphp
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Компания
+                                            {{ $canSeeNames ? 'Компания' : 'Участник' }}
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Цена (руб.)
@@ -408,12 +457,26 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($rfq->bids->sortByDesc('total_score') as $bid)
-                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : '' }}">
+                                    @foreach($rfq->bids->sortByDesc('total_score') as $index => $bid)
+                                        @php
+                                            $isUserBid = in_array($bid->company_id, $userCompanyIds);
+                                        @endphp
+                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : ($isUserBid ? 'bg-blue-50' : '') }}">
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                                                    {{ $bid->company->name }}
-                                                </a>
+                                                @if($canSeeNames)
+                                                    {{-- T2: После закрытия или для организатора показываем названия --}}
+                                                    <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                        {{ $bid->company->name }}
+                                                    </a>
+                                                @else
+                                                    {{-- T2: На активном этапе показываем анонимный номер --}}
+                                                    <span class="text-sm font-medium {{ $isUserBid ? 'text-blue-600' : 'text-gray-900' }}">
+                                                        Участник {{ $index + 1 }}
+                                                        @if($isUserBid)
+                                                            <span class="text-xs text-blue-500">(вы)</span>
+                                                        @endif
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ number_format($bid->price, 2, ',', ' ') }}
@@ -521,6 +584,18 @@
 
 @push('scripts')
 <script>
+    // T1: Копирование ссылки на RFQ
+    function copyRfqLink() {
+        const linkInput = document.getElementById('rfq-link');
+        const successMsg = document.getElementById('copy-success');
+        if (linkInput) {
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                successMsg.classList.remove('hidden');
+                setTimeout(() => successMsg.classList.add('hidden'), 2000);
+            });
+        }
+    }
+
     // Переключение вкладок
     function showTab(tabName) {
         // Скрываем все вкладки
