@@ -92,35 +92,16 @@
                         <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
                             Начальная максимальная цена (₽) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" 
-                               name="starting_price" 
-                               id="starting_price" 
+                        <input type="number"
+                               name="starting_price"
+                               id="starting_price"
                                step="0.01"
                                min="0"
                                required
                                value="{{ old('starting_price', $auction->starting_price) }}"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('starting_price') border-red-500 @enderror">
+                        <p class="mt-1 text-sm text-gray-500">Участники смогут снижать цену на 0.5% — 5% от текущей</p>
                         @error('starting_price')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Шаг аукциона -->
-                    <div class="mb-6">
-                        <label for="step_percent" class="block text-sm font-medium text-gray-700 mb-2">
-                            Шаг аукциона (%) <span class="text-red-500">*</span>
-                        </label>
-                        <input type="number" 
-                               name="step_percent" 
-                               id="step_percent" 
-                               step="0.1"
-                               min="0.5"
-                               max="5"
-                               required
-                               value="{{ old('step_percent', $auction->step_percent) }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('step_percent') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Допустимый диапазон: 0.5% — 5%</p>
-                        @error('step_percent')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

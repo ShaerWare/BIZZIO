@@ -184,60 +184,38 @@
                         @enderror
                     </div>
 
-                    <!-- Параметры аукциона -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <!-- Начальная максимальная цена -->
-                        <div>
-                            <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
-                                Начальная максимальная цена (₽) <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number"
-                                   name="starting_price"
-                                   id="starting_price"
-                                   step="0.01"
-                                   min="0"
-                                   required
-                                   value="{{ old('starting_price') }}"
-                                   placeholder="Введите начальную максимальную цену"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('starting_price') border-red-500 @enderror">
-                            @error('starting_price')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Шаг аукциона -->
-                        <div>
-                            <label for="step_percent" class="block text-sm font-medium text-gray-700 mb-2">
-                                Шаг аукциона (%) <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number" 
-                                   name="step_percent" 
-                                   id="step_percent" 
-                                   step="0.1"
-                                   min="0.5"
-                                   max="5"
-                                   required
-                                   value="{{ old('step_percent', '1') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('step_percent') border-red-500 @enderror">
-                            <p class="mt-1 text-sm text-gray-500">Допустимый диапазон: 0.5% — 5%</p>
-                            @error('step_percent')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <!-- Начальная максимальная цена -->
+                    <div class="mb-6">
+                        <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
+                            Начальная максимальная цена (₽) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number"
+                               name="starting_price"
+                               id="starting_price"
+                               step="0.01"
+                               min="0"
+                               required
+                               value="{{ old('starting_price') }}"
+                               placeholder="Введите начальную максимальную цену"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('starting_price') border-red-500 @enderror">
+                        <p class="mt-1 text-sm text-gray-500">Участники смогут снижать цену на 0.5% — 5% от текущей</p>
+                        @error('starting_price')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <!-- Техническое задание -->
+                    <!-- Техническое задание - F3: с сохранением при ошибке валидации -->
                     <div class="mb-6">
-                        <label for="technical_specification" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
                             Техническое задание (PDF) <span class="text-red-500">*</span>
                         </label>
-                        <input type="file" 
-                               name="technical_specification" 
-                               id="technical_specification" 
-                               accept="application/pdf"
-                               required
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 @error('technical_specification') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Максимальный размер: 10 МБ</p>
+                        <x-file-upload
+                            name="technical_specification"
+                            collection="technical_specification"
+                            accept="application/pdf"
+                            :required="true"
+                            hint="Максимальный размер: 20 МБ. Файл сохраняется при ошибке валидации."
+                        />
                         @error('technical_specification')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

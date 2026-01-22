@@ -99,13 +99,14 @@
                     </div>
 
                     <!-- Отрасль -->
+                    {{-- C2: text-base для iOS (16px предотвращает auto-zoom) --}}
                     <div>
                         <label for="industry_id" class="block text-sm font-medium text-gray-700">
                             Отрасль
                         </label>
-                        <select name="industry_id" 
+                        <select name="industry_id"
                                 id="industry_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm">
                             <option value="">Не выбрано</option>
                             @foreach($industries as $industry)
                                 <option value="{{ $industry->id }}" {{ old('industry_id', $company->industry_id) == $industry->id ? 'selected' : '' }}>

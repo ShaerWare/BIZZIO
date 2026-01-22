@@ -254,18 +254,18 @@
                         @enderror
                     </div>
 
-                    <!-- Техническое задание (PDF) -->
+                    <!-- Техническое задание (PDF) - F3: с сохранением при ошибке валидации -->
                     <div class="mb-6">
-                        <label for="technical_specification" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
                             Техническое задание (PDF) <span class="text-red-500">*</span>
                         </label>
-                        <input type="file" 
-                               name="technical_specification" 
-                               id="technical_specification" 
-                               required
-                               accept="application/pdf"
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 @error('technical_specification') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Максимальный размер: 10 МБ</p>
+                        <x-file-upload
+                            name="technical_specification"
+                            collection="technical_specification"
+                            accept="application/pdf"
+                            :required="true"
+                            hint="Максимальный размер: 20 МБ. Файл сохраняется при ошибке валидации."
+                        />
                         @error('technical_specification')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

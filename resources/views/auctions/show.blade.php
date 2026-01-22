@@ -182,7 +182,7 @@
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
                                 <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} ₽</strong></li>
-                                <li>• Шаг аукциона — <strong>{{ $auction->step_percent }}%</strong></li>
+                                <li>• Шаг снижения — <strong>0.5% — 5%</strong> от текущей цены</li>
                                 @if($auction->isTrading())
                                     <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</strong></li>
                                 @endif
@@ -259,6 +259,135 @@
                         </h3>
                         <div class="mt-2 text-sm text-yellow-700">
                             <p>Этот аукцион находится в режиме черновика. Для начала приёма заявок активируйте его, нажав кнопку "Активировать аукцион".</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- A8: Панель торгов на главном экране (только для статуса trading) --}}
+        @if($auction->isTrading())
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        {{-- Левая колонка: Форма ставки --}}
+                        <div class="lg:w-1/3">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Торги в реальном времени
+                            </h3>
+
+                            <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                                <p class="text-sm text-gray-600">Текущая цена:</p>
+                                <p class="text-3xl font-bold text-blue-600 current-price">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</p>
+                                @if($auction->last_bid_at)
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Последняя ставка: {{ $auction->last_bid_at->format('H:i:s') }}
+                                    </p>
+                                @endif
+                            </div>
+
+                            @auth
+                                @if($canBid)
+                                    <form method="POST" action="{{ route('auctions.bids.store', $auction) }}" class="space-y-4">
+                                        @csrf
+                                        @if($userCompanies->count() > 1)
+                                            <select name="company_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                                                <option value="">Выберите компанию...</option>
+                                                @foreach($userCompanies as $company)
+                                                    <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <input type="hidden" name="company_id" value="{{ $userCompanies->first()->id }}">
+                                        @endif
+
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-2">Снижение цены:</p>
+                                            <div class="grid grid-cols-3 gap-1">
+                                                @php $percentages = [0.5, 1, 2, 3, 4, 5]; @endphp
+                                                @foreach($percentages as $pct)
+                                                    @php $newPrice = round($currentPrice * (1 - $pct / 100), 2); @endphp
+                                                    <button type="button" onclick="setMainBidPrice({{ $newPrice }})"
+                                                            class="main-bid-btn px-2 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-500 transition">
+                                                        -{{ $pct }}%
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <input type="number" name="price" id="main-price" step="0.01"
+                                               min="{{ $currentPrice - $stepRange['max'] }}" max="{{ $currentPrice - $stepRange['min'] }}"
+                                               required placeholder="Ваша ставка (₽)"
+                                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+
+                                        <label class="flex items-start text-xs text-gray-600">
+                                            <input type="checkbox" name="acknowledgement" required class="mt-0.5 mr-2 rounded border-gray-300">
+                                            Подтверждаю условия участия
+                                        </label>
+
+                                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition">
+                                            Сделать ставку
+                                        </button>
+                                    </form>
+                                @elseif($existingBid && $existingBid->type === 'bid')
+                                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-green-800">Вы участвуете в торгах</p>
+                                    </div>
+                                @endif
+                            @else
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <p class="text-sm text-gray-600">
+                                        <a href="{{ route('login') }}" class="text-blue-600 hover:underline">Войдите</a>, чтобы участвовать
+                                    </p>
+                                </div>
+                            @endauth
+                        </div>
+
+                        {{-- Правая колонка: Таблица последних ставок --}}
+                        <div class="lg:w-2/3">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                История ставок
+                                <span class="text-sm font-normal text-gray-500">({{ $auction->tradingBids->count() }})</span>
+                            </h3>
+
+                            @if($auction->tradingBids->count() > 0)
+                                <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Участник</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Цена</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Время</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            @php $userCompanyIds = auth()->check() ? $userCompanies->pluck('id')->toArray() : []; @endphp
+                                            @foreach($auction->tradingBids->take(20) as $bid)
+                                                @php $isUserBid = in_array($bid->company_id, $userCompanyIds); @endphp
+                                                <tr class="{{ $isUserBid ? 'bg-blue-50' : '' }}">
+                                                    <td class="px-4 py-2 whitespace-nowrap text-sm {{ $isUserBid ? 'text-blue-600 font-medium' : 'text-gray-900' }}">
+                                                        {{ $bid->anonymous_code }}
+                                                        @if($isUserBid) <span class="text-xs">(вы)</span> @endif
+                                                    </td>
+                                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                                        {{ number_format($bid->price, 2, ',', ' ') }} ₽
+                                                    </td>
+                                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                                        {{ $bid->created_at->format('H:i:s') }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-8 text-gray-500">
+                                    Ставок пока нет. Будьте первым!
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -359,14 +488,35 @@
                                             <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
                                                 Ваша ставка (₽) <span class="text-red-500">*</span>
                                             </label>
-                                            <input type="number" 
-                                                   name="price" 
-                                                   id="price" 
+
+                                            <!-- Кнопки быстрого выбора снижения -->
+                                            <div class="mb-3">
+                                                <p class="text-xs text-gray-500 mb-2">Выберите размер снижения:</p>
+                                                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                                    @php
+                                                        $percentages = [0.5, 1, 2, 3, 4, 5];
+                                                    @endphp
+                                                    @foreach($percentages as $pct)
+                                                        @php
+                                                            $newPrice = round($currentPrice * (1 - $pct / 100), 2);
+                                                        @endphp
+                                                        <button type="button"
+                                                                onclick="setBidPrice({{ $newPrice }})"
+                                                                class="bid-percent-btn px-3 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-green-50 hover:border-green-500 hover:text-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition">
+                                                            -{{ $pct }}%
+                                                        </button>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+
+                                            <input type="number"
+                                                   name="price"
+                                                   id="price"
                                                    step="0.01"
                                                    min="{{ $currentPrice - $stepRange['max'] }}"
                                                    max="{{ $currentPrice - $stepRange['min'] }}"
                                                    required
-                                                   placeholder="Введите цену"
+                                                   placeholder="Введите цену или выберите снижение выше"
                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
                                             <p class="mt-1 text-xs text-gray-500">
                                                 Текущая цена: <strong>{{ number_format($currentPrice, 2, ',', ' ') }} ₽</strong><br>
@@ -523,17 +673,24 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
+                                    @php
+                                        // A7: Определяем компании текущего пользователя для подсветки его ставок
+                                        $userCompanyIds = auth()->check() ? $userCompanies->pluck('id')->toArray() : [];
+                                    @endphp
                                     @foreach($auction->bids->sortBy('created_at') as $bid)
-                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : '' }}">
+                                        @php
+                                            $isUserBid = in_array($bid->company_id, $userCompanyIds);
+                                        @endphp
+                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : ($isUserBid ? 'bg-blue-50' : '') }}">
                                             @if($auction->isTrading())
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    @if($auction->canManage(auth()->user()))
-                                                        <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                                                            {{ $bid->company->name }}
-                                                        </a>
-                                                    @else
-                                                        <span class="text-sm font-medium text-gray-900">{{ $bid->anonymous_code }}</span>
-                                                    @endif
+                                                    {{-- A10: Скрываем названия компаний от всех (включая организатора) до завершения аукциона --}}
+                                                    <span class="text-sm font-medium {{ $isUserBid ? 'text-blue-600' : 'text-gray-900' }}">
+                                                        {{ $bid->anonymous_code }}
+                                                        @if($isUserBid)
+                                                            <span class="ml-1 text-xs text-blue-500">(вы)</span>
+                                                        @endif
+                                                    </span>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                                     {{ number_format($bid->price, 2, ',', ' ') }}
@@ -542,10 +699,28 @@
                                                     {{ $bid->created_at->format('d.m.Y H:i:s') }}
                                                 </td>
                                             @else
+                                                {{-- Для статуса active (приём заявок) или closed (завершён) --}}
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                                                        {{ $bid->company->name }}
-                                                    </a>
+                                                    @if($auction->status === 'closed')
+                                                        {{-- После закрытия показываем названия компаний --}}
+                                                        <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                            {{ $bid->company->name }}
+                                                        </a>
+                                                    @else
+                                                        {{-- A10: На этапе приёма заявок скрываем названия от всех, кроме организатора --}}
+                                                        @if($auction->canManage(auth()->user()))
+                                                            <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                                {{ $bid->company->name }}
+                                                            </a>
+                                                        @else
+                                                            <span class="text-sm font-medium {{ $isUserBid ? 'text-blue-600' : 'text-gray-900' }}">
+                                                                Участник {{ $loop->iteration }}
+                                                                @if($isUserBid)
+                                                                    <span class="ml-1 text-xs text-blue-500">(вы)</span>
+                                                                @endif
+                                                            </span>
+                                                        @endif
+                                                    @endif
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {{ $bid->created_at->format('d.m.Y H:i') }}
@@ -625,6 +800,32 @@
 
 @push('scripts')
 <script>
+    // Установка цены ставки (A5) - для формы во вкладке
+    function setBidPrice(price) {
+        const priceInput = document.getElementById('price');
+        if (priceInput) {
+            priceInput.value = price.toFixed(2);
+            // Подсветка выбранной кнопки
+            document.querySelectorAll('.bid-percent-btn').forEach(btn => {
+                btn.classList.remove('bg-green-100', 'border-green-500', 'text-green-700');
+            });
+            event.target.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+        }
+    }
+
+    // Установка цены ставки (A8) - для основной панели торгов
+    function setMainBidPrice(price) {
+        const priceInput = document.getElementById('main-price');
+        if (priceInput) {
+            priceInput.value = price.toFixed(2);
+            // Подсветка выбранной кнопки
+            document.querySelectorAll('.main-bid-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
+            });
+            event.target.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+        }
+    }
+
     // Переключение вкладок
     function showTab(tabName) {
         // Скрываем все вкладки
