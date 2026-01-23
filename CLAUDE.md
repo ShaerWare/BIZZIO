@@ -31,12 +31,13 @@ php artisan queue:work    # Process queue jobs (use queue:listen for auto-reload
 composer run test                        # Run all tests (clears config first)
 php artisan test                         # Alternative
 php artisan test --filter=TestName       # Run specific test
+php artisan test --filter=TestClass::testMethod  # Run single test method
 php artisan test tests/Feature/XxxTest.php  # Run single test file
 ```
 
 ### Code Style
 ```bash
-./vendor/bin/pint --check    # Check code style (Laravel Pint)
+./vendor/bin/pint --test     # Check code style (Laravel Pint)
 ./vendor/bin/pint            # Fix code style
 ```
 
@@ -194,6 +195,18 @@ Requires in `.env`: `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI`
 - `APP_URL` must match actual URL (http://localhost:8080 for local dev)
 - `SESSION_SECURE_COOKIE=false` for HTTP development
 - HTTPS is forced only when `APP_ENV=production` or `APP_URL` starts with https (see `AppServiceProvider@configureHttps()`)
+
+## Key Model Relationships
+
+```
+User ←→ Company (many-to-many via company_user pivot with role)
+Company → Projects (owner)
+Project ←→ Companies (many-to-many via project_participants)
+Company → Rfqs (owner)
+Rfq → RfqBids (one-to-many)
+Company → Auctions (owner)
+Auction → AuctionBids (one-to-many)
+```
 
 ## Documentation
 
