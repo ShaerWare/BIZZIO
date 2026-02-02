@@ -133,10 +133,26 @@ Route::get('/auctions/create', ...)->name('create');
 Route::get('/auctions/{auction}', ...)->name('show');
 ```
 
+## Brand Colors
+
+Primary color: **Bizzio Green** (`#28a745`)
+
+Tailwind CSS uses `emerald-*` classes for UI elements. Custom palette in `tailwind.config.js`:
+```javascript
+bizzio: {
+    500: '#28a745',  // Primary brand green
+    600: '#22963e',  // Hover states
+    700: '#1e8537',  // Active states
+}
+```
+
+Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom.css`)
+
 ## Docker Setup
 
-- **app** container: PHP 8.2-FPM + Nginx + Supervisor, port 80
-- **db** container: PostgreSQL 14 Alpine, host port 5435
+- **app** container: PHP 8.2-FPM + Nginx + Supervisor, port 80, timezone Europe/Moscow
+- **db** container: PostgreSQL 14 Alpine, host port 5435, timezone Europe/Moscow
+- Timezone configured via tzdata in Dockerfile + TZ environment variable
 - Production: `docker-compose.override.yml.prod` with nginx-proxy + Let's Encrypt
 
 ## Production Deployment

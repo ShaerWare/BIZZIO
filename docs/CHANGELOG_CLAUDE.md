@@ -311,3 +311,73 @@ SESSION_SECURE_COOKIE=true
 **Изменённые файлы:**
 - `docker/supervisord.conf` — добавлен laravel-scheduler
 - `CLAUDE.md` — добавлена секция Production Deployment
+
+---
+
+### Ребрендинг цветов — Bizzio Green (#28a745)
+
+**Что сделано:**
+
+1. **Обновлена цветовая палитра Tailwind**
+   - Добавлена кастомная палитра `bizzio` в `tailwind.config.js`
+   - Основной цвет бренда: `#28a745` (bizzio-500)
+   - Полный спектр оттенков 50-950
+
+2. **Обновлена стартовая страница (welcome.blade.php)**
+   - Кнопки: градиент `#28a745 → #81b407`
+   - Фон блока features: тот же градиент
+   - Ховер-эффекты ссылок: emerald цвета
+   - Иконки: заливка `#28a745`
+   - **Исправлена загрузка CSS** — изменено с внешнего URL (bizzio.ru) на локальный `{{ asset('css/custom.css') }}`
+
+3. **Массовая замена цветов в Blade-шаблонах**
+   - Заменено `indigo-*` → `emerald-*` в 41 файле
+   - Заменено `blue-*` → `emerald-*` где применимо
+   - **Сохранены исключения:** кнопка VK OAuth осталась синей (фирменный цвет VK)
+
+4. **Обновлены компоненты**
+   - `primary-button.blade.php` — bg-emerald-600/700/800
+   - `nav-link.blade.php` — border-emerald-400/700
+   - `responsive-nav-link.blade.php` — emerald-* для активного состояния
+
+**Изменённые файлы:**
+- `tailwind.config.js` — добавлена палитра bizzio
+- `public/css/custom.css` — зелёные цвета для welcome page
+- `resources/views/welcome.blade.php` — локальные assets
+- `resources/views/components/primary-button.blade.php`
+- `resources/views/components/nav-link.blade.php`
+- `resources/views/components/responsive-nav-link.blade.php`
+- 41 blade-шаблон в `resources/views/` — замена indigo/blue → emerald
+
+---
+
+### Настройка таймзоны Docker — Europe/Moscow
+
+**Проблема:**
+Контейнер показывал UTC вместо московского времени, несмотря на `APP_TIMEZONE=Europe/Moscow` в Laravel.
+
+**Решение:**
+
+1. **docker-compose.yml** — добавлена переменная окружения:
+   ```yaml
+   app:
+     environment:
+       - TZ=Europe/Moscow
+   db:
+     environment:
+       TZ: Europe/Moscow
+   ```
+
+2. **Dockerfile** — установка tzdata для Alpine Linux:
+   ```dockerfile
+   ENV TZ=Europe/Moscow
+   RUN apk add --no-cache tzdata \
+       && cp /usr/share/zoneinfo/$TZ /etc/localtime \
+       && echo $TZ > /etc/timezone
+   ```
+
+**Причина:** Alpine Linux не имеет tzdata по умолчанию, поэтому переменная окружения `TZ` не работает без установки пакета и копирования файла зоны.
+
+**Изменённые файлы:**
+- `docker-compose.yml` — TZ environment для app и db
+- `Dockerfile` — установка tzdata, настройка /etc/localtime
