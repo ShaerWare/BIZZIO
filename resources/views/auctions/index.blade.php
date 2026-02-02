@@ -36,13 +36,13 @@
                                name="search" 
                                placeholder="Поиск по названию или номеру..."
                                value="{{ request('search') }}"
-                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                     </div>
                     
                     <!-- Статус -->
                     <div>
                         <select name="status" 
-                                class="w-full md:w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="w-full md:w-40 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <option value="">Все статусы</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Черновик</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Приём заявок</option>
@@ -54,7 +54,7 @@
                     <!-- Тип -->
                     <div>
                         <select name="type" 
-                                class="w-full md:w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="w-full md:w-40 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <option value="">Все типы</option>
                             <option value="open" {{ request('type') === 'open' ? 'selected' : '' }}>Открытая</option>
                             <option value="closed" {{ request('type') === 'closed' ? 'selected' : '' }}>Закрытая</option>
@@ -64,7 +64,7 @@
                     <!-- Кнопки -->
                     <div class="flex gap-2">
                         <button type="submit" 
-                                class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                class="px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             Применить
                         </button>
                         <a href="{{ route('auctions.index') }}" 

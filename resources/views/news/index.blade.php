@@ -25,7 +25,7 @@
                             </label>
                             <select name="source_id" 
                                     id="source_id"
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все источники</option>
                                 @foreach($sources as $source)
                                     <option value="{{ $source->id }}" 
@@ -45,7 +45,7 @@
                                    name="date" 
                                    id="date"
                                    value="{{ request('date') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
 
                         <!-- Фильтр по ключевым словам -->
@@ -60,7 +60,7 @@
                                            id="apply_keywords"
                                            value="1"
                                            {{ request('apply_keywords') ? 'checked' : '' }}
-                                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                           class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                     <label for="apply_keywords" class="ml-2 text-sm text-gray-600">
                                         Фильтровать по моим ключевым словам
                                         @if(!empty($userKeywords))
@@ -70,7 +70,7 @@
                                 </div>
                                 @if(empty($userKeywords))
                                     <p class="mt-1 text-xs text-gray-500">
-                                        <a href="{{ route('profile.keywords.index') }}" class="text-indigo-600 hover:text-indigo-500">
+                                        <a href="{{ route('profile.keywords.index') }}" class="text-emerald-600 hover:text-emerald-500">
                                             Добавить ключевые слова
                                         </a>
                                     </p>
@@ -82,7 +82,7 @@
                     <!-- Кнопки -->
                     <div class="flex items-center space-x-2">
                         <button type="submit" 
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
@@ -99,11 +99,11 @@
 
                     <!-- Активные ключевые слова -->
                     @if(request('apply_keywords') && !empty($userKeywords))
-                        <div class="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-                            <p class="text-xs font-medium text-blue-800 mb-2">Фильтрация по ключевым словам (все должны присутствовать):</p>
+                        <div class="mt-3 p-3 bg-emerald-50 rounded border border-emerald-200">
+                            <p class="text-xs font-medium text-emerald-800 mb-2">Фильтрация по ключевым словам (все должны присутствовать):</p>
                             <div class="flex flex-wrap gap-2">
                                 @foreach($userKeywords as $keyword)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                                         {{ $keyword }}
                                     </span>
                                 @endforeach
@@ -135,7 +135,7 @@
                                 <div class="flex-1">
                                     <!-- Источник и дата -->
                                     <div class="flex items-center text-xs text-gray-500 mb-2">
-                                        <span class="font-semibold text-indigo-600">{{ $item->rssSource->name }}</span>
+                                        <span class="font-semibold text-emerald-600">{{ $item->rssSource->name }}</span>
                                         <span class="mx-2">•</span>
                                         <span>{{ $item->published_at->format('d.m.Y H:i') }}</span>
                                     </div>
@@ -145,7 +145,7 @@
                                         <a href="{{ $item->link }}" 
                                            target="_blank"
                                            rel="noopener noreferrer"
-                                           class="hover:text-indigo-600 transition">
+                                           class="hover:text-emerald-600 transition">
                                             {{ $item->title }}
                                         </a>
                                     </h3>
@@ -161,7 +161,7 @@
                                     <a href="{{ $item->link }}" 
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       class="inline-flex items-center mt-2 text-sm text-indigo-600 hover:text-indigo-500">
+                                       class="inline-flex items-center mt-2 text-sm text-emerald-600 hover:text-emerald-500">
                                         Читать далее
                                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
@@ -188,7 +188,7 @@
                     <p class="mt-1 text-sm text-gray-500">
                         @if(request('apply_keywords'))
                             Попробуйте изменить ключевые слова или 
-                            <a href="{{ route('news.index') }}" class="text-indigo-600 hover:text-indigo-500">
+                            <a href="{{ route('news.index') }}" class="text-emerald-600 hover:text-emerald-500">
                                 показать все новости
                             </a>
                         @else

@@ -20,7 +20,7 @@
                     </svg>
                     <p class="mt-4 text-gray-500">Вы ещё не подавали заявок на участие в аукционах.</p>
                     <a href="{{ route('auctions.index') }}" 
-                       class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                       class="mt-4 inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700">
                         Найти аукционы
                     </a>
                 </div>
@@ -59,7 +59,7 @@
                                 @foreach($bids as $bid)
                                     <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : '' }}">
                                         <td class="px-6 py-4 text-sm text-gray-900">
-                                            <a href="{{ route('auctions.show', $bid->auction) }}" class="text-indigo-600 hover:text-indigo-900">
+                                            <a href="{{ route('auctions.show', $bid->auction) }}" class="text-emerald-600 hover:text-emerald-900">
                                                 {{ $bid->auction->number }}
                                             </a>
                                             <br>
@@ -70,7 +70,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             @if($bid->type === 'initial')
-                                                <span class="text-blue-600">Заявка</span>
+                                                <span class="text-emerald-600">Заявка</span>
                                             @else
                                                 <span class="text-purple-600">Ставка</span>
                                             @endif
@@ -89,7 +89,7 @@
                                             @if($bid->status === 'winner')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Победитель</span>
                                             @elseif($bid->status === 'accepted')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Принята</span>
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">Принята</span>
                                             @else
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Ожидание</span>
                                             @endif
@@ -99,7 +99,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('auctions.show', $bid->auction) }}" 
-                                               class="text-indigo-600 hover:text-indigo-900">
+                                               class="text-emerald-600 hover:text-emerald-900">
                                                 Просмотр
                                             </a>
                                         </td>

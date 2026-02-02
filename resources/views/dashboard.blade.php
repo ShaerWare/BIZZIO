@@ -26,7 +26,7 @@
                                     <button
                                         id="load-more-btn"
                                         data-offset="20"
-                                        class="inline-flex items-center px-4 py-2 bg-gray-100 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                        class="inline-flex items-center px-4 py-2 bg-gray-100 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                     >
                                         <span id="load-more-text">{{ __('Загрузить ещё') }}</span>
                                         <svg id="load-more-spinner" class="hidden animate-spin ml-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -64,11 +64,11 @@
                             @else
                                 <div class="space-y-3">
                                     @foreach($notifications as $notification)
-                                        <div class="flex items-start space-x-3 p-3 rounded-lg {{ $notification->read_at ? 'bg-gray-50' : 'bg-blue-50' }}">
+                                        <div class="flex items-start space-x-3 p-3 rounded-lg {{ $notification->read_at ? 'bg-gray-50' : 'bg-emerald-50' }}">
                                             <div class="flex-shrink-0">
                                                 @switch($notification->data['type'] ?? '')
                                                     @case('project_invitation')
-                                                        <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <svg class="h-5 w-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                                                         </svg>
                                                         @break
@@ -95,7 +95,7 @@
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 @if(isset($notification->data['url']))
-                                                    <a href="{{ $notification->data['url'] }}" class="text-sm font-medium text-gray-900 hover:text-indigo-600">
+                                                    <a href="{{ $notification->data['url'] }}" class="text-sm font-medium text-gray-900 hover:text-emerald-600">
                                                         @include('partials.notification-text', ['notification' => $notification])
                                                     </a>
                                                 @else
@@ -115,7 +115,7 @@
                                     <div class="mt-4">
                                         <button
                                             id="mark-all-read-btn"
-                                            class="text-sm text-indigo-600 hover:text-indigo-800"
+                                            class="text-sm text-emerald-600 hover:text-emerald-800"
                                         >
                                             {{ __('Отметить все как прочитанные') }}
                                         </button>
@@ -123,7 +123,7 @@
                                 @endif
 
                                 <div class="mt-4 pt-4 border-t border-gray-200">
-                                    <a href="{{ route('notifications.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800">
+                                    <a href="{{ route('notifications.index') }}" class="text-sm text-emerald-600 hover:text-emerald-800">
                                         {{ __('Все уведомления') }} &rarr;
                                     </a>
                                 </div>
@@ -189,8 +189,8 @@
                     .then(data => {
                         if (data.success) {
                             // Обновить UI
-                            document.querySelectorAll('.bg-blue-50').forEach(el => {
-                                el.classList.remove('bg-blue-50');
+                            document.querySelectorAll('.bg-emerald-50').forEach(el => {
+                                el.classList.remove('bg-emerald-50');
                                 el.classList.add('bg-gray-50');
                             });
                             // Убрать бейдж и кнопку

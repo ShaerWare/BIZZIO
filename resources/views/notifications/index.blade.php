@@ -7,7 +7,7 @@
             @if(auth()->user()->unreadNotifications()->count() > 0)
                 <button
                     id="mark-all-read-btn"
-                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-emerald-700 bg-emerald-100 hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                 >
                     {{ __('Отметить все как прочитанные') }}
                 </button>
@@ -31,14 +31,14 @@
                         <div class="space-y-4" id="notifications-list">
                             @foreach($notifications as $notification)
                                 <div
-                                    class="notification-item flex items-start space-x-4 p-4 rounded-lg border {{ $notification->read_at ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200' }}"
+                                    class="notification-item flex items-start space-x-4 p-4 rounded-lg border {{ $notification->read_at ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200' }}"
                                     data-id="{{ $notification->id }}"
                                 >
                                     <div class="flex-shrink-0">
                                         @switch($notification->data['type'] ?? '')
                                             @case('project_invitation')
-                                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                    <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                                    <svg class="h-5 w-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                                                     </svg>
                                                 </div>
@@ -83,7 +83,7 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="text-sm font-medium text-gray-900">
                                             @if(isset($notification->data['url']))
-                                                <a href="{{ $notification->data['url'] }}" class="hover:text-indigo-600">
+                                                <a href="{{ $notification->data['url'] }}" class="hover:text-emerald-600">
                                                     @include('partials.notification-text', ['notification' => $notification])
                                                 </a>
                                             @else
@@ -98,7 +98,7 @@
                                     <div class="flex-shrink-0">
                                         @if(!$notification->read_at)
                                             <button
-                                                class="mark-read-btn text-xs text-indigo-600 hover:text-indigo-800"
+                                                class="mark-read-btn text-xs text-emerald-600 hover:text-emerald-800"
                                                 data-id="{{ $notification->id }}"
                                             >
                                                 {{ __('Прочитано') }}
@@ -140,7 +140,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            item.classList.remove('bg-blue-50', 'border-blue-200');
+                            item.classList.remove('bg-emerald-50', 'border-emerald-200');
                             item.classList.add('bg-gray-50', 'border-gray-200');
                             this.outerHTML = '<span class="text-xs text-gray-400">Прочитано</span>';
                             updateNotificationBadge(data.unreadCount);
@@ -165,7 +165,7 @@
                     .then(data => {
                         if (data.success) {
                             document.querySelectorAll('.notification-item').forEach(item => {
-                                item.classList.remove('bg-blue-50', 'border-blue-200');
+                                item.classList.remove('bg-emerald-50', 'border-emerald-200');
                                 item.classList.add('bg-gray-50', 'border-gray-200');
                             });
                             document.querySelectorAll('.mark-read-btn').forEach(btn => {

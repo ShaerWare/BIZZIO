@@ -37,7 +37,7 @@
                                    id="name"
                                    value="{{ old('name', $project->name) }}"
                                    required
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('name') border-red-500 @enderror">
                             @error('name')
                                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -51,7 +51,7 @@
                             <select name="company_id" 
                                     id="company_id"
                                     required
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('company_id') border-red-500 @enderror">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('company_id') border-red-500 @enderror">
                                 <option value="">Выберите компанию</option>
                                 @foreach($companies as $company)
                                     <option value="{{ $company->id }}" {{ old('company_id', $project->company_id) == $company->id ? 'selected' : '' }}>
@@ -73,7 +73,7 @@
                                       id="description"
                                       rows="3"
                                       maxlength="500"
-                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror">{{ old('description', $project->description) }}</textarea>
+                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-red-500 @enderror">{{ old('description', $project->description) }}</textarea>
                             @error('description')
                                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -88,7 +88,7 @@
                             <textarea name="full_description" 
                                       id="full_description"
                                       rows="8"
-                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('full_description') border-red-500 @enderror">{{ old('full_description', $project->full_description) }}</textarea>
+                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('full_description') border-red-500 @enderror">{{ old('full_description', $project->full_description) }}</textarea>
                             @error('full_description')
                                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -115,7 +115,7 @@
                                    name="avatar" 
                                    id="avatar"
                                    accept="image/*"
-                                   class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                   class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                             @error('avatar')
                                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -132,7 +132,7 @@
                                        id="start_date"
                                        value="{{ old('start_date', $project->start_date?->format('Y-m-d')) }}"
                                        required
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
 
                             <div>
@@ -143,7 +143,7 @@
                                        name="end_date" 
                                        id="end_date"
                                        value="{{ old('end_date', $project->end_date?->format('Y-m-d')) }}"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                        {{ $project->is_ongoing ? 'disabled' : '' }}>
                             </div>
                         </div>
@@ -156,7 +156,7 @@
                                        id="is_ongoing"
                                        value="1"
                                        {{ old('is_ongoing', $project->is_ongoing) ? 'checked' : '' }}
-                                       class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     Проект выполняется по настоящее время
                                 </span>
@@ -171,7 +171,7 @@
                             <select name="status" 
                                     id="status"
                                     required
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 @foreach(\App\Models\Project::getStatuses() as $value => $label)
                                     <option value="{{ $value }}" {{ old('status', $project->status) === $value ? 'selected' : '' }}>
                                         {{ $label }}
@@ -192,7 +192,7 @@
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Компания</label>
                                                 <select name="participants[{{ $index }}][company_id]" 
-                                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
                                                         required>
                                                     @foreach($allCompanies as $company)
                                                         <option value="{{ $company->id }}" {{ $participant->id == $company->id ? 'selected' : '' }}>
@@ -204,7 +204,7 @@
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Роль</label>
                                                 <select name="participants[{{ $index }}][role]" 
-                                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
                                                         required>
                                                     @foreach(\App\Models\Project::getParticipantRoles() as $value => $label)
                                                         <option value="{{ $value }}" {{ $participant->pivot->role === $value ? 'selected' : '' }}>
@@ -225,7 +225,7 @@
                                             <label class="block text-sm font-medium text-gray-700 mb-1">Описание участия</label>
                                             <textarea name="participants[{{ $index }}][participation_description]" 
                                                       rows="2"
-                                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">{{ $participant->pivot->participation_description }}</textarea>
+                                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">{{ $participant->pivot->participation_description }}</textarea>
                                         </div>
                                     </div>
                                 @endforeach
@@ -247,7 +247,7 @@
                                 Отмена
                             </a>
                             <button type="submit" 
-                                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                    class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                 </svg>
@@ -274,7 +274,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Компания</label>
                             <select name="participants[${participantIndex}][company_id]" 
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
                                     required>
                                 <option value="">Выберите компанию</option>
                                 ${allCompanies.map(company => `<option value="${company.id}">${company.name}</option>`).join('')}
@@ -283,7 +283,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Роль</label>
                             <select name="participants[${participantIndex}][role]" 
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
                                     required>
                                 ${Object.entries(participantRoles).map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}
                             </select>
@@ -300,7 +300,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Описание участия</label>
                         <textarea name="participants[${participantIndex}][participation_description]" 
                                   rows="2"
-                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"></textarea>
                     </div>
                 </div>
             `;

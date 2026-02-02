@@ -26,7 +26,7 @@
                         <select name="company_id" 
                                 id="company_id" 
                                 required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('company_id') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('company_id') border-red-500 @enderror">
                             <option value="">Выберите компанию...</option>
                             @foreach($companies as $company)
                                 <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>
@@ -50,7 +50,7 @@
                                required
                                value="{{ old('title') }}"
                                placeholder="Например: Поставка офисной мебели"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('title') border-red-500 @enderror">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('title') border-red-500 @enderror">
                         @error('title')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -65,7 +65,7 @@
                                   id="description" 
                                   rows="5"
                                   placeholder="Подробное описание предмета аукциона, требований и условий..."
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -83,7 +83,7 @@
                                        value="open" 
                                        {{ old('type', 'open') === 'open' ? 'checked' : '' }}
                                        onchange="toggleInvitations()"
-                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     Открытая процедура 
                                     <span class="text-gray-500">(любая компания может подать заявку)</span>
@@ -96,7 +96,7 @@
                                        value="closed" 
                                        {{ old('type') === 'closed' ? 'checked' : '' }}
                                        onchange="toggleInvitations()"
-                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     Закрытая процедура 
                                     <span class="text-gray-500">(только приглашённые компании)</span>
@@ -117,7 +117,7 @@
                                 id="invited_companies" 
                                 multiple
                                 size="10"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             @foreach($allCompanies as $company)
                                 <option value="{{ $company->id }}" {{ in_array($company->id, old('invited_companies', [])) ? 'selected' : '' }}>
                                     {{ $company->name }} (ИНН: {{ $company->inn }})
@@ -142,7 +142,7 @@
                                    id="start_date"
                                    required
                                    value="{{ old('start_date', now()->addDay()->format('Y-m-d\TH:i')) }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('start_date') border-red-500 @enderror">
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -159,7 +159,7 @@
                                    id="end_date"
                                    required
                                    value="{{ old('end_date', now()->addWeek()->format('Y-m-d\TH:i')) }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('end_date') border-red-500 @enderror">
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -177,7 +177,7 @@
                                id="trading_start" 
                                required
                                value="{{ old('trading_start', now()->addWeek()->addDay()->format('Y-m-d\TH:i')) }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('trading_start') border-red-500 @enderror">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('trading_start') border-red-500 @enderror">
                         <p class="mt-1 text-sm text-gray-500">Время указывается по UTC +3 (Москва)</p>
                         @error('trading_start')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -197,7 +197,7 @@
                                required
                                value="{{ old('starting_price') }}"
                                placeholder="Введите начальную максимальную цену"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('starting_price') border-red-500 @enderror">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('starting_price') border-red-500 @enderror">
                         <p class="mt-1 text-sm text-gray-500">Участники смогут снижать цену на 0.5% — 5% от текущей</p>
                         @error('starting_price')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -233,7 +233,7 @@
                                        value="draft" 
                                        {{ old('status', 'draft') === 'draft' ? 'checked' : '' }}
                                        onchange="toggleStatusWarning()"
-                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     Сохранить как черновик
                                     <span class="text-gray-500">(можно будет отредактировать позже)</span>
@@ -246,7 +246,7 @@
                                        value="active" 
                                        {{ old('status') === 'active' ? 'checked' : '' }}
                                        onchange="toggleStatusWarning()"
-                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     Опубликовать сразу
                                     <span class="text-gray-500">(начнётся приём заявок)</span>
@@ -282,7 +282,7 @@
                                    name="notification_agreement" 
                                    id="notification_agreement"
                                    required
-                                   class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <label for="notification_agreement" class="ml-3 text-sm text-gray-700">
                                 Я уведомлён, что процедура проведения Аукциона не является торгами и не обязывает к заключению договора. 
                                 Результаты подведения итогов носят информационный характер.

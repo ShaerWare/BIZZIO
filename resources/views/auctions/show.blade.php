@@ -33,7 +33,7 @@
                     <!-- Кнопка редактирования (только для черновиков) -->
                     @if($auction->status === 'draft')
                         <a href="{{ route('auctions.edit', $auction) }}" 
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                        class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
@@ -89,7 +89,7 @@
                                 }
                             } elseif ($auction->status === 'trading') {
                                 $displayLabel = 'Торги';
-                                $displayColor = 'bg-blue-100 text-blue-800';
+                                $displayColor = 'bg-emerald-100 text-emerald-800';
                             } elseif ($auction->status === 'closed') {
                                 $displayLabel = 'Завершён';
                                 $displayColor = 'bg-gray-100 text-gray-800';
@@ -106,7 +106,7 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $displayColor }}">
                                 {{ $displayLabel }}
                             </span>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $auction->type === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $auction->type === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $auction->type === 'open' ? 'Открытая процедура' : 'Закрытая процедура' }}
                             </span>
                             
@@ -146,7 +146,7 @@
                             <div>
                                 <p class="text-xs text-gray-500">Организатор</p>
                                 <a href="{{ route('companies.show', $auction->company) }}" 
-                                   class="text-base font-semibold text-indigo-600 hover:text-indigo-500">
+                                   class="text-base font-semibold text-emerald-600 hover:text-emerald-500">
                                     {{ $auction->company->name }}
                                 </a>
                             </div>
@@ -193,7 +193,7 @@
                         @if($auction->hasMedia('technical_specification'))
                             <a href="{{ $auction->getFirstMediaUrl('technical_specification') }}" 
                                target="_blank"
-                               class="block w-full text-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition mb-4">
+                               class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition mb-4">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                 </svg>
@@ -273,15 +273,15 @@
                         {{-- Левая колонка: Форма ставки --}}
                         <div class="lg:w-1/3">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
                                 Торги в реальном времени
                             </h3>
 
-                            <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                            <div class="bg-emerald-50 rounded-lg p-4 mb-4">
                                 <p class="text-sm text-gray-600">Текущая цена:</p>
-                                <p class="text-3xl font-bold text-blue-600 current-price">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</p>
+                                <p class="text-3xl font-bold text-emerald-600 current-price">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</p>
                                 @if($auction->last_bid_at)
                                     <p class="text-xs text-gray-500 mt-1">
                                         Последняя ставка: {{ $auction->last_bid_at->format('H:i:s') }}
@@ -294,7 +294,7 @@
                                     <form method="POST" action="{{ route('auctions.bids.store', $auction) }}" class="space-y-4">
                                         @csrf
                                         @if($userCompanies->count() > 1)
-                                            <select name="company_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                                            <select name="company_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-blue-500 text-sm">
                                                 <option value="">Выберите компанию...</option>
                                                 @foreach($userCompanies as $company)
                                                     <option value="{{ $company->id }}">{{ $company->name }}</option>
@@ -311,7 +311,7 @@
                                                 @foreach($percentages as $pct)
                                                     @php $newPrice = round($currentPrice * (1 - $pct / 100), 2); @endphp
                                                     <button type="button" onclick="setMainBidPrice({{ $newPrice }})"
-                                                            class="main-bid-btn px-2 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-500 transition">
+                                                            class="main-bid-btn px-2 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-emerald-50 hover:border-emerald-500 transition">
                                                         -{{ $pct }}%
                                                     </button>
                                                 @endforeach
@@ -321,14 +321,14 @@
                                         <input type="number" name="price" id="main-price" step="0.01"
                                                min="{{ $currentPrice - $stepRange['max'] }}" max="{{ $currentPrice - $stepRange['min'] }}"
                                                required placeholder="Ваша ставка (₽)"
-                                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-blue-500">
 
                                         <label class="flex items-start text-xs text-gray-600">
                                             <input type="checkbox" name="acknowledgement" required class="mt-0.5 mr-2 rounded border-gray-300">
                                             Подтверждаю условия участия
                                         </label>
 
-                                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition">
+                                        <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-md hover:bg-emerald-700 transition">
                                             Сделать ставку
                                         </button>
                                     </form>
@@ -340,7 +340,7 @@
                             @else
                                 <div class="bg-gray-50 rounded-lg p-4 text-center">
                                     <p class="text-sm text-gray-600">
-                                        <a href="{{ route('login') }}" class="text-blue-600 hover:underline">Войдите</a>, чтобы участвовать
+                                        <a href="{{ route('login') }}" class="text-emerald-600 hover:underline">Войдите</a>, чтобы участвовать
                                     </p>
                                 </div>
                             @endauth
@@ -367,8 +367,8 @@
                                             @php $userCompanyIds = auth()->check() ? $userCompanies->pluck('id')->toArray() : []; @endphp
                                             @foreach($auction->tradingBids->take(20) as $bid)
                                                 @php $isUserBid = in_array($bid->company_id, $userCompanyIds); @endphp
-                                                <tr class="{{ $isUserBid ? 'bg-blue-50' : '' }}">
-                                                    <td class="px-4 py-2 whitespace-nowrap text-sm {{ $isUserBid ? 'text-blue-600 font-medium' : 'text-gray-900' }}">
+                                                <tr class="{{ $isUserBid ? 'bg-emerald-50' : '' }}">
+                                                    <td class="px-4 py-2 whitespace-nowrap text-sm {{ $isUserBid ? 'text-emerald-600 font-medium' : 'text-gray-900' }}">
                                                         {{ $bid->anonymous_code }}
                                                         @if($isUserBid) <span class="text-xs">(вы)</span> @endif
                                                     </td>
@@ -401,7 +401,7 @@
                 <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
                     <button onclick="showTab('description')" 
                             id="tab-description"
-                            class="tab-button active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            class="tab-button active border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
                     <button onclick="showTab('bids')" 
@@ -567,12 +567,12 @@
                                 </form>
                             </div>
                         @elseif($existingBid)
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-6">
                                 <div class="flex items-center">
-                                    <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-6 h-6 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    <p class="text-blue-800 font-medium">Вы уже подали заявку на этот аукцион</p>
+                                    <p class="text-emerald-800 font-medium">Вы уже подали заявку на этот аукцион</p>
                                 </div>
                             </div>
                         @elseif($auction->status === 'draft')
@@ -621,21 +621,21 @@
                                 </div>
                             </div>
                         @elseif($userCompanies->isEmpty())
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-6">
                                 <div class="flex items-center">
-                                    <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-6 h-6 text-emerald-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                     </svg>
-                                    <p class="text-blue-800">Для подачи заявки необходимо быть модератором компании. <a href="{{ route('companies.create') }}" class="underline font-semibold">Создайте компанию</a> или получите права модератора.</p>
+                                    <p class="text-emerald-800">Для подачи заявки необходимо быть модератором компании. <a href="{{ route('companies.create') }}" class="underline font-semibold">Создайте компанию</a> или получите права модератора.</p>
                                 </div>
                             </div>
                         @endif
                     @else
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6 text-center">
                             <p class="text-gray-700">
-                                <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">Войдите</a> 
+                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a> 
                                 или 
-                                <a href="{{ route('register') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">зарегистрируйтесь</a>, 
+                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>, 
                                 чтобы подать заявку
                             </p>
                         </div>
@@ -681,14 +681,14 @@
                                         @php
                                             $isUserBid = in_array($bid->company_id, $userCompanyIds);
                                         @endphp
-                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : ($isUserBid ? 'bg-blue-50' : '') }}">
+                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : ($isUserBid ? 'bg-emerald-50' : '') }}">
                                             @if($auction->isTrading())
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     {{-- A10: Скрываем названия компаний от всех (включая организатора) до завершения аукциона --}}
-                                                    <span class="text-sm font-medium {{ $isUserBid ? 'text-blue-600' : 'text-gray-900' }}">
+                                                    <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">
                                                         {{ $bid->anonymous_code }}
                                                         @if($isUserBid)
-                                                            <span class="ml-1 text-xs text-blue-500">(вы)</span>
+                                                            <span class="ml-1 text-xs text-emerald-500">(вы)</span>
                                                         @endif
                                                     </span>
                                                 </td>
@@ -703,20 +703,20 @@
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     @if($auction->status === 'closed')
                                                         {{-- После закрытия показываем названия компаний --}}
-                                                        <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                        <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                             {{ $bid->company->name }}
                                                         </a>
                                                     @else
                                                         {{-- A10: На этапе приёма заявок скрываем названия от всех, кроме организатора --}}
                                                         @if($auction->canManage(auth()->user()))
-                                                            <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                            <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                                 {{ $bid->company->name }}
                                                             </a>
                                                         @else
-                                                            <span class="text-sm font-medium {{ $isUserBid ? 'text-blue-600' : 'text-gray-900' }}">
+                                                            <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">
                                                                 Участник {{ $loop->iteration }}
                                                                 @if($isUserBid)
-                                                                    <span class="ml-1 text-xs text-blue-500">(вы)</span>
+                                                                    <span class="ml-1 text-xs text-emerald-500">(вы)</span>
                                                                 @endif
                                                             </span>
                                                         @endif
@@ -766,7 +766,7 @@
                                             @endif
                                             <div>
                                                 <a href="{{ route('companies.show', $invitation->company) }}" 
-                                                   class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                   class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                     {{ $invitation->company->name }}
                                                 </a>
                                                 <p class="text-xs text-gray-500">
@@ -820,9 +820,9 @@
             priceInput.value = price.toFixed(2);
             // Подсветка выбранной кнопки
             document.querySelectorAll('.main-bid-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
+                btn.classList.remove('bg-emerald-100', 'border-emerald-500', 'text-emerald-700');
             });
-            event.target.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+            event.target.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-700');
         }
     }
 
@@ -835,7 +835,7 @@
         
         // Убираем активный класс у всех кнопок
         document.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+            button.classList.remove('active', 'border-emerald-500', 'text-emerald-600');
             button.classList.add('border-transparent', 'text-gray-500');
         });
         
@@ -845,7 +845,7 @@
         // Активируем кнопку
         const activeButton = document.getElementById('tab-' + tabName);
         activeButton.classList.remove('border-transparent', 'text-gray-500');
-        activeButton.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+        activeButton.classList.add('active', 'border-emerald-500', 'text-emerald-600');
     }
 
     @if($auction->isTrading())

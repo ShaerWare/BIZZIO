@@ -29,7 +29,7 @@
                     <p class="mt-1 text-sm text-gray-500">Разместите первый запрос котировок</p>
                     <div class="mt-6">
                         <a href="{{ route('rfqs.create') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                           class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             Разместить первый RFQ
                         </a>
                     </div>
@@ -45,7 +45,7 @@
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-3 mb-2">
                                         <h3 class="text-xl font-semibold text-gray-900">
-                                            <a href="{{ route('rfqs.show', $rfq) }}" class="hover:text-indigo-600 transition">
+                                            <a href="{{ route('rfqs.show', $rfq) }}" class="hover:text-emerald-600 transition">
                                                 {{ $rfq->title }}
                                             </a>
                                         </h3>
@@ -97,7 +97,7 @@
                                 <!-- Кнопки действий -->
                                 <div class="flex space-x-2 ml-4">
                                     <a href="{{ route('rfqs.show', $rfq) }}" 
-                                       class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                       class="inline-flex items-center px-3 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                         Просмотр
                                     </a>
                                     @if($rfq->status === 'draft')

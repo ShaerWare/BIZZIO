@@ -23,7 +23,7 @@
                     <p class="mt-1 text-sm text-gray-500">Найдите подходящий тендер и подайте заявку</p>
                     <div class="mt-6">
                         <a href="{{ route('rfqs.index') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                           class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             Найти тендеры
                         </a>
                     </div>
@@ -39,14 +39,14 @@
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-3 mb-2">
                                         <h3 class="text-xl font-semibold text-gray-900">
-                                            <a href="{{ route('rfqs.show', $bid->rfq) }}" class="hover:text-indigo-600 transition">
+                                            <a href="{{ route('rfqs.show', $bid->rfq) }}" class="hover:text-emerald-600 transition">
                                                 {{ $bid->rfq->title }}
                                             </a>
                                         </h3>
                                         @php
                                             $statusColors = [
                                                 'pending' => 'bg-yellow-100 text-yellow-800',
-                                                'accepted' => 'bg-blue-100 text-blue-800',
+                                                'accepted' => 'bg-emerald-100 text-emerald-800',
                                                 'rejected' => 'bg-red-100 text-red-800',
                                                 'winner' => 'bg-green-100 text-green-800',
                                             ];
@@ -106,7 +106,7 @@
                                 <!-- Кнопка -->
                                 <div class="ml-4">
                                     <a href="{{ route('rfqs.show', $bid->rfq) }}" 
-                                       class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                       class="inline-flex items-center px-3 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                         Просмотр тендера
                                     </a>
                                 </div>

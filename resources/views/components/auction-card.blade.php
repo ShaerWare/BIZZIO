@@ -20,7 +20,7 @@
                 }
             } elseif ($auction->status === 'trading') {
                 $statusLabel = 'Торги';
-                $statusColor = 'bg-blue-100 text-blue-800';
+                $statusColor = 'bg-emerald-100 text-emerald-800';
             } elseif ($auction->status === 'closed') {
                 $statusLabel = 'Завершён';
                 $statusColor = 'bg-gray-100 text-gray-800';
@@ -39,7 +39,7 @@
 
         <!-- Название -->
         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            <a href="{{ route('auctions.show', $auction) }}" class="hover:text-indigo-600 transition-colors">
+            <a href="{{ route('auctions.show', $auction) }}" class="hover:text-emerald-600 transition-colors">
                 {{ Str::limit($auction->title, 60) }}
             </a>
         </h3>
@@ -48,7 +48,7 @@
         <div class="mb-3">
             <p class="text-sm text-gray-600">
                 <span class="font-medium">Организатор:</span> 
-                <a href="{{ route('companies.show', $auction->company) }}" class="text-indigo-600 hover:text-indigo-800">
+                <a href="{{ route('companies.show', $auction->company) }}" class="text-emerald-600 hover:text-emerald-800">
                     {{ $auction->company->name }}
                 </a>
             </p>
@@ -99,7 +99,7 @@
         <!-- Кнопка просмотра -->
         <div class="mt-4">
             <a href="{{ route('auctions.show', $auction) }}" 
-               class="block w-full text-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+               class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 focus:bg-emerald-700 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 Подробнее
             </a>
         </div>

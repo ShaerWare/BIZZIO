@@ -5,7 +5,7 @@
         <!-- Заголовок -->
         <div class="flex justify-between items-start mb-3">
             <h3 class="text-xl font-semibold text-gray-900">
-                <a href="{{ route('rfqs.show', $rfq) }}" class="hover:text-indigo-600 transition">
+                <a href="{{ route('rfqs.show', $rfq) }}" class="hover:text-emerald-600 transition">
                     {{ Str::limit($rfq->title, 60) }}
                 </a>
             </h3>
@@ -45,7 +45,7 @@
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
                 {{ $statusLabel }}
             </span>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $rfq->type === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $rfq->type === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800' }}">
                 {{ $rfq->type === 'open' ? 'Открытая' : 'Закрытая' }}
             </span>
         </div>
@@ -65,7 +65,7 @@
             @endif
             <div>
                 <p class="text-xs text-gray-500">Организатор</p>
-                <a href="{{ route('companies.show', $rfq->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                <a href="{{ route('companies.show', $rfq->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                     {{ Str::limit($rfq->company->name, 30) }}
                 </a>
             </div>
@@ -102,7 +102,7 @@
 
         <!-- Кнопка -->
         <a href="{{ route('rfqs.show', $rfq) }}" 
-           class="block w-full text-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+           class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
             Подробнее
         </a>
     </div>

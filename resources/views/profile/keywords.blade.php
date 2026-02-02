@@ -27,14 +27,14 @@
         @endif
 
         <!-- Информация о фильтрации -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
             <div class="flex">
-                <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800">Как работает фильтрация?</h3>
-                    <div class="mt-2 text-sm text-blue-700">
+                    <h3 class="text-sm font-medium text-emerald-800">Как работает фильтрация?</h3>
+                    <div class="mt-2 text-sm text-emerald-700">
                         <ul class="list-disc list-inside space-y-1">
                             <li>Если указано <strong>одно</strong> ключевое слово — показываем новости, содержащие это слово</li>
                             <li>Если указано <strong>несколько</strong> ключевых слов — показываем новости, содержащие <strong>ВСЕ</strong> эти слова одновременно</li>
@@ -62,14 +62,14 @@
                                    placeholder="Например: искусственный интеллект"
                                    maxlength="50"
                                    required
-                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('keyword') border-red-500 @enderror">
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('keyword') border-red-500 @enderror">
                             @error('keyword')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
                         
                         <button type="submit" 
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
@@ -93,7 +93,7 @@
                     
                     @if($keywords->count() > 0)
                         <a href="{{ route('news.index', ['apply_keywords' => 1]) }}" 
-                           class="text-sm text-indigo-600 hover:text-indigo-500">
+                           class="text-sm text-emerald-600 hover:text-emerald-500">
                             Смотреть новости →
                         </a>
                     @endif

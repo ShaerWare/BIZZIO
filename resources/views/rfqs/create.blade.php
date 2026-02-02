@@ -26,7 +26,7 @@
                         <select name="company_id" 
                                 id="company_id" 
                                 required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('company_id') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('company_id') border-red-500 @enderror">
                             <option value="">Выберите компанию</option>
                             @foreach($companies as $company)
                                 <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>
@@ -49,7 +49,7 @@
                                id="title" 
                                required
                                value="{{ old('title') }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('title') border-red-500 @enderror">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('title') border-red-500 @enderror">
                         @error('title')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -63,7 +63,7 @@
                         <textarea name="description" 
                                   id="description" 
                                   rows="5"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -80,7 +80,7 @@
                                        name="type" 
                                        value="open" 
                                        {{ old('type', 'open') === 'open' ? 'checked' : '' }}
-                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     <strong>Открытая</strong> — любая компания может подать заявку
                                 </span>
@@ -90,7 +90,7 @@
                                        name="type" 
                                        value="closed"
                                        {{ old('type') === 'closed' ? 'checked' : '' }}
-                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <span class="ml-2 text-sm text-gray-700">
                                     <strong>Закрытая</strong> — только приглашённые компании
                                 </span>
@@ -108,7 +108,7 @@
                                     name="status" 
                                     value="draft" 
                                     {{ old('status', 'draft') === 'draft' ? 'checked' : '' }}
-                                    class="mt-1 rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <div class="ml-3">
                                     <span class="text-sm font-semibold text-gray-900">Черновик</span>
                                     <p class="text-xs text-gray-500 mt-1">
@@ -121,7 +121,7 @@
                                     name="status" 
                                     value="active"
                                     {{ old('status') === 'active' ? 'checked' : '' }}
-                                    class="mt-1 rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <div class="ml-3">
                                     <span class="text-sm font-semibold text-gray-900">Активный (опубликовать сразу)</span>
                                     <p class="text-xs text-gray-500 mt-1">
@@ -143,7 +143,7 @@
                         <select name="invited_companies[]" 
                                 multiple 
                                 size="8"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             @foreach($availableCompanies as $company)
                                 <option value="{{ $company->id }}" 
                                         {{ in_array($company->id, old('invited_companies', [])) ? 'selected' : '' }}>
@@ -165,7 +165,7 @@
                                    id="start_date"
                                    required
                                    value="{{ old('start_date') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-500 @enderror">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('start_date') border-red-500 @enderror">
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -180,7 +180,7 @@
                                    id="end_date"
                                    required
                                    value="{{ old('end_date') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-500 @enderror">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('end_date') border-red-500 @enderror">
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -206,7 +206,7 @@
                                        min="0" 
                                        max="100" 
                                        step="0.01"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('weight_price') border-red-500 @enderror">
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_price') border-red-500 @enderror">
                                 @error('weight_price')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -223,7 +223,7 @@
                                        min="0" 
                                        max="100" 
                                        step="0.01"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('weight_deadline') border-red-500 @enderror">
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_deadline') border-red-500 @enderror">
                                 @error('weight_deadline')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -240,7 +240,7 @@
                                        min="0" 
                                        max="100" 
                                        step="0.01"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('weight_advance') border-red-500 @enderror">
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_advance') border-red-500 @enderror">
                                 @error('weight_advance')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -277,7 +277,7 @@
                             <input type="checkbox" 
                                    id="agreement" 
                                    required
-                                   class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <span class="ml-2 text-sm text-gray-700">
                                 Я уведомлён, что процедура проведения Запроса котировок не является публичной офертой и не обязывает к заключению договора. Организатор вправе отменить процедуру на любом этапе без объяснения причин.
                             </span>
