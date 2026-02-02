@@ -72,7 +72,7 @@
                                             {{ $auction->number }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-900">
-                                            <a href="{{ route('auctions.show', $auction) }}" class="text-indigo-600 hover:text-indigo-900">
+                                            <a href="{{ route('auctions.show', $auction) }}" class="text-emerald-600 hover:text-emerald-900">
                                                 {{ Str::limit($auction->title, 40) }}
                                             </a>
                                         </td>
@@ -84,7 +84,7 @@
                                                 $statusColors = [
                                                     'draft' => 'bg-yellow-100 text-yellow-800',
                                                     'active' => 'bg-green-100 text-green-800',
-                                                    'trading' => 'bg-blue-100 text-blue-800',
+                                                    'trading' => 'bg-emerald-100 text-emerald-800',
                                                     'closed' => 'bg-gray-100 text-gray-800',
                                                 ];
                                                 $statusLabels = [
@@ -106,7 +106,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('auctions.show', $auction) }}" 
-                                               class="text-indigo-600 hover:text-indigo-900">
+                                               class="text-emerald-600 hover:text-emerald-900">
                                                 Просмотр
                                             </a>
                                         </td>

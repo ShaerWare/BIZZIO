@@ -14,7 +14,7 @@
                 @if($project->canManage(auth()->user()))
                     <div class="flex space-x-2">
                         <a href="{{ route('projects.edit', $project->slug) }}" 
-                           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                           class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
@@ -51,7 +51,7 @@
                                  alt="{{ $project->name }}" 
                                  class="w-full md:w-64 h-48 object-cover rounded-lg">
                         @else
-                            <div class="w-full md:w-64 h-48 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <div class="w-full md:w-64 h-48 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg flex items-center justify-center">
                                 <svg class="w-24 h-24 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -65,7 +65,7 @@
                         @php
                             $statusColors = [
                                 'active' => 'bg-green-100 text-green-800',
-                                'completed' => 'bg-blue-100 text-blue-800',
+                                'completed' => 'bg-emerald-100 text-emerald-800',
                                 'cancelled' => 'bg-red-100 text-red-800',
                             ];
                         @endphp
@@ -89,7 +89,7 @@
                             <div>
                                 <p class="text-xs text-gray-500">Компания-заказчик</p>
                                 <a href="{{ route('companies.show', $project->company->id) }}" 
-                                   class="text-base font-semibold text-indigo-600 hover:text-indigo-500">
+                                   class="text-base font-semibold text-emerald-600 hover:text-emerald-500">
                                     {{ $project->company->name }}
                                 </a>
                             </div>
@@ -122,7 +122,7 @@
                 <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
                     <button onclick="showTab('description')" 
                             id="tab-description"
-                            class="tab-button active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            class="tab-button active border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
                     <button onclick="showTab('participants')" 
@@ -183,7 +183,7 @@
 
                                     <div class="flex-1">
                                         <a href="{{ route('companies.show', $participant->slug) }}" 
-                                           class="text-lg font-semibold text-indigo-600 hover:text-indigo-500">
+                                           class="text-lg font-semibold text-emerald-600 hover:text-emerald-500">
                                             {{ $participant->name }}
                                         </a>
                                         
@@ -217,7 +217,7 @@
                                       rows="3" 
                                       placeholder="Написать комментарий..."
                                       required
-                                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
                             
                             @error('body')
                                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -225,7 +225,7 @@
 
                             <div class="mt-2 flex justify-end">
                                 <button type="submit" 
-                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                        class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                     Отправить комментарий
                                 </button>
                             </div>
@@ -233,9 +233,9 @@
                     @else
                         <div class="bg-gray-50 rounded-lg p-4 mb-6 text-center">
                             <p class="text-gray-600">
-                                <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">Войдите</a> 
+                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a> 
                                 или 
-                                <a href="{{ route('register') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">зарегистрируйтесь</a>, 
+                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>, 
                                 чтобы оставить комментарий
                             </p>
                         </div>
@@ -267,7 +267,7 @@
         
         // Убираем активный класс у всех кнопок
         document.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+            button.classList.remove('active', 'border-emerald-500', 'text-emerald-600');
             button.classList.add('border-transparent', 'text-gray-500');
         });
         
@@ -277,7 +277,7 @@
         // Активируем кнопку
         const activeButton = document.getElementById('tab-' + tabName);
         activeButton.classList.remove('border-transparent', 'text-gray-500');
-        activeButton.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+        activeButton.classList.add('active', 'border-emerald-500', 'text-emerald-600');
     }
 
     // ========================

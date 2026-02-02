@@ -10,8 +10,8 @@
                     $modelName = class_basename($activity->subject_type);
                     switch($modelName) {
                         case 'Company':
-                            $iconColor = 'text-blue-500';
-                            $bgColor = 'bg-blue-100';
+                            $iconColor = 'text-emerald-500';
+                            $bgColor = 'bg-emerald-100';
                             break;
                         case 'Project':
                             $iconColor = 'text-green-500';
@@ -26,8 +26,8 @@
                             $bgColor = 'bg-purple-100';
                             break;
                         case 'Comment':
-                            $iconColor = 'text-indigo-500';
-                            $bgColor = 'bg-indigo-100';
+                            $iconColor = 'text-emerald-500';
+                            $bgColor = 'bg-emerald-100';
                             break;
                     }
                 }
@@ -135,7 +135,7 @@
 
                 <!-- Ссылка на объект -->
                 @if($subjectUrl && $subjectName)
-                    <a href="{{ $subjectUrl }}" class="font-medium text-indigo-600 hover:text-indigo-800">
+                    <a href="{{ $subjectUrl }}" class="font-medium text-emerald-600 hover:text-emerald-800">
                         "{{ $subjectName }}"
                     </a>
                 @elseif($subjectName)

@@ -52,7 +52,7 @@
                                id="name" 
                                value="{{ old('name', $company->name) }}"
                                required
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('name') border-red-500 @enderror">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm @error('name') border-red-500 @enderror">
                         @error('name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -71,7 +71,7 @@
                                pattern="[0-9]{10}([0-9]{2})?"
                                required
                                placeholder="1234567890"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('inn') border-red-500 @enderror">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm @error('inn') border-red-500 @enderror">
                         <p class="mt-1 text-xs text-gray-500">ИНН: 10 цифр (юрлицо/ИП) или 12 цифр (физлицо)</p>
                         @error('inn')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -85,7 +85,7 @@
                         </label>
                         <select name="legal_form" 
                                 id="legal_form"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
                             <option value="">Не выбрано</option>
                             <option value="ООО" {{ old('legal_form', $company->legal_form) == 'ООО' ? 'selected' : '' }}>ООО</option>
                             <option value="АО" {{ old('legal_form', $company->legal_form) == 'АО' ? 'selected' : '' }}>АО</option>
@@ -106,7 +106,7 @@
                         </label>
                         <select name="industry_id"
                                 id="industry_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm">
                             <option value="">Не выбрано</option>
                             @foreach($industries as $industry)
                                 <option value="{{ $industry->id }}" {{ old('industry_id', $company->industry_id) == $industry->id ? 'selected' : '' }}>
@@ -129,7 +129,7 @@
                                   rows="3"
                                   maxlength="500"
                                   placeholder="Кратко опишите деятельность компании (до 500 символов)"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('short_description') border-red-500 @enderror">{{ old('short_description', $company->short_description) }}</textarea>
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm @error('short_description') border-red-500 @enderror">{{ old('short_description', $company->short_description) }}</textarea>
                         <p class="mt-1 text-xs text-gray-500">Максимум 500 символов</p>
                         @error('short_description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -145,7 +145,7 @@
                                   id="full_description" 
                                   rows="6"
                                   placeholder="Подробное описание компании, её деятельности, достижений и преимуществ"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('full_description') border-red-500 @enderror">{{ old('full_description', $company->full_description) }}</textarea>
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm @error('full_description') border-red-500 @enderror">{{ old('full_description', $company->full_description) }}</textarea>
                         @error('full_description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -172,7 +172,7 @@
                                name="logo" 
                                id="logo" 
                                accept="image/*"
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                         <p class="mt-1 text-xs text-gray-500">Форматы: JPG, PNG. Максимальный размер: 2MB</p>
                         @error('logo')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -199,7 +199,7 @@
                                         </div>
                                         <a href="{{ $document->getUrl() }}" 
                                            target="_blank"
-                                           class="text-indigo-600 hover:text-indigo-900 text-sm">
+                                           class="text-emerald-600 hover:text-emerald-900 text-sm">
                                             Скачать
                                         </a>
                                     </div>
@@ -218,7 +218,7 @@
                                id="documents" 
                                accept=".pdf"
                                multiple
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                         <p class="mt-1 text-xs text-gray-500">Максимум 10 файлов по 10MB</p>
                         @error('documents.*')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -228,11 +228,11 @@
                     <!-- Кнопки -->
                     <div class="flex items-center justify-end gap-4 pt-4 border-t">
                         <a href="{{ route('companies.show', $company) }}" 
-                           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                           class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             Отмена
                         </a>
                         <button type="submit" 
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             Сохранить изменения
                         </button>
                     </div>

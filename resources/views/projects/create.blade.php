@@ -34,7 +34,7 @@
                                id="name"
                                value="{{ old('name') }}"
                                required
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         @error('name')
                             <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -46,7 +46,7 @@
                             Компания-заказчик <span class="text-red-500">*</span>
                         </label>
                         <select name="company_id" id="company_id" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <option value="">Выберите компанию</option>
                             @foreach($companies as $company)
                                 <option value="{{ $company->id }}">{{ $company->name }}</option>
@@ -58,21 +58,21 @@
                     <div class="mb-6">
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Краткое описание</label>
                         <textarea name="description" id="description" rows="3" maxlength="500"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('description') }}</textarea>
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('description') }}</textarea>
                     </div>
 
                     <!-- Полное описание -->
                     <div class="mb-6">
                         <label for="full_description" class="block text-sm font-medium text-gray-700 mb-2">Полное описание</label>
                         <textarea name="full_description" id="full_description" rows="8"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('full_description') }}</textarea>
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('full_description') }}</textarea>
                     </div>
 
                     <!-- Аватар -->
                     <div class="mb-6">
                         <label for="avatar" class="block text-sm font-medium text-gray-700 mb-2">Аватар проекта</label>
                         <input type="file" name="avatar" id="avatar" accept="image/*"
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                     </div>
 
                     <!-- Даты -->
@@ -80,12 +80,12 @@
                         <div>
                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Дата начала <span class="text-red-500">*</span></label>
                             <input type="date" name="start_date" id="start_date" required
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
                         <div>
                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">Дата окончания</label>
                             <input type="date" name="end_date" id="end_date"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
                     </div>
 
@@ -93,7 +93,7 @@
                     <div class="mb-6">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_ongoing" id="is_ongoing" value="1"
-                                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <span class="ml-2 text-sm text-gray-700">Проект выполняется по настоящее время</span>
                         </label>
                     </div>
@@ -102,7 +102,7 @@
                     <div class="mb-6">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Статус проекта <span class="text-red-500">*</span></label>
                         <select name="status" id="status" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             @foreach(\App\Models\Project::getStatuses() as $value => $label)
                                 <option value="{{ $value }}" {{ old('status', 'active') === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -153,7 +153,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Компания</label>
                         <select name="participants[${participantIndex}][company_id]" required
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">
                             <option value="">Выберите компанию</option>
                             ${allCompanies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                         </select>
@@ -161,7 +161,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Роль</label>
                         <select name="participants[${participantIndex}][role]" required
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">
                             ${Object.entries(participantRoles).map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
                         </select>
                     </div>
@@ -175,7 +175,7 @@
                 <div class="mt-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Описание участия</label>
                     <textarea name="participants[${participantIndex}][participation_description]" rows="2"
-                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"></textarea>
                 </div>
             </div>
         `;

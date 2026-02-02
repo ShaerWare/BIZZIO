@@ -35,7 +35,7 @@
                                    id="search"
                                    value="{{ request('search') }}"
                                    placeholder="Введите название проекта"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
 
                         <!-- Фильтр по статусу -->
@@ -45,7 +45,7 @@
                             </label>
                             <select name="status" 
                                     id="status"
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все статусы</option>
                                 @foreach(\App\Models\Project::getStatuses() as $value => $label)
                                     <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>
@@ -62,7 +62,7 @@
                             </label>
                             <select name="company_id" 
                                     id="company_id"
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все компании</option>
                                 @foreach($companies as $company)
                                     <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
@@ -79,7 +79,7 @@
                             Сбросить
                         </a>
                         <button type="submit" 
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             Применить фильтры
                         </button>
                     </div>
@@ -99,7 +99,7 @@
                     @auth
                         <div class="mt-6">
                             <a href="{{ route('projects.create') }}" 
-                               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                               class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                 Создать первый проект
                             </a>
                         </div>

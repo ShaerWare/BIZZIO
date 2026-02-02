@@ -34,7 +34,7 @@
                                  alt="{{ $company->name }}"
                                  class="w-24 h-24 rounded-lg object-cover shadow-md">
                         @else
-                            <div class="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                            <div class="w-24 h-24 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
                                 <span class="text-4xl font-bold text-white">
                                     {{ substr($company->name, 0, 1) }}
                                 </span>
@@ -87,7 +87,7 @@
                             @if($company->canManageModerators(auth()->user()))
                                 <!-- Кнопка редактирования (для модераторов) -->
                                 <a href="{{ route('companies.edit', $company) }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                   class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
@@ -143,7 +143,7 @@
                 <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
                     <button onclick="showTab('description')" 
                             id="tab-description"
-                            class="tab-button border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            class="tab-button border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
                     <button onclick="showTab('documents')"
@@ -248,15 +248,15 @@
                                                 file:mr-4 file:py-2 file:px-4
                                                 file:rounded-md file:border-0
                                                 file:text-sm file:font-semibold
-                                                file:bg-indigo-50 file:text-indigo-700
-                                                hover:file:bg-indigo-100 cursor-pointer"
+                                                file:bg-emerald-50 file:text-emerald-700
+                                                hover:file:bg-emerald-100 cursor-pointer"
                                         >
                                         @error('photos.*')
                                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                         @enderror
                                         <p class="mt-1 text-xs text-gray-500">Можно выбрать несколько файлов. JPG, PNG, GIF или WebP. Максимум 5 МБ каждый.</p>
                                     </div>
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 focus:bg-emerald-700 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                         </svg>
@@ -323,8 +323,8 @@
                         <div class="space-y-3">
                             @foreach($company->moderators as $moderator)
                                 <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                                    <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
-                                        <span class="text-base font-semibold text-indigo-600">
+                                    <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4">
+                                        <span class="text-base font-semibold text-emerald-600">
                                             {{ strtoupper(substr($moderator->name, 0, 2)) }}
                                         </span>
                                     </div>
@@ -332,7 +332,7 @@
                                         <p class="text-sm font-semibold text-gray-900">{{ $moderator->name }}</p>
                                         <p class="text-xs text-gray-500">{{ $moderator->email }}</p>
                                         @if($moderator->pivot->role)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 mt-1">
                                                 {{ $moderator->pivot->role }}
                                             </span>
                                         @endif
@@ -373,8 +373,8 @@
                                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                                 <div class="flex items-start justify-between">
                                                     <div class="flex items-start flex-1">
-                                                        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
-                                                            <span class="text-lg font-semibold text-indigo-600">
+                                                        <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4">
+                                                            <span class="text-lg font-semibold text-emerald-600">
                                                                 {{ strtoupper(substr($joinRequest->user->name, 0, 2)) }}
                                                             </span>
                                                         </div>
@@ -438,7 +438,7 @@
                                             <select name="user_id" 
                                                     id="user_id" 
                                                     required
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                                 <option value="">Выберите...</option>
                                                 @foreach(\App\Models\User::whereNotIn('id', $company->moderators->pluck('id'))->orderBy('name')->get() as $user)
                                                     <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
@@ -454,7 +454,7 @@
                                                    name="role" 
                                                    id="role"
                                                    placeholder="Например: Менеджер"
-                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                         </div>
                                         
                                         <div class="flex items-end">
@@ -462,14 +462,14 @@
                                                 <input type="checkbox" 
                                                        name="can_manage_moderators" 
                                                        value="1"
-                                                       class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                       class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                                 <span class="ml-2 text-sm text-gray-700">Может управлять модераторами</span>
                                             </label>
                                         </div>
                                     </div>
                                     
                                     <button type="submit" 
-                                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                            class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                         Добавить модератора
                                     </button>
                                 </form>
@@ -486,8 +486,8 @@
                                         @foreach($company->moderators as $moderator)
                                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                                                 <div class="flex items-center flex-1">
-                                                    <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
-                                                        <span class="text-base font-semibold text-indigo-600">
+                                                    <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4">
+                                                        <span class="text-base font-semibold text-emerald-600">
                                                             {{ strtoupper(substr($moderator->name, 0, 2)) }}
                                                         </span>
                                                     </div>
@@ -497,7 +497,7 @@
                                                         
                                                         <div class="flex items-center space-x-2 mt-1">
                                                             @if($moderator->pivot->role)
-                                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
                                                                     {{ $moderator->pivot->role }}
                                                                 </span>
                                                             @endif
@@ -565,7 +565,7 @@
                            name="desired_role" 
                            id="desired_role"
                            placeholder="Например: Менеджер по продажам"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                 </div>
                 
                 <div class="mb-4">
@@ -576,7 +576,7 @@
                               id="message"
                               rows="4"
                               placeholder="Расскажите о себе..."
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
                 </div>
                 
                 <div class="flex justify-end space-x-2">
@@ -623,7 +623,7 @@
                            name="role"
                            id="approve_role"
                            placeholder="Например: Менеджер"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                     <p class="text-xs text-gray-500 mt-1">Оставьте пустым, чтобы использовать роль из запроса</p>
                 </div>
 
@@ -671,7 +671,7 @@
                               id="review_comment"
                               rows="3"
                               placeholder="Укажите причину..."
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
                 </div>
 
                 <div class="flex justify-end space-x-2">
@@ -701,7 +701,7 @@ function showTab(tabName) {
     
     // Убрать активное состояние у всех кнопок
     document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('border-indigo-500', 'text-indigo-600');
+        button.classList.remove('border-emerald-500', 'text-emerald-600');
         button.classList.add('border-transparent', 'text-gray-500');
     });
     
@@ -711,7 +711,7 @@ function showTab(tabName) {
     // Активировать выбранную кнопку
     const activeButton = document.getElementById('tab-' + tabName);
     activeButton.classList.remove('border-transparent', 'text-gray-500');
-    activeButton.classList.add('border-indigo-500', 'text-indigo-600');
+    activeButton.classList.add('border-emerald-500', 'text-emerald-600');
 }
 
 // Модальное окно присоединения

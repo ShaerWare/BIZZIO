@@ -33,7 +33,7 @@
                     <!-- Кнопка редактирования (только для черновиков) -->
                     @if($rfq->status === 'draft')
                         <a href="{{ route('rfqs.edit', $rfq) }}" 
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                        class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
@@ -87,7 +87,7 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$rfq->status] }}">
                                 {{ $statusLabels[$rfq->status] }}
                             </span>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $rfq->type === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $rfq->type === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $rfq->type === 'open' ? 'Открытая процедура' : 'Закрытая процедура' }}
                             </span>
                         </div>
@@ -108,7 +108,7 @@
                             <div>
                                 <p class="text-xs text-gray-500">Организатор</p>
                                 <a href="{{ route('companies.show', $rfq->company) }}" 
-                                   class="text-base font-semibold text-indigo-600 hover:text-indigo-500">
+                                   class="text-base font-semibold text-emerald-600 hover:text-emerald-500">
                                     {{ $rfq->company->name }}
                                 </a>
                             </div>
@@ -150,7 +150,7 @@
 
                             {{-- T5: Формула расчёта балла --}}
                             <details class="mt-3">
-                                <summary class="text-xs text-indigo-600 cursor-pointer hover:text-indigo-800">
+                                <summary class="text-xs text-emerald-600 cursor-pointer hover:text-emerald-800">
                                     Как рассчитывается итоговый балл?
                                 </summary>
                                 <div class="mt-2 p-3 bg-white rounded border border-gray-200 text-xs text-gray-600">
@@ -168,7 +168,7 @@
                         @if($rfq->hasMedia('technical_specification'))
                             <a href="{{ $rfq->getFirstMediaUrl('technical_specification') }}" 
                                target="_blank"
-                               class="block w-full text-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition mb-4">
+                               class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition mb-4">
                                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                 </svg>
@@ -184,9 +184,9 @@
                                     <input type="text" readonly
                                            id="rfq-link"
                                            value="{{ route('rfqs.show', $rfq) }}"
-                                           class="flex-1 text-xs rounded border-gray-300 bg-white focus:ring-indigo-500">
+                                           class="flex-1 text-xs rounded border-gray-300 bg-white focus:ring-emerald-500">
                                     <button type="button" onclick="copyRfqLink()"
-                                            class="px-3 py-2 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition">
+                                            class="px-3 py-2 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                         </svg>
@@ -237,7 +237,7 @@
                 <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
                     <button onclick="showTab('description')" 
                             id="tab-description"
-                            class="tab-button active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            class="tab-button active border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
                     <button onclick="showTab('bids')" 
@@ -368,7 +368,7 @@
                 </div>
 
                 {{-- T5: Информация о формуле расчёта в форме заявки --}}
-                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">
                     <p class="font-medium mb-1">Как оценивается ваша заявка:</p>
                     <p>• Чем ниже цена — тем больше баллов (вес {{ $rfq->weight_price }}%)</p>
                     <p>• Чем короче срок — тем больше баллов (вес {{ $rfq->weight_deadline }}%)</p>
@@ -401,22 +401,22 @@
             </form>
         </div>
     @elseif($alreadyBid)
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-6">
             <div class="flex items-center">
-                <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <p class="text-blue-800 font-medium">Вы уже подали заявку на этот запрос котировок</p>
+                <p class="text-emerald-800 font-medium">Вы уже подали заявку на этот запрос котировок</p>
             </div>
         </div>
     @endif
 @endauth
                     @elseif(!auth()->check())
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6 text-center">
                             <p class="text-gray-700">
-                                <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">Войдите</a> 
+                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a> 
                                 или 
-                                <a href="{{ route('register') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">зарегистрируйтесь</a>, 
+                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>, 
                                 чтобы подать заявку
                             </p>
                         </div>
@@ -461,19 +461,19 @@
                                         @php
                                             $isUserBid = in_array($bid->company_id, $userCompanyIds);
                                         @endphp
-                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : ($isUserBid ? 'bg-blue-50' : '') }}">
+                                        <tr class="{{ $bid->status === 'winner' ? 'bg-green-50' : ($isUserBid ? 'bg-emerald-50' : '') }}">
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @if($canSeeNames)
                                                     {{-- T2: После закрытия или для организатора показываем названия --}}
-                                                    <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                    <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                         {{ $bid->company->name }}
                                                     </a>
                                                 @else
                                                     {{-- T2: На активном этапе показываем анонимный номер --}}
-                                                    <span class="text-sm font-medium {{ $isUserBid ? 'text-blue-600' : 'text-gray-900' }}">
+                                                    <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">
                                                         Участник {{ $index + 1 }}
                                                         @if($isUserBid)
-                                                            <span class="text-xs text-blue-500">(вы)</span>
+                                                            <span class="text-xs text-emerald-500">(вы)</span>
                                                         @endif
                                                     </span>
                                                 @endif
@@ -550,7 +550,7 @@
                                             @endif
                                             <div>
                                                 <a href="{{ route('companies.show', $invitation->company) }}" 
-                                                   class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                                   class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                     {{ $invitation->company->name }}
                                                 </a>
                                                 <p class="text-xs text-gray-500">
@@ -605,7 +605,7 @@
         
         // Убираем активный класс у всех кнопок
         document.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+            button.classList.remove('active', 'border-emerald-500', 'text-emerald-600');
             button.classList.add('border-transparent', 'text-gray-500');
         });
         
@@ -615,7 +615,7 @@
         // Активируем кнопку
         const activeButton = document.getElementById('tab-' + tabName);
         activeButton.classList.remove('border-transparent', 'text-gray-500');
-        activeButton.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+        activeButton.classList.add('active', 'border-emerald-500', 'text-emerald-600');
     }
 </script>
 @endpush

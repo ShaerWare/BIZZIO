@@ -84,7 +84,7 @@ html {
 }
 
 .nav-link:hover {
-    color: #5081ff;
+    color: #34d399;
 }
 
 /* Мобильный toggle */
@@ -156,10 +156,10 @@ html {
 .features-block {
     flex: 1;
     padding: 50px 40px;
-    background: #4169E1;
+    background: linear-gradient(135deg, #28a745 0%, #81b407 100%);
     color: white;
-    display: flex;  
-    flex-direction: column;  
+    display: flex;
+    flex-direction: column;
     justify-content: center;
 }
 
@@ -191,7 +191,7 @@ html {
 .feature-icon svg {
     width: 35px;
     height: 35px;
-    fill: #2A5BDD;
+    fill: #28a745;
 }
 
 .feature-info h4 {
@@ -264,7 +264,7 @@ html {
 
 .form-control:focus {
     outline: none;
-    border-color: #2A5BDD;
+    border-color: #28a745;
 }
 
 /* Форма опций */
@@ -288,7 +288,7 @@ html {
 }
 
 .form-options a {
-    color: #2A5BDD;
+    color: #28a745;
     text-decoration: none;
     font-weight: 500;
 }
@@ -297,7 +297,7 @@ html {
 .btn-login {
     width: 100%;
     padding: 15px;
-    background: #2A5BDD;
+    background: linear-gradient(135deg, #28a745 0%, #81b407 100%);
     border: none;
     border-radius: 12px;
     color: white;
@@ -308,7 +308,7 @@ html {
 }
 
 .btn-login:hover {
-    background: #1d4bbd;
+    background: linear-gradient(135deg, #22963e 0%, #6b9a06 100%);
     transform: translateY(-2px);
 }
 
@@ -323,7 +323,7 @@ html {
 }
 
 .register-link a {
-    color: #2A5BDD;
+    color: #28a745;
     font-weight: 600;
     text-decoration: none;
     font-size: 1rem;

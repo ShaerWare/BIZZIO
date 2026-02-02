@@ -37,7 +37,7 @@
                                    id="search"
                                    value="{{ request('search') }}"
                                    placeholder="Название или номер"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
 
                         <!-- Статус -->
@@ -47,7 +47,7 @@
                             </label>
                             <select name="status" 
                                     id="status"
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все статусы</option>
                                 <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Активные</option>
                                 <option value="closed" {{ request('status') === 'closed' ? 'selected' : '' }}>Завершённые</option>
@@ -62,7 +62,7 @@
                             </label>
                             <select name="type" 
                                     id="type"
-                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все типы</option>
                                 <option value="open" {{ request('type') === 'open' ? 'selected' : '' }}>Открытые</option>
                                 <option value="closed" {{ request('type') === 'closed' ? 'selected' : '' }}>Закрытые</option>
@@ -72,7 +72,7 @@
                         <!-- Кнопки -->
                         <div class="flex items-end space-x-2">
                             <button type="submit" 
-                                    class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                    class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                 Применить
                             </button>
                             <a href="{{ route('rfqs.index') }}" 
@@ -98,7 +98,7 @@
                         @if(auth()->user()->isModeratorOfAnyCompany())
                             <div class="mt-6">
                                 <a href="{{ route('rfqs.create') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                   class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                     Разместить первый RFQ
                                 </a>
                             </div>

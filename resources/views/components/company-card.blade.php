@@ -9,7 +9,7 @@
                      alt="{{ $company->name }}"
                      class="w-16 h-16 rounded-lg object-cover">
             @else
-                <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg flex items-center justify-center">
                     <span class="text-2xl font-bold text-white">
                         {{ substr($company->name, 0, 1) }}
                     </span>
@@ -32,7 +32,7 @@
 
         <!-- Название -->
         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            <a href="{{ route('companies.show', $company) }}" class="hover:text-indigo-600 transition-colors">
+            <a href="{{ route('companies.show', $company) }}" class="hover:text-emerald-600 transition-colors">
                 {{ $company->name }}
             </a>
         </h3>
@@ -46,7 +46,7 @@
                 ИНН: {{ $company->inn }}
             </span>
             @if($company->legal_form)
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
                     {{ $company->legal_form }}
                 </span>
             @endif
@@ -75,7 +75,7 @@
                 {{ $company->creator->name }}
             </div>
             <a href="{{ route('companies.show', $company) }}" 
-               class="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center">
+               class="text-sm font-medium text-emerald-600 hover:text-emerald-500 flex items-center">
                 Подробнее
                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

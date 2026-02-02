@@ -33,10 +33,10 @@
                 <textarea name="body" 
                           rows="3"
                           required
-                          class="w-full mt-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">{{ $comment->body }}</textarea>
+                          class="w-full mt-2 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">{{ $comment->body }}</textarea>
                 <div class="mt-2 flex space-x-2">
                     <button type="submit" 
-                            class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                            class="inline-flex items-center px-3 py-1.5 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                         Сохранить
                     </button>
                     <button type="button" 
@@ -52,7 +52,7 @@
                     <!-- Кнопки управления (скрыты при редактировании) -->
                     <div class="comment-actions-{{ $comment->id }} mt-2 flex space-x-3">
                         <button onclick="editComment({{ $comment->id }})" 
-                                class="text-xs text-indigo-600 hover:text-indigo-500 font-medium">
+                                class="text-xs text-emerald-600 hover:text-emerald-500 font-medium">
                             Редактировать
                         </button>
                         <form method="POST" 

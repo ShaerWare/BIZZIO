@@ -23,7 +23,7 @@
                     <p class="mt-1 text-sm text-gray-500">Вы ещё не отправляли запросы на присоединение к компаниям</p>
                     <div class="mt-6">
                         <a href="{{ route('companies.index') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                           class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             Найти компанию
                         </a>
                     </div>
@@ -39,7 +39,7 @@
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-3 mb-2">
                                         <h3 class="text-xl font-semibold text-gray-900">
-                                            <a href="{{ route('companies.show', $request->company) }}" class="hover:text-indigo-600 transition">
+                                            <a href="{{ route('companies.show', $request->company) }}" class="hover:text-emerald-600 transition">
                                                 {{ $request->company->name }}
                                             </a>
                                         </h3>
@@ -67,7 +67,7 @@
                                     @if($request->desired_role)
                                         <div class="mb-2">
                                             <span class="text-xs text-gray-500">Желаемая роль:</span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 ml-1">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 ml-1">
                                                 {{ $request->desired_role }}
                                             </span>
                                         </div>
@@ -121,7 +121,7 @@
                                         </form>
                                     @else
                                         <a href="{{ route('companies.show', $request->company) }}" 
-                                           class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                           class="inline-flex items-center px-3 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                             Просмотр компании
                                         </a>
                                     @endif

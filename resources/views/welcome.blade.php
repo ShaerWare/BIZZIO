@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="https://bizzio.ru/css/custom.css">
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 
     <!-- Favicon – современный минимальный набор 2025–2026 -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
@@ -285,6 +285,6 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="https://bizzio.ru/js/custom.js"></script>
+    <script src="{{ asset('js/custom.js') }}"></script>
 </body>
 </html>

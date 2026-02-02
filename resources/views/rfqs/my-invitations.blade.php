@@ -26,14 +26,14 @@
         @else
             <div class="space-y-4">
                 @foreach($invitations as $invitation)
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-lg transition-shadow duration-300 {{ $invitation->rfq->isActive() ? 'border-l-4 border-indigo-500' : '' }}">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-lg transition-shadow duration-300 {{ $invitation->rfq->isActive() ? 'border-l-4 border-emerald-500' : '' }}">
                         <div class="p-6">
                             <div class="flex justify-between items-start">
                                 <!-- Информация -->
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-3 mb-2">
                                         <h3 class="text-xl font-semibold text-gray-900">
-                                            <a href="{{ route('rfqs.show', $invitation->rfq) }}" class="hover:text-indigo-600 transition">
+                                            <a href="{{ route('rfqs.show', $invitation->rfq) }}" class="hover:text-emerald-600 transition">
                                                 {{ $invitation->rfq->title }}
                                             </a>
                                         </h3>
@@ -98,7 +98,7 @@
                                 <!-- Кнопка -->
                                 <div class="ml-4">
                                     <a href="{{ route('rfqs.show', $invitation->rfq) }}" 
-                                       class="inline-flex items-center px-4 py-2 {{ $invitation->rfq->isActive() ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-600 hover:bg-gray-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition">
+                                       class="inline-flex items-center px-4 py-2 {{ $invitation->rfq->isActive() ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-600 hover:bg-gray-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition">
                                         {{ $invitation->rfq->isActive() ? 'Подать заявку' : 'Просмотр' }}
                                     </a>
                                 </div>

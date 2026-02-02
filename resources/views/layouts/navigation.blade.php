@@ -34,7 +34,7 @@
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = ! open" 
                                     class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
-                                        {{ request()->routeIs('rfqs.*', 'auctions.*', 'bids.*', 'invitations.*') ? 'border-indigo-400 text-gray-900 focus:border-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
+                                        {{ request()->routeIs('rfqs.*', 'auctions.*', 'bids.*', 'invitations.*') ? 'border-emerald-400 text-gray-900 focus:border-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
                                 <span>{{ __('Тендеры и Аукционы') }}</span>
                                 <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -96,7 +96,7 @@
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = ! open" 
                                     class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 transition duration-150 ease-in-out border-b-2
-                                        {{ request()->routeIs('news.*', 'profile.keywords.*') ? 'border-indigo-400 text-gray-900 focus:border-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
+                                        {{ request()->routeIs('news.*', 'profile.keywords.*') ? 'border-emerald-400 text-gray-900 focus:border-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }}">
                                 <span>{{ __('Новости') }}</span>
                                 <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -136,7 +136,7 @@
                             @focus="if(results.length > 0) open = true"
                             @keydown.escape="open = false"
                             placeholder="Поиск..."
-                            class="w-48 lg:w-64 pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            class="w-48 lg:w-64 pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +176,7 @@
                             </template>
                         </div>
                         <div class="px-4 py-2 border-t border-gray-100 bg-gray-50">
-                            <a :href="'{{ route('search.index') }}?q=' + encodeURIComponent(query)" class="block text-center text-sm text-indigo-600 hover:text-indigo-800">
+                            <a :href="'{{ route('search.index') }}?q=' + encodeURIComponent(query)" class="block text-center text-sm text-emerald-600 hover:text-emerald-800">
                                 {{ __('Все результаты') }}
                             </a>
                         </div>
@@ -188,7 +188,7 @@
                     <div class="relative mr-4" x-data="{ open: false, notifications: [], loading: false }">
                         <button
                             @click="open = !open; if(open && notifications.length === 0) { loading = true; fetch('{{ route('notifications.index') }}', {headers: {'Accept': 'application/json'}}).then(r => r.json()).then(d => { notifications = d.notifications || []; loading = false; }).catch(() => loading = false); }"
-                            class="relative p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-full"
+                            class="relative p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 rounded-full"
                         >
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -225,7 +225,7 @@
                                 <div class="px-4 py-2 border-b border-gray-100">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-semibold text-gray-900">{{ __('Уведомления') }}</span>
-                                        <a href="{{ route('notifications.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">{{ __('Все') }}</a>
+                                        <a href="{{ route('notifications.index') }}" class="text-xs text-emerald-600 hover:text-emerald-800">{{ __('Все') }}</a>
                                     </div>
                                 </div>
                                 <div class="max-h-96 overflow-y-auto">
@@ -243,7 +243,7 @@
                                         <a
                                             :href="notification.data?.url || '#'"
                                             class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
-                                            :class="{ 'bg-blue-50': !notification.read_at }"
+                                            :class="{ 'bg-emerald-50': !notification.read_at }"
                                         >
                                             <p class="text-sm text-gray-900" x-text="notification.data?.project_title || notification.data?.tender_number || notification.data?.message || 'Новое уведомление'"></p>
                                             <p class="text-xs text-gray-500 mt-1" x-text="new Date(notification.created_at).toLocaleString('ru-RU')"></p>
@@ -251,7 +251,7 @@
                                     </template>
                                 </div>
                                 <div class="px-4 py-2 border-t border-gray-100 bg-gray-50">
-                                    <a href="{{ route('notifications.index') }}" class="block text-center text-sm text-indigo-600 hover:text-indigo-800">
+                                    <a href="{{ route('notifications.index') }}" class="block text-center text-sm text-emerald-600 hover:text-emerald-800">
                                         {{ __('Показать все уведомления') }}
                                     </a>
                                 </div>

@@ -69,7 +69,7 @@
                                             @php
                                                 $statusColors = [
                                                     'active' => 'bg-green-100 text-green-800',
-                                                    'trading' => 'bg-blue-100 text-blue-800',
+                                                    'trading' => 'bg-emerald-100 text-emerald-800',
                                                     'closed' => 'bg-gray-100 text-gray-800',
                                                     'draft' => 'bg-yellow-100 text-yellow-800',
                                                 ];
@@ -89,7 +89,7 @@
                                                 <span class="text-green-600">✓ Заявка подана</span>
                                             @elseif($auction->isAcceptingApplications() || $auction->isTrading())
                                                 <a href="{{ route('auctions.show', $auction) }}#bid-form" 
-                                                   class="text-indigo-600 hover:text-indigo-900">
+                                                   class="text-emerald-600 hover:text-emerald-900">
                                                     Подать заявку
                                                 </a>
                                             @else
