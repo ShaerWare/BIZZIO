@@ -287,3 +287,27 @@ SESSION_SECURE_COOKIE=true
 - `CLAUDE.md` — обновлён статус (8/10 спринтов, 80% MVP), добавлен `laravel/scout` в пакеты
 - `docs/README.md` — добавлен спринт 8, обновлён статус, следующий спринт 9
 - `docs/claude/start_message.md` — полностью переписан для спринта 9 (Тестирование + Багфиксы)
+
+---
+
+## 02.02.2026
+
+### Production Deployment — Настройка сервера
+
+**Что сделано:**
+
+1. **Добавлен Laravel Scheduler в Supervisor**
+   - Добавлена программа `laravel-scheduler` в `docker/supervisord.conf`
+   - Scheduler запускает `php artisan schedule:run` каждые 60 секунд
+   - Логи пишутся в `/var/log/scheduler.log`
+
+2. **Документация Production Deployment**
+   - Добавлена секция "Production Deployment" в `CLAUDE.md`
+   - Команды для деплоя через git pull
+   - Все server-команды в формате `docker compose exec app`
+   - Описание auto-start сервисов через Supervisor
+   - First-time setup инструкции
+
+**Изменённые файлы:**
+- `docker/supervisord.conf` — добавлен laravel-scheduler
+- `CLAUDE.md` — добавлена секция Production Deployment

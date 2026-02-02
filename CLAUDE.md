@@ -29,10 +29,8 @@ php artisan queue:work    # Process queue jobs (use queue:listen for auto-reload
 ### Testing
 ```bash
 composer run test                        # Run all tests (clears config first)
-php artisan test                         # Alternative
 php artisan test --filter=TestName       # Run specific test
 php artisan test --filter=TestClass::testMethod  # Run single test method
-php artisan test tests/Feature/XxxTest.php  # Run single test file
 ```
 
 ### Code Style
@@ -41,82 +39,27 @@ php artisan test tests/Feature/XxxTest.php  # Run single test file
 ./vendor/bin/pint            # Fix code style
 ```
 
-### Database
+### Database & Cache
 ```bash
-php artisan migrate              # Run migrations
-php artisan migrate --seed       # Run migrations with seeders
-php artisan migrate:rollback     # Rollback last migration
-```
-
-### Frontend
-```bash
-npm install                  # Install Node dependencies
-npm run dev                  # Start Vite dev server
-npm run build               # Build for production
-```
-
-### Cache (clear all)
-```bash
+php artisan migrate --seed                    # Run migrations with seeders
 php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear
 ```
 
 ### Custom Artisan Commands
 ```bash
-php artisan auctions:check-expired   # Close expired auctions (runs every minute via scheduler)
+php artisan auctions:check-expired   # Close expired auctions (scheduler runs every minute)
 php artisan auctions:update-status   # Update auction statuses
 php artisan rss:parse                # Parse RSS news sources
-php artisan news:clean-old           # Clean old news entries
 ```
 
-### Testing PDF Generation (RFQ & Auctions)
+### Testing PDF Generation
+Queue worker must be running: `php artisan queue:work`
 
-**Prerequisites:**
-- Queue worker must be running: `php artisan queue:work`
-- For production: cron must be configured for scheduler
-
-**Testing RFQ (Тендеры):**
 ```bash
-# 1. Create a test RFQ with end_date in ~2 minutes
-# 2. Activate it (dispatches CloseRfqJob with delay)
-# 3. Wait for end_date to pass
-# 4. Queue worker will execute CloseRfqJob → generates PDF
-
-# Or dispatch job manually via tinker (replace 123 with actual RFQ ID):
+# Dispatch jobs manually via tinker:
 php artisan tinker
 >>> App\Jobs\CloseRfqJob::dispatch(App\Models\Rfq::find(123));
-```
-
-**Testing Auction (Аукционы):**
-```bash
-# 1. Create auction, activate, start trading
-# 2. Wait 20+ min after last bid (or set last_bid_at manually)
-# 3. Run: php artisan auctions:check-expired
-# 4. Queue worker will execute CloseAuctionJob → generates PDF
-
-# Or dispatch job manually (replace 123 with actual Auction ID):
-php artisan tinker
 >>> App\Jobs\CloseAuctionJob::dispatch(123);
-```
-
-**On Production Server (docker compose):**
-```bash
-# Check queue status
-docker compose exec app php artisan queue:work --once
-
-# Run auction check manually
-docker compose exec app php artisan auctions:check-expired
-
-# Test RFQ job manually (replace 123 with actual RFQ ID)
-docker compose exec app php artisan tinker --execute="App\\Jobs\\CloseRfqJob::dispatch(App\\Models\\Rfq::find(123));"
-
-# Test Auction job manually (replace 123 with actual Auction ID)
-docker compose exec app php artisan tinker --execute="App\\Jobs\\CloseAuctionJob::dispatch(123);"
-
-# View generated PDFs
-docker compose exec app ls -la storage/app/public/rfq-protocols/
-
-# Check logs for errors
-docker compose exec app tail -f storage/logs/laravel.log
 ```
 
 **PDF Files Location:**
@@ -126,75 +69,154 @@ docker compose exec app tail -f storage/logs/laravel.log
 ## Architecture
 
 ### Core Modules
-- **Companies** — Company profiles with verification, document upload, moderator assignment, join requests
-- **Projects** — Project management with company invitations, comments, participant roles
-- **RFQ (Request for Quotation)** — Tender system with weighted scoring criteria, auto-calculation, PDF protocols
-- **Auction** — Real-time online trading (long-polling), anonymized participants, configurable bid step, PDF protocols
+- **Companies** — Profiles with verification, documents, moderator assignment, join requests
+- **Projects** — Company invitations, comments, participant roles
+- **RFQ (Тендеры)** — Weighted scoring criteria, auto-calculation, PDF protocols
+- **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **News** — RSS aggregator with keyword filtering, personalized feed
-- **Search** — Global search via Laravel Scout (database driver) across User, Company, Project, Rfq, Auction
+- **Search** — Laravel Scout (database driver) across User, Company, Project, Rfq, Auction
+
+### Status Lifecycles
+
+**RFQ:** `draft` → `active` → `closed`
+- `draft`: Only visible to owner/moderators
+- `active`: Accepting bids (between start_date and end_date)
+- `closed`: CloseRfqJob runs at end_date, generates PDF protocol, determines winner
+
+**Auction:** `draft` → `active` → `trading` → `closed`
+- `draft`: Only visible to owner/moderators
+- `active`: Accepting initial applications (between start_date and end_date)
+- `trading`: Real-time bidding (started via `startTrading()`, uses long-polling)
+- `closed`: CloseAuctionJob runs 20min after last bid, generates PDF protocol
 
 ### Key Directories
 ```
 app/
-├── Events/         # Domain events: ProjectInvitationSent, TenderClosed, etc.
-├── Listeners/      # Event handlers: Send*Notification classes
-├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, RfqProtocolService, etc.
-├── Policies/       # Authorization: RfqPolicy, AuctionPolicy
-├── Socialite/      # Custom OAuth: VKIDProvider (new VK ID API)
-├── Jobs/           # Queue jobs: CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, etc.
-├── Traits/         # Reusable traits: HandlesTempUploads (file persistence on validation errors)
-└── Orchid/         # Admin panel screens and layouts
-
-routes/
-├── web.php         # Main web routes (companies, projects, rfqs, auctions, news, search)
-├── platform.php    # Orchid admin routes
-└── api.php         # API routes (v1: POST /api/v1/chat for Gemini proxy)
+├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, *ProtocolService, NewsFilterService
+├── Events/         # Domain events (registered in AppServiceProvider@registerEventListeners)
+├── Listeners/      # Send*Notification handlers
+├── Jobs/           # CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses
+├── Policies/       # RfqPolicy, AuctionPolicy
+├── Socialite/      # VKIDProvider (custom VK ID API implementation)
+├── Orchid/         # Admin panel screens and layouts
+└── Http/Controllers/Api/  # API endpoints (v1/chat - Gemini AI proxy)
 ```
 
 ### Event-Driven Architecture
-Events are registered in `AppServiceProvider@registerEventListeners()`. Key events:
+Events registered in `AppServiceProvider@registerEventListeners()`:
 - `ProjectInvitationSent` → `SendProjectInvitationNotification`
 - `TenderInvitationSent` → `SendTenderInvitationNotification`
 - `TenderClosed` → `SendTenderClosedNotification`
 - `AuctionTradingStarted` → `SendAuctionTradingStartedNotification`
 - `CommentCreated` → `SendCommentNotification`
 
-### Services Layer
-Business logic is encapsulated in `app/Services/`:
-- `RfqScoringService` — Weighted scoring calculation for RFQ bids
-- `RfqProtocolService` — PDF protocol generation for RFQ results
-- `AuctionWinnerService` — Winner determination logic for auctions
-- `AuctionProtocolService` — PDF protocol generation for auction results
-- `NewsFilterService` — Keyword-based news filtering for personalized feeds
-
 ### Key Packages
 - `orchid/platform` — Admin panel
-- `spatie/laravel-activitylog` — Action logging for activity feed
-- `spatie/laravel-medialibrary` — File/image management with conversions
-- `laravel/socialite` — OAuth (Google built-in, VK via custom provider)
-- `barryvdh/laravel-dompdf` — PDF generation for protocols
-- `willvincent/feeds` — RSS parsing
-- `google-gemini-php/client` — Gemini AI API client
-- `laravel/scout` — Full-text search (database driver for MVP)
+- `spatie/laravel-activitylog` — Activity feed logging
+- `spatie/laravel-medialibrary` — File/image management
+- `barryvdh/laravel-dompdf` — PDF protocol generation
+- `laravel/socialite` + `app/Socialite/VKIDProvider.php` — OAuth (Google, VK ID)
 
 ### VK ID OAuth
-Two VK providers are registered in `AppServiceProvider@configureSocialite()`:
-- `vkid` — Custom provider at `app/Socialite/VKIDProvider.php` for new VK ID API
-- `vk` — `socialiteproviders/vkontakte` package for legacy compatibility
+Custom provider at `app/Socialite/VKIDProvider.php` for new VK ID API.
+Requires `.env`: `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI`
 
-Requires in `.env`: `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI`
+### AI Chat API
+`POST /api/v1/chat` — Proxies chat to Google Gemini API.
+Requires `.env`: `GEMINI_API_KEY`
+
+### Routing Conventions
+**Important:** Fixed routes MUST be defined BEFORE dynamic `{param}` routes to avoid conflicts.
+```php
+// ✅ Correct: /auctions/create before /auctions/{auction}
+Route::get('/auctions/create', ...)->name('create');
+Route::get('/auctions/{auction}', ...)->name('show');
+```
 
 ## Docker Setup
 
-- **app** container: PHP 8.2-FPM + Nginx + Supervisor (single container), internally exposes port 80
-- **db** container: PostgreSQL 14 Alpine, exposed on host port 5435
-- Use `docker-compose.override.yml.prod` for production with nginx-proxy + Let's Encrypt
+- **app** container: PHP 8.2-FPM + Nginx + Supervisor, port 80
+- **db** container: PostgreSQL 14 Alpine, host port 5435
+- Production: `docker-compose.override.yml.prod` with nginx-proxy + Let's Encrypt
+
+## Production Deployment
+
+### Deploy from Git
+```bash
+cd /path/to/project
+git pull origin main
+docker compose exec app composer install --no-dev --optimize-autoloader
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan config:cache
+docker compose exec app php artisan route:cache
+docker compose exec app php artisan view:cache
+docker compose exec app php artisan storage:link
+```
+
+### Server Commands (docker compose exec app)
+```bash
+# Artisan commands
+docker compose exec app php artisan migrate              # Run migrations
+docker compose exec app php artisan db:seed              # Run seeders
+docker compose exec app php artisan tinker               # Laravel REPL
+
+# Queue & Jobs
+docker compose exec app php artisan queue:work           # Process jobs (auto-started by Supervisor)
+docker compose exec app php artisan queue:restart        # Restart queue workers after code changes
+docker compose exec app php artisan queue:failed         # List failed jobs
+docker compose exec app php artisan queue:retry all      # Retry failed jobs
+
+# Scheduler (auto-runs every minute via Supervisor)
+docker compose exec app php artisan schedule:run         # Manual run
+docker compose exec app php artisan schedule:list        # List scheduled tasks
+
+# Custom commands
+docker compose exec app php artisan auctions:check-expired   # Close expired auctions
+docker compose exec app php artisan rss:parse                # Parse RSS feeds
+
+# Cache management
+docker compose exec app php artisan config:cache        # Cache config (production)
+docker compose exec app php artisan route:cache         # Cache routes (production)
+docker compose exec app php artisan view:cache          # Cache views (production)
+docker compose exec app php artisan optimize:clear      # Clear all caches
+
+# Logs
+docker compose exec app tail -f /var/log/queue-worker.log    # Queue worker logs
+docker compose exec app tail -f /var/log/scheduler.log       # Scheduler logs
+docker compose logs -f app                                    # Container logs
+```
+
+### What Supervisor Auto-Starts
+Configured in `docker/supervisord.conf`:
+- **php-fpm** — PHP FastCGI Process Manager
+- **nginx** — Web server
+- **laravel-worker** — Queue worker (`queue:work database`)
+- **laravel-scheduler** — Cron scheduler (`schedule:run` every 60 sec)
+
+### Restart Services After Deploy
+```bash
+docker compose restart app                              # Restart entire container
+docker compose exec app php artisan queue:restart       # Graceful queue restart
+docker compose exec app supervisorctl restart all       # Restart all Supervisor programs
+```
+
+### First-Time Setup on Server
+```bash
+git clone <repo> /path/to/project
+cd /path/to/project
+cp .env.example .env
+# Edit .env with production values (DB, MAIL, APP_URL, etc.)
+docker compose up -d
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan storage:link
+```
 
 ## Environment Notes
 
 - `APP_URL` must match actual URL (http://localhost:8080 for local dev)
 - `SESSION_SECURE_COOKIE=false` for HTTP development
-- HTTPS is forced only when `APP_ENV=production` or `APP_URL` starts with https (see `AppServiceProvider@configureHttps()`)
+- HTTPS forced when `APP_ENV=production` or `APP_URL` starts with https
 
 ## Key Model Relationships
 
@@ -207,6 +229,21 @@ Rfq → RfqBids (one-to-many)
 Company → Auctions (owner)
 Auction → AuctionBids (one-to-many)
 ```
+
+## Testing Patterns
+
+Tests use `RefreshDatabase` trait with standard setup:
+```php
+protected function setUp(): void {
+    parent::setUp();
+    $this->user = User::factory()->create(['email_verified_at' => now()]);
+    $this->company = Company::factory()->create(['created_by' => $this->user->id]);
+    $this->company->assignModerator($this->user, 'owner');
+    Storage::fake('public');
+    Queue::fake();
+}
+```
+Helper methods like `createRfq()`, `createAuction()` are defined in each test class.
 
 ## Documentation
 
