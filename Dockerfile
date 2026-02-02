@@ -16,6 +16,12 @@ RUN composer install \
 # Stage 2: Сборка финального образа
 FROM php:8.2-fpm-alpine
 
+# Устанавливаем timezone
+ENV TZ=Europe/Moscow
+RUN apk add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone
+
 # Устанавливаем системные зависимости, необходимые для работы приложения и сборки расширений
 RUN apk add --no-cache \
     # Постоянные зависимости, необходимые для работы приложения (RUNTIME)
