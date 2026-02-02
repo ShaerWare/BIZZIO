@@ -8,8 +8,10 @@ services:
       dockerfile: Dockerfile
     container_name: my_project_app
     restart: unless-stopped
-    # ports:  
-    #  - "80:80" 
+    environment:
+      - TZ=Europe/Moscow
+    # ports:
+    #  - "80:80"
     working_dir: /var/www
     volumes:
       - .:/var/www
@@ -27,6 +29,7 @@ services:
     container_name: my_project_db
     restart: unless-stopped
     environment:
+      TZ: Europe/Moscow
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
