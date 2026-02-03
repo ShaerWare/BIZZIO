@@ -79,7 +79,7 @@
                                             </div>
                                             <div>
                                                 <p class="text-xs text-gray-500">Цена</p>
-                                                <p class="text-sm font-semibold text-gray-900">{{ number_format($bid->price, 0, ',', ' ') }} руб.</p>
+                                                <p class="text-sm font-semibold text-gray-900">{{ number_format($bid->price, 0, ',', ' ') }} {{ $bid->rfq->currency_symbol }}</p>
                                             </div>
                                             <div>
                                                 <p class="text-xs text-gray-500">Срок</p>
@@ -157,7 +157,7 @@
                                             </div>
                                             <div>
                                                 <p class="text-xs text-gray-500">Цена</p>
-                                                <p class="text-sm font-semibold text-gray-900">{{ number_format($bid->price, 2, '.', ' ') }} ₽</p>
+                                                <p class="text-sm font-semibold text-gray-900">{{ number_format($bid->price, 2, '.', ' ') }} {{ $bid->auction->currency_symbol }}</p>
                                             </div>
                                             @if($bid->anonymous_code)
                                                 <div>

@@ -181,10 +181,10 @@
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
-                                <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} ₽</strong></li>
+                                <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 <li>• Шаг снижения — <strong>0.5% — 5%</strong> от текущей цены</li>
                                 @if($auction->isTrading())
-                                    <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</strong></li>
+                                    <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 @endif
                             </ul>
                         </div>
@@ -201,32 +201,39 @@
                             </a>
                         @endif
 
-                        <!-- Протокол (если завершён) -->
+                        <!-- Протокол (если завершён) — A16: доступ только организатору и участникам -->
                         @if($auction->status === 'closed')
-                            @if($auction->hasMedia('protocol'))
-                                <a href="{{ $auction->getFirstMediaUrl('protocol') }}"
-                                   target="_blank"
-                                   class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
-                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Скачать протокол (PDF)
-                                </a>
-                            @elseif(auth()->check() && $auction->canManage(auth()->user()))
-                                <form method="POST" action="{{ route('auctions.protocol.generate', $auction) }}" class="mb-4">
-                                    @csrf
-                                    <button type="submit"
-                                            class="block w-full text-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
+                            @php
+                                $isParticipant = auth()->check() && $auction->bids->pluck('company_id')->intersect($userCompanies->pluck('id'))->isNotEmpty();
+                                $isManager = auth()->check() && $auction->canManage(auth()->user());
+                                $canViewProtocol = $isManager || $isParticipant;
+                            @endphp
+                            @if($canViewProtocol)
+                                @if($auction->hasMedia('protocol'))
+                                    <a href="{{ $auction->getFirstMediaUrl('protocol') }}"
+                                       target="_blank"
+                                       class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
                                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
-                                        Сгенерировать протокол
-                                    </button>
-                                </form>
-                            @else
-                                <div class="mb-4 p-3 bg-gray-100 rounded text-center text-sm text-gray-600">
-                                    Протокол ещё не сгенерирован
-                                </div>
+                                        Скачать протокол (PDF)
+                                    </a>
+                                @elseif($isManager)
+                                    <form method="POST" action="{{ route('auctions.protocol.generate', $auction) }}" class="mb-4">
+                                        @csrf
+                                        <button type="submit"
+                                                class="block w-full text-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
+                                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Сгенерировать протокол
+                                        </button>
+                                    </form>
+                                @else
+                                    <div class="mb-4 p-3 bg-gray-100 rounded text-center text-sm text-gray-600">
+                                        Протокол ещё не сгенерирован
+                                    </div>
+                                @endif
                             @endif
                         @endif
 
@@ -281,7 +288,7 @@
 
                             <div class="bg-emerald-50 rounded-lg p-4 mb-4">
                                 <p class="text-sm text-gray-600">Текущая цена:</p>
-                                <p class="text-3xl font-bold text-emerald-600 current-price">{{ number_format($currentPrice, 2, ',', ' ') }} ₽</p>
+                                <p class="text-3xl font-bold text-emerald-600 current-price">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</p>
                                 @if($auction->last_bid_at)
                                     <p class="text-xs text-gray-500 mt-1">
                                         Последняя ставка: {{ $auction->last_bid_at->format('H:i:s') }}
@@ -320,7 +327,7 @@
 
                                         <input type="number" name="price" id="main-price" step="0.01"
                                                min="{{ $currentPrice - $stepRange['max'] }}" max="{{ $currentPrice - $stepRange['min'] }}"
-                                               required placeholder="Ваша ставка (₽)"
+                                               required placeholder="Ваша ставка ({{ $auction->currency_symbol }})"
                                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-blue-500">
 
                                         <label class="flex items-start text-xs text-gray-600">
@@ -373,7 +380,7 @@
                                                         @if($isUserBid) <span class="text-xs">(вы)</span> @endif
                                                     </td>
                                                     <td class="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                                        {{ number_format($bid->price, 2, ',', ' ') }} ₽
+                                                        {{ number_format($bid->price, 2, ',', ' ') }} {{ $auction->currency_symbol }}
                                                     </td>
                                                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                                                         {{ $bid->created_at->format('H:i:s') }}
@@ -486,7 +493,7 @@
                                         <!-- Цена ставки (для торгов) -->
                                         <div class="mb-4">
                                             <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Ваша ставка (₽) <span class="text-red-500">*</span>
+                                                Ваша ставка ({{ $auction->currency_symbol }}) <span class="text-red-500">*</span>
                                             </label>
 
                                             <!-- Кнопки быстрого выбора снижения -->
@@ -519,8 +526,8 @@
                                                    placeholder="Введите цену или выберите снижение выше"
                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
                                             <p class="mt-1 text-xs text-gray-500">
-                                                Текущая цена: <strong>{{ number_format($currentPrice, 2, ',', ' ') }} ₽</strong><br>
-                                                Допустимый диапазон: {{ number_format($currentPrice - $stepRange['max'], 2, ',', ' ') }} — {{ number_format($currentPrice - $stepRange['min'], 2, ',', ' ') }} ₽
+                                                Текущая цена: <strong>{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong><br>
+                                                Допустимый диапазон: {{ number_format($currentPrice - $stepRange['max'], 2, ',', ' ') }} — {{ number_format($currentPrice - $stepRange['min'], 2, ',', ' ') }} {{ $auction->currency_symbol }}
                                             </p>
                                         </div>
                                     @endif
@@ -652,7 +659,7 @@
                                                 Участник
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Цена (₽)
+                                                Цена ({{ $auction->currency_symbol }})
                                             </th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Время ставки
@@ -707,19 +714,13 @@
                                                             {{ $bid->company->name }}
                                                         </a>
                                                     @else
-                                                        {{-- A10: На этапе приёма заявок скрываем названия от всех, кроме организатора --}}
-                                                        @if($auction->canManage(auth()->user()))
-                                                            <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
-                                                                {{ $bid->company->name }}
-                                                            </a>
-                                                        @else
-                                                            <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">
-                                                                Участник {{ $loop->iteration }}
-                                                                @if($isUserBid)
-                                                                    <span class="ml-1 text-xs text-emerald-500">(вы)</span>
-                                                                @endif
-                                                            </span>
-                                                        @endif
+                                                        {{-- A15: На этапе приёма заявок скрываем названия от ВСЕХ (включая организатора) --}}
+                                                        <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">
+                                                            Участник {{ $loop->iteration }}
+                                                            @if($isUserBid)
+                                                                <span class="ml-1 text-xs text-emerald-500">(вы)</span>
+                                                            @endif
+                                                        </span>
                                                     @endif
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

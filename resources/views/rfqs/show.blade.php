@@ -196,15 +196,19 @@
                             </div>
                         @endcan
 
-                        <!-- Служба поддержки -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h3 class="text-sm font-semibold text-gray-900 mb-2">Служба поддержки</h3>
-                            <p class="text-xs text-gray-600 mb-3">Возникли вопросы по процедуре?</p>
-                            <a href="mailto:support@bizzio.ru?subject=RFQ {{ $rfq->number }}"
-                               class="block w-full text-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition">
-                                Написать в поддержку
-                            </a>
-                        </div>
+                        {{-- T3: Кнопка «Подать заявку» с прокруткой к форме --}}
+                        @auth
+                            @if($canBid && $rfq->isActive() && !$rfq->isExpired())
+                                <a href="#bid-form"
+                                   onclick="document.getElementById('bid-form').scrollIntoView({behavior: 'smooth'}); return false;"
+                                   class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Подать заявку
+                                </a>
+                            @endif
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -313,7 +317,7 @@
                 <!-- Цена -->
                 <div class="mb-4">
                     <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
-                        Цена (₽ без НДС) <span class="text-red-500">*</span>
+                        Цена ({{ $rfq->currency_symbol }} без НДС) <span class="text-red-500">*</span>
                     </label>
                     <input type="number" 
                            name="price" 
@@ -427,8 +431,8 @@
                         @php
                             // T2: Определяем компании текущего пользователя для подсветки его заявок
                             $userCompanyIds = auth()->check() && isset($availableCompanies) ? $availableCompanies->pluck('id')->toArray() : [];
-                            // Обезличиваем заявки на активном этапе (кроме организатора)
-                            $canSeeNames = $rfq->status === 'closed' || (auth()->check() && $rfq->canManage(auth()->user()));
+                            // A15: Обезличиваем заявки на активном этапе для ВСЕХ (включая организатора)
+                            $canSeeNames = $rfq->status === 'closed';
                         @endphp
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -438,7 +442,7 @@
                                             {{ $canSeeNames ? 'Компания' : 'Участник' }}
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Цена (руб.)
+                                            Цена ({{ $rfq->currency_symbol }})
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Срок (дн.)
@@ -508,24 +512,31 @@
                         <p class="text-gray-500 text-center py-8">Заявок пока нет</p>
                     @endif
 
-                    <!-- Протокол (если завершён) -->
+                    <!-- Протокол (если завершён) — A16: доступ только организатору и участникам -->
                     @if($rfq->status === 'closed' && $rfq->hasMedia('protocol'))
-                        <div class="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Процедура завершена</h3>
-                            @if($rfq->winnerBid)
-                                <p class="text-sm text-gray-700 mb-1">
-                                    <strong>Победитель:</strong> {{ $rfq->winnerBid->company->name }}
-                                </p>
-                                <p class="text-sm text-gray-700 mb-4">
-                                    <strong>Итоговый балл:</strong> {{ number_format($rfq->winnerBid->total_score, 2, ',', ' ') }}
-                                </p>
-                            @endif
-                            <a href="{{ $rfq->getFirstMediaUrl('protocol') }}" 
-                               target="_blank"
-                               class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                Скачать протокол (PDF)
-                            </a>
-                        </div>
+                        @php
+                            $rfqIsParticipant = auth()->check() && isset($availableCompanies) && $rfq->bids->pluck('company_id')->intersect($availableCompanies->pluck('id'))->isNotEmpty();
+                            $rfqIsManager = auth()->check() && $rfq->canManage(auth()->user());
+                            $rfqCanViewProtocol = $rfqIsManager || $rfqIsParticipant;
+                        @endphp
+                        @if($rfqCanViewProtocol)
+                            <div class="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Процедура завершена</h3>
+                                @if($rfq->winnerBid)
+                                    <p class="text-sm text-gray-700 mb-1">
+                                        <strong>Победитель:</strong> {{ $rfq->winnerBid->company->name }}
+                                    </p>
+                                    <p class="text-sm text-gray-700 mb-4">
+                                        <strong>Итоговый балл:</strong> {{ number_format($rfq->winnerBid->total_score, 2, ',', ' ') }}
+                                    </p>
+                                @endif
+                                <a href="{{ $rfq->getFirstMediaUrl('protocol') }}"
+                                   target="_blank"
+                                   class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                    Скачать протокол (PDF)
+                                </a>
+                            </div>
+                        @endif
                     @endif
                 </div>
 
@@ -576,6 +587,20 @@
                         @endif
                     </div>
                 @endif
+            </div>
+        </div>
+
+        {{-- T4: Служба поддержки (перенесена вниз страницы) --}}
+        <div class="bg-gray-50 rounded-lg p-4 mt-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900">Служба поддержки</h3>
+                    <p class="text-xs text-gray-600">Возникли вопросы по процедуре?</p>
+                </div>
+                <a href="mailto:support@bizzio.ru?subject=RFQ {{ $rfq->number }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition">
+                    Написать в поддержку
+                </a>
             </div>
         </div>
 

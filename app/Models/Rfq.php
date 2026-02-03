@@ -29,6 +29,7 @@ class Rfq extends Model implements HasMedia
         'company_id',
         'created_by',
         'type',
+        'currency',
         'start_date',
         'end_date',
         'weight_price',
@@ -45,6 +46,17 @@ class Rfq extends Model implements HasMedia
         'weight_deadline' => 'decimal:2',
         'weight_advance' => 'decimal:2',
     ];
+
+    public const CURRENCIES = [
+        'RUB' => '₽',
+        'USD' => '$',
+        'CNY' => '¥',
+    ];
+
+    public function getCurrencySymbolAttribute(): string
+    {
+        return self::CURRENCIES[$this->currency ?? 'RUB'] ?? '₽';
+    }
 
     // ========================
     // СВЯЗИ (RELATIONSHIPS)

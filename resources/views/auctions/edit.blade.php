@@ -54,12 +54,10 @@
                         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                             Дата окончания приёма заявок <span class="text-red-500">*</span>
                         </label>
-                        <input type="datetime-local" 
-                               name="end_date" 
-                               id="end_date" 
-                               required
-                               value="{{ old('end_date', $auction->end_date->format('Y-m-d\TH:i')) }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('end_date') border-red-500 @enderror">
+                        <x-datetime-input name="end_date"
+                                          :value="old('end_date', $auction->end_date->format('Y-m-d\TH:i'))"
+                                          :required="true"
+                                          :error="$errors->has('end_date')" />
                         @error('end_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -73,12 +71,10 @@
                         <label for="trading_start" class="block text-sm font-medium text-gray-700 mb-2">
                             Дата начала торгов <span class="text-red-500">*</span>
                         </label>
-                        <input type="datetime-local" 
-                               name="trading_start" 
-                               id="trading_start" 
-                               required
-                               value="{{ old('trading_start', $auction->trading_start->format('Y-m-d\TH:i')) }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('trading_start') border-red-500 @enderror">
+                        <x-datetime-input name="trading_start"
+                                          :value="old('trading_start', $auction->trading_start->format('Y-m-d\TH:i'))"
+                                          :required="true"
+                                          :error="$errors->has('trading_start')" />
                         @error('trading_start')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -90,7 +86,7 @@
                     <!-- Начальная максимальная цена -->
                     <div class="mb-6">
                         <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
-                            Начальная максимальная цена (₽) <span class="text-red-500">*</span>
+                            Начальная максимальная цена ({{ $auction->currency_symbol }}) <span class="text-red-500">*</span>
                         </label>
                         <input type="number"
                                name="starting_price"
@@ -159,4 +155,27 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // A12: Авто-заполнение «Начало торгов» = «Окончание приёма» + 1 мин
+    document.addEventListener('DOMContentLoaded', function() {
+        const endDate = document.getElementById('end_date');
+        const tradingStart = document.getElementById('trading_start');
+
+        if (endDate && tradingStart) {
+            endDate.addEventListener('change', function() {
+                if (!this.value || tradingStart.dataset.userEdited) return;
+                const dt = new Date(this.value);
+                dt.setMinutes(dt.getMinutes() + 1);
+                const pad = n => String(n).padStart(2, '0');
+                tradingStart.value = dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+            });
+            tradingStart.addEventListener('input', function() {
+                this.dataset.userEdited = 'true';
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

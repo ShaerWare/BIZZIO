@@ -54,12 +54,10 @@
                         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                             Дата окончания приёма заявок <span class="text-red-500">*</span>
                         </label>
-                        <input type="datetime-local" 
-                               name="end_date" 
-                               id="end_date" 
-                               required
-                               value="{{ old('end_date', $rfq->end_date->format('Y-m-d\TH:i')) }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('end_date') border-red-500 @enderror">
+                        <x-datetime-input name="end_date"
+                                          :value="old('end_date', $rfq->end_date->format('Y-m-d\TH:i'))"
+                                          :required="true"
+                                          :error="$errors->has('end_date')" />
                         @error('end_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

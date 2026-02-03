@@ -29,6 +29,7 @@ class Auction extends Model implements HasMedia
         'company_id',
         'created_by',
         'type',
+        'currency',
         'start_date',
         'end_date',
         'trading_start',
@@ -49,6 +50,17 @@ class Auction extends Model implements HasMedia
         'starting_price' => 'decimal:2',
         'step_percent' => 'decimal:2',
     ];
+
+    public const CURRENCIES = [
+        'RUB' => '₽',
+        'USD' => '$',
+        'CNY' => '¥',
+    ];
+
+    public function getCurrencySymbolAttribute(): string
+    {
+        return self::CURRENCIES[$this->currency ?? 'RUB'] ?? '₽';
+    }
 
     // ========================
     // СВЯЗИ (RELATIONSHIPS)

@@ -77,7 +77,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             @if($bid->type === 'bid')
-                                                <span class="font-semibold text-gray-900">{{ number_format($bid->price, 2, '.', ' ') }} ₽</span>
+                                                <span class="font-semibold text-gray-900">{{ number_format($bid->price, 2, '.', ' ') }} {{ $bid->auction->currency_symbol }}</span>
                                                 @if($bid->anonymous_code)
                                                     <br><span class="text-xs text-gray-500">Код: {{ $bid->anonymous_code }}</span>
                                                 @endif

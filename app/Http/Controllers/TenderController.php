@@ -161,6 +161,14 @@ class TenderController extends Controller
     }
 
     /**
+     * Правила проведения тендеров (T9)
+     */
+    public function rules()
+    {
+        return view('tenders.rules');
+    }
+
+    /**
      * Скрываем черновики от посторонних (C3)
      */
     private function applyDraftFilter($query): void

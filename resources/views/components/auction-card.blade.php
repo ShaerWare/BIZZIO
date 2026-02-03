@@ -62,14 +62,14 @@
         <!-- Информация -->
         <div class="space-y-2 text-sm text-gray-600 mb-4">
             <div class="flex justify-between">
-                <span>Начальная цена:</span>
-                <span class="font-semibold text-gray-900">{{ number_format($auction->starting_price, 2, '.', ' ') }} ₽</span>
+                <span>НМЦ:</span>
+                <span class="font-semibold text-gray-900">{{ number_format($auction->starting_price, 2, '.', ' ') }} {{ $auction->currency_symbol }}</span>
             </div>
             
             @if($auction->isTrading())
                 <div class="flex justify-between">
                     <span>Текущая цена:</span>
-                    <span class="font-semibold text-green-600">{{ number_format($auction->getCurrentPrice(), 2, '.', ' ') }} ₽</span>
+                    <span class="font-semibold text-green-600">{{ number_format($auction->getCurrentPrice(), 2, '.', ' ') }} {{ $auction->currency_symbol }}</span>
                 </div>
             @endif
 
