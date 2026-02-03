@@ -196,6 +196,63 @@
                             </div>
                         @endcan
 
+                        {{-- T8: Блок приглашения компаний --}}
+                        @can('update', $rfq)
+                            @if($rfq->status !== 'closed')
+                                <div class="bg-gray-50 rounded-lg p-4 mb-4" x-data="companyInviter()">
+                                    <h3 class="text-sm font-semibold text-gray-900 mb-2">Пригласить компании</h3>
+
+                                    {{-- Поиск --}}
+                                    <div class="relative">
+                                        <input type="text"
+                                               x-model="query"
+                                               @input.debounce.300ms="search()"
+                                               @click.away="showResults = false"
+                                               placeholder="Поиск по названию или ИНН..."
+                                               class="block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+
+                                        {{-- Результаты --}}
+                                        <div x-show="showResults && results.length > 0" x-cloak
+                                             class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                            <template x-for="company in results" :key="company.id">
+                                                <button type="button"
+                                                        @click="invite(company)"
+                                                        class="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-100 last:border-0">
+                                                    <p class="text-sm font-medium text-gray-900" x-text="company.title"></p>
+                                                    <p class="text-xs text-gray-500" x-text="company.subtitle"></p>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        {{-- Загрузка --}}
+                                        <div x-show="searching" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg p-3 text-center text-xs text-gray-500">
+                                            Поиск...
+                                        </div>
+                                    </div>
+
+                                    {{-- Сообщения --}}
+                                    <p x-show="message" x-cloak x-text="message" class="text-xs mt-2"
+                                       :class="messageType === 'success' ? 'text-green-600' : 'text-red-600'"></p>
+
+                                    {{-- Список приглашённых --}}
+                                    @if($rfq->invitations->count() > 0)
+                                        <div class="mt-3 space-y-1">
+                                            <p class="text-xs text-gray-500 font-medium">Приглашённые ({{ $rfq->invitations->count() }}):</p>
+                                            @foreach($rfq->invitations as $inv)
+                                                <div class="flex items-center justify-between text-xs">
+                                                    <span class="text-gray-700 truncate">{{ $inv->company->name }}</span>
+                                                    <span class="ml-1 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium
+                                                        {{ $inv->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : ($inv->status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') }}">
+                                                        {{ $inv->status === 'pending' ? 'Ожидает' : ($inv->status === 'accepted' ? 'Принято' : 'Отклонено') }}
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        @endcan
+
                         {{-- T3: Кнопка «Подать заявку» с прокруткой к форме --}}
                         @auth
                             @if($canBid && $rfq->isActive() && !$rfq->isExpired())
@@ -249,8 +306,8 @@
                             class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Заявки ({{ $rfq->bids->count() }})
                     </button>
-                    @if($rfq->type === 'closed')
-                        <button onclick="showTab('invitations')" 
+                    @if($rfq->type === 'closed' || $rfq->invitations->count() > 0 || (auth()->check() && $rfq->canManage(auth()->user())))
+                        <button onclick="showTab('invitations')"
                                 id="tab-invitations"
                                 class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                             Приглашения ({{ $rfq->invitations->count() }})
@@ -540,8 +597,8 @@
                     @endif
                 </div>
 
-                <!-- Вкладка: Приглашения (для закрытых процедур) -->
-                @if($rfq->type === 'closed')
+                <!-- Вкладка: Приглашения -->
+                @if($rfq->type === 'closed' || $rfq->invitations->count() > 0 || (auth()->check() && $rfq->canManage(auth()->user())))
                     <div id="content-invitations" class="tab-content hidden">
                         @if($rfq->invitations->count() > 0)
                             <div class="space-y-4">
@@ -641,6 +698,68 @@
         const activeButton = document.getElementById('tab-' + tabName);
         activeButton.classList.remove('border-transparent', 'text-gray-500');
         activeButton.classList.add('active', 'border-emerald-500', 'text-emerald-600');
+    }
+
+    // T8: Alpine.js компонент для приглашения компаний
+    function companyInviter() {
+        return {
+            query: '',
+            results: [],
+            showResults: false,
+            searching: false,
+            message: '',
+            messageType: 'success',
+
+            async search() {
+                if (this.query.length < 2) {
+                    this.results = [];
+                    this.showResults = false;
+                    return;
+                }
+                this.searching = true;
+                this.message = '';
+                try {
+                    const res = await fetch(`{{ route('search.quick') }}?q=${encodeURIComponent(this.query)}`);
+                    const data = await res.json();
+                    this.results = (data.results || []).filter(r => r.type === 'company');
+                    this.showResults = true;
+                } catch (e) {
+                    this.results = [];
+                } finally {
+                    this.searching = false;
+                }
+            },
+
+            async invite(company) {
+                this.showResults = false;
+                this.query = '';
+                this.message = '';
+                try {
+                    const res = await fetch(`{{ route('rfqs.invitations.store', $rfq) }}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ company_id: company.id }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.message = `${company.title} — приглашение отправлено`;
+                        this.messageType = 'success';
+                        // Перезагрузка через 1.5 сек для обновления списка
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        this.message = data.error || 'Ошибка при отправке';
+                        this.messageType = 'error';
+                    }
+                } catch (e) {
+                    this.message = 'Ошибка сети';
+                    this.messageType = 'error';
+                }
+            }
+        };
     }
 </script>
 @endpush

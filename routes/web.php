@@ -37,7 +37,6 @@ Route::get('/', function () {
 
 // Publicly accessible routes for viewing companies
 
-Route::post('/auth/vk/callback', [SocialiteController::class, 'vkIdCallback'])->name('vkid.callback');
 // Authenticated routes for managing companies (create, store, edit, update, delete)
 // CRUD компаний (создание, обновление, удаление только для авторизованных)
 Route::middleware('auth')->group(function () {
@@ -181,6 +180,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Подача заявки
     Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
+
+    // T8: Приглашение компании к участию
+    Route::post('/rfqs/{rfq}/invitations', [RfqController::class, 'storeInvitation'])->name('rfqs.invitations.store');
 });
 
 // Публичный просмотр RFQ (после auth-группы, чтобы create не конфликтовал)

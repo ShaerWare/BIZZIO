@@ -6,6 +6,33 @@
 
 ## 03.02.2026
 
+### Замена авторизации VK → Яндекс OAuth
+
+- Установлен пакет `socialiteproviders/yandex` (стандартный OAuth redirect flow)
+- `config/services.php`: блоки `vk` и `vkid` заменены на `yandex`
+- `.env.example` и `.env`: VK-переменные заменены на `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
+- `AppServiceProvider`: регистрация Yandex через `SocialiteWasCalled` event вместо кастомного `VKIDProvider`
+- `SocialiteController`: удалён метод `vkIdCallback()`, убрана нормализация `vkid → vk`
+- `routes/web.php`: удалён маршрут `POST /auth/vk/callback`
+- Blade-шаблоны (login, register, welcome): кнопка VK заменена на «Войти через Яндекс» в emerald-стиле
+- Welcome page: удалён VK ID SDK скрипт (~50 строк JS), заменён на простую ссылку
+- `public/css/custom.css`: стили `.oauth-btn.vk` заменены на `.oauth-btn.yandex` (цвет #28a745)
+- Удалён `app/Socialite/VKIDProvider.php` и директория `app/Socialite/`
+
+**Файлы:** config/services.php, .env.example, AppServiceProvider.php, SocialiteController.php, routes/web.php, login.blade.php, register.blade.php, welcome.blade.php, custom.css. Удалён: VKIDProvider.php
+
+### #31 T8 — Приглашение компаний к участию в RFQ через поиск
+
+- Новый AJAX-маршрут `POST /rfqs/{rfq}/invitations` → `RfqController@storeInvitation` (JSON API)
+- Метод `storeInvitation()`: валидация прав, проверка дубликатов, создание `RfqInvitation`, dispatch `TenderInvitationSent` event
+- Блок приглашений на show-странице RFQ: Alpine.js поиск + invite (сайдбар, для организатора)
+- Вкладка «Приглашения» теперь видна для ВСЕХ типов RFQ (не только закрытых)
+- Форма создания RFQ: статический multi-select заменён на поиск с автодополнением (Alpine.js + `/search/quick`)
+- Блок приглашений на создании показывается всегда, с разным пояснением для open/closed
+- `store()` отправляет приглашения для ЛЮБОГО типа процедуры + dispatch event
+
+**Файлы:** `routes/web.php`, `RfqController.php`, `rfqs/show.blade.php`, `rfqs/create.blade.php`
+
 ### Пакет багфиксов и улучшений (issues #32, #33, #35, #38, #40, #41, #42, #43)
 
 - **#35 A2** — Изменён текст «Начальная цена» → «НМЦ» в карточке аукциона (`auction-card.blade.php`)

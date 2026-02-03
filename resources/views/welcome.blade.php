@@ -204,69 +204,13 @@
                     </svg>
                 </a>
 
-                <!-- VK OAuth -->
-                <a href="{{ url('/auth/vk/redirect') }}" class="oauth-btn vk" title="Войти через ВКонтакте">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-                        <path d="M31.4907 63.4907C0 94.9813 0 145.671 0 247.04V264.96C0 366.329 0 417.019 31.4907 448.509C62.9813 480 113.671 480 215.04 480H232.96C334.329 480 385.019 480 416.509 448.509C448 417.019 448 366.329 448 264.96V247.04C448 145.671 448 94.9813 416.509 63.4907C385.019 32 334.329 32 232.96 32H215.04C113.671 32 62.9813 32 31.4907 63.4907ZM75.6 168.267H126.747C128.427 253.76 166.133 289.973 196 297.44V168.267H244.16V242.693C273.653 239.52 304.64 205.653 315.093 168.267H363.253C359.313 187.435 351.46 205.583 340.186 221.579C328.913 237.574 314.461 251.071 297.733 261.227C316.41 270.499 332.907 283.63 346.132 299.751C359.357 315.873 369.01 334.618 374.453 354.747H321.44C316.555 337.262 306.614 321.61 292.865 309.754C279.117 297.899 262.178 290.368 244.16 288.107V354.747H238.373C136.267 354.747 78.0267 284.747 75.6 168.267Z"/>
+                <!-- Yandex OAuth -->
+                <a href="{{ url('/auth/yandex/redirect') }}" class="oauth-btn yandex" title="Войти через Яндекс">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M13.32 7.67h-.67c-1.55 0-2.37.88-2.37 2.18 0 1.47.67 2.16 2.04 3.12l1.12.78-3.25 5.25H7.85l2.88-4.58C9.2 13.27 8.18 12.05 8.18 10.08c0-2.63 1.83-4.42 5.07-4.42h3.22V19h-2.15V7.67h-1z"/>
                     </svg>
                 </a>
             </div>
-            <!-- VK ID SDK -->
-            <script src="https://unpkg.com/@vkid/sdk@3.0.0/dist-sdk/umd/index.js"></script>
-            <script type="text/javascript">
-                if ('VKIDSDK' in window) {
-                    const VKID = window.VKIDSDK;
-
-                    VKID.Config.init({
-                        app: 'cCOT0c6jvlw0dp5feuYV', // Твой App ID из VK ID кабинета
-                        redirectUrl: 'https://bizzio.ru', // Или https://bizzio.ru/auth/vk/callback
-                        responseMode: VKID.ConfigResponseMode.Callback,
-                        source: VKID.ConfigSource.LOWCODE,
-                        scope: 'email' // Добавь нужные права, например 'email phone'
-                    });
-
-                    const oneTap = new VKID.OneTap();
-                    oneTap.render({
-                        container: document.getElementById('vkid-container'),
-                        showAlternativeLogin: true, // Показывать "Войти другим способом"
-                        styles: {
-                            width: '200px', // Ширина кнопки
-                            height: '48px',
-                            borderRadius: '8px'
-                        }
-                    })
-                    .on(VKID.WidgetEvents.ERROR, function(error) {
-                        console.error('VKID Error:', error);
-                        alert('Ошибка авторизации VK: ' + error.description);
-                    })
-                    .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function(payload) {
-                        const code = payload.code;
-                        const deviceId = payload.device_id;
-
-                        // Отправляем code и device_id на бэкенд
-                        fetch('/auth/vk/callback', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ code, device_id: deviceId })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                window.location.href = data.redirect || '/dashboard';
-                            } else {
-                                alert('Ошибка входа: ' + (data.error || 'Неизвестная ошибка'));
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Fetch error:', err);
-                            alert('Ошибка соединения с сервером');
-                        });
-                    });
-                }
-            </script>
 
         </div>
 

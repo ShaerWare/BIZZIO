@@ -58,12 +58,12 @@
             Войти через Google
         </a>
 
-        <a href="{{ route('socialite.redirect', 'vkid') }}" 
-           class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14c5.6 0 6.93-1.33 6.93-6.93V8.93C22 3.33 20.67 2 15.07 2zm3.31 14.98h-1.39c-.59 0-.77-.47-1.83-1.53-1.03-1.03-1.49-1.17-1.75-1.17-.36 0-.46.1-.46.58v1.39c0 .37-.12.59-1.11.59-1.83 0-3.86-1.11-5.29-3.17-2.14-3.06-2.73-5.37-2.73-5.84 0-.26.1-.5.58-.5h1.39c.43 0 .59.2.76.66.86 2.47 2.3 4.64 2.89 4.64.22 0 .32-.1.32-.66v-2.56c-.07-1.13-.66-1.22-.66-1.62 0-.21.17-.42.45-.42h2.18c.36 0 .49.19.49.61v3.46c0 .36.16.49.26.49.22 0 .4-.13.81-.54 1.26-1.42 2.16-3.61 2.16-3.61.12-.25.31-.5.78-.5h1.39c.42 0 .52.22.42.61-.16 1.01-2.03 3.93-2.03 3.93-.18.3-.25.43 0 .76.18.25.78.77 1.18 1.24.73.84 1.29 1.54 1.44 2.03.15.49-.08.73-.56.73z"/>
+        <a href="{{ route('socialite.redirect', 'yandex') }}"
+           class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700">
+            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none">
+                <path d="M13.32 7.67h-.67c-1.55 0-2.37.88-2.37 2.18 0 1.47.67 2.16 2.04 3.12l1.12.78-3.25 5.25H7.85l2.88-4.58C9.2 13.27 8.18 12.05 8.18 10.08c0-2.63 1.83-4.42 5.07-4.42h3.22V19h-2.15V7.67h-1z" fill="currentColor"/>
             </svg>
-            Войти через VK
+            Войти через Яндекс
         </a>
     </div>
 </x-guest-layout>

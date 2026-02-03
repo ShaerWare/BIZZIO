@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "35cfabb22b5cc1a584bdfe5256fc25bc",
+    "content-hash": "be08282ccd4d6216b4aab9e04cd5b56d",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -4872,6 +4872,47 @@
                 "source": "https://github.com/socialiteproviders/providers"
             },
             "time": "2025-09-08T22:08:36+00:00"
+        },
+        {
+            "name": "socialiteproviders/yandex",
+            "version": "4.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SocialiteProviders/Yandex.git",
+                "reference": "e8cf2c088feda1525b49cee396bd46fc96509f20"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SocialiteProviders/Yandex/zipball/e8cf2c088feda1525b49cee396bd46fc96509f20",
+                "reference": "e8cf2c088feda1525b49cee396bd46fc96509f20",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": "^7.2 || ^8.0",
+                "socialiteproviders/manager": "~4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SocialiteProviders\\Yandex\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Brian Faust",
+                    "email": "hello@brianfaust.de"
+                }
+            ],
+            "description": "Yandex OAuth2 Provider for Laravel Socialite",
+            "support": {
+                "source": "https://github.com/SocialiteProviders/Yandex/tree/4.1.0"
+            },
+            "time": "2020-12-01T23:10:59+00:00"
         },
         {
             "name": "spatie/image",
@@ -10838,5 +10879,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
