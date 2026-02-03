@@ -516,16 +516,16 @@ html {
     fill: white;
 }
 
-.oauth-btn.vk {
-    border-color: #0077FF;
+.oauth-btn.yandex {
+    border-color: #28a745;
 }
 
-.oauth-btn.vk:hover {
-    background: #0077FF;
-    border-color: #0077FF;
+.oauth-btn.yandex:hover {
+    background: #28a745;
+    border-color: #28a745;
 }
 
-.oauth-btn.vk:hover svg {
+.oauth-btn.yandex:hover svg {
     fill: white;
 }
 
@@ -539,8 +539,8 @@ html {
     fill: #DB4437;
 }
 
-.oauth-btn.vk svg {
-    fill: #0077FF;
+.oauth-btn.yandex svg {
+    fill: #28a745;
 }
 
 .reduce-10 {

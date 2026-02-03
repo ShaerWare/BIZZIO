@@ -84,6 +84,7 @@ class AuctionController extends Controller
                 'company_id' => $request->company_id,
                 'created_by' => auth()->id(),
                 'type' => $request->type,
+                'currency' => $request->currency ?? 'RUB',
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'trading_start' => $request->trading_start,

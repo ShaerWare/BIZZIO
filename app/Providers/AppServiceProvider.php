@@ -17,13 +17,13 @@ use App\Models\Auction;
 use App\Models\Rfq;
 use App\Policies\AuctionPolicy;
 use App\Policies\RfqPolicy;
-use App\Socialite\VKIDProvider;
 // Listeners
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Yandex\YandexExtendSocialite;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,30 +47,11 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure Socialite providers (Google, VK, VK ID).
+     * Configure Socialite providers (Google, Yandex).
      */
     protected function configureSocialite(): void
     {
-        $socialite = $this->app->make(SocialiteFactory::class);
-
-        // VK ID провайдер (новый API VK) - собственная реализация
-        $socialite->extend('vkid', function ($app) {
-            $config = $app['config']['services.vkid'];
-
-            return new VKIDProvider(
-                $app['request'],
-                $config['client_id'],
-                $config['client_secret'],
-                $config['redirect']
-            );
-        });
-
-        // Старый VK-провайдер (для обратной совместимости)
-        $socialite->extend('vk', function ($app) use ($socialite) {
-            $config = $app['config']['services.vk'];
-
-            return $socialite->buildProvider(\SocialiteProviders\VKontakte\Provider::class, $config);
-        });
+        Event::listen(SocialiteWasCalled::class, YandexExtendSocialite::class.'@handle');
     }
 
     /**

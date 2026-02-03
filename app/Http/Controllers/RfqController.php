@@ -97,6 +97,7 @@ class RfqController extends Controller
                 'company_id' => $request->company_id,
                 'created_by' => auth()->id(),
                 'type' => $request->type,
+                'currency' => $request->currency ?? 'RUB',
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'weight_price' => $request->weight_price,
@@ -108,14 +109,19 @@ class RfqController extends Controller
             // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
             $this->addFileToModel($rfq, $request, 'technical_specification', 'technical_specification');
 
-            // Отправка приглашений (для закрытых процедур)
-            if ($request->type === 'closed' && $request->filled('invited_companies')) {
+            // T8: Отправка приглашений (для любого типа процедуры)
+            if ($request->filled('invited_companies')) {
                 foreach ($request->invited_companies as $companyId) {
                     $rfq->invitations()->create([
                         'company_id' => $companyId,
                         'invited_by' => auth()->id(),
                         'status' => 'pending',
                     ]);
+
+                    $company = Company::find($companyId);
+                    if ($company) {
+                        \App\Events\TenderInvitationSent::dispatch($rfq, $company, 'rfq');
+                    }
                 }
             }
 
@@ -301,6 +307,57 @@ class RfqController extends Controller
             DB::rollBack();
             return back()->withInput()->with('error', 'Ошибка при подаче заявки: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * T8: Приглашение компании к участию в RFQ
+     */
+    public function storeInvitation(Request $request, Rfq $rfq)
+    {
+        // Проверка: пользователь может управлять RFQ
+        if (!$rfq->canManage(auth()->user())) {
+            return response()->json(['error' => 'Недостаточно прав'], 403);
+        }
+
+        // Проверка: RFQ не завершён
+        if ($rfq->status === 'closed') {
+            return response()->json(['error' => 'RFQ уже завершён'], 422);
+        }
+
+        $request->validate([
+            'company_id' => 'required|exists:companies,id',
+        ]);
+
+        // Проверка: не приглашаем свою компанию
+        if ($request->company_id == $rfq->company_id) {
+            return response()->json(['error' => 'Нельзя пригласить компанию-организатора'], 422);
+        }
+
+        // Проверка: компания ещё не приглашена
+        $exists = $rfq->invitations()->where('company_id', $request->company_id)->exists();
+        if ($exists) {
+            return response()->json(['error' => 'Компания уже приглашена'], 422);
+        }
+
+        $invitation = $rfq->invitations()->create([
+            'company_id' => $request->company_id,
+            'invited_by' => auth()->id(),
+            'status' => 'pending',
+        ]);
+
+        // Отправка уведомления
+        $company = Company::find($request->company_id);
+        \App\Events\TenderInvitationSent::dispatch($rfq, $company, 'rfq');
+
+        return response()->json([
+            'success' => true,
+            'invitation' => [
+                'id' => $invitation->id,
+                'company_name' => $company->name,
+                'company_inn' => $company->inn,
+                'status' => 'pending',
+            ],
+        ]);
     }
 
     /**
