@@ -22,8 +22,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use SocialiteProviders\Manager\SocialiteWasCalled;
-use SocialiteProviders\Yandex\YandexExtendSocialite;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,7 +49,10 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureSocialite(): void
     {
-        Event::listen(SocialiteWasCalled::class, YandexExtendSocialite::class.'@handle');
+        Event::listen(
+            'SocialiteProviders\Manager\SocialiteWasCalled',
+            'SocialiteProviders\Yandex\YandexExtendSocialite@handle'
+        );
     }
 
     /**
