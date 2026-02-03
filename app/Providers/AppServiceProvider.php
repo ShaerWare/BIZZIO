@@ -49,10 +49,12 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureSocialite(): void
     {
-        Event::listen(
-            'SocialiteProviders\Manager\SocialiteWasCalled',
-            'SocialiteProviders\Yandex\YandexExtendSocialite@handle'
-        );
+        if (class_exists('SocialiteProviders\Manager\SocialiteWasCalled')) {
+            Event::listen(
+                'SocialiteProviders\Manager\SocialiteWasCalled',
+                'SocialiteProviders\Yandex\YandexExtendSocialite@handle'
+            );
+        }
     }
 
     /**
