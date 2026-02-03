@@ -33,9 +33,14 @@
             }
         @endphp
 
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
-            {{ $statusLabel }}
-        </span>
+        <div class="flex items-center flex-wrap gap-2 mb-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                Аукцион
+            </span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
+                {{ $statusLabel }}
+            </span>
+        </div>
 
         <!-- Название -->
         <h3 class="text-lg font-semibold text-gray-900 mb-2">
