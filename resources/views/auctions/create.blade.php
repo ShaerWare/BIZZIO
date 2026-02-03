@@ -108,6 +108,27 @@
                         @enderror
                     </div>
 
+                    <!-- Валюта -->
+                    <div class="mb-6">
+                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
+                            Валюта <span class="text-red-500">*</span>
+                        </label>
+                        <select name="currency"
+                                id="currency"
+                                required
+                                onchange="updateCurrencyLabel()"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('currency') border-red-500 @enderror">
+                            @foreach(\App\Models\Auction::CURRENCIES as $code => $symbol)
+                                <option value="{{ $code }}" {{ old('currency', 'RUB') === $code ? 'selected' : '' }}>
+                                    {{ $code }} ({{ $symbol }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('currency')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Приглашение компаний (для закрытой процедуры) -->
                     <div id="invitations-block" class="mb-6 hidden">
                         <label for="invited_companies" class="block text-sm font-medium text-gray-700 mb-2">
@@ -137,12 +158,10 @@
                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Начало приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local"
-                                   name="start_date"
-                                   id="start_date"
-                                   required
-                                   value="{{ old('start_date', now()->addDay()->format('Y-m-d\TH:i')) }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('start_date') border-red-500 @enderror">
+                            <x-datetime-input name="start_date"
+                                              :value="old('start_date', now()->format('Y-m-d\TH:i'))"
+                                              :required="true"
+                                              :error="$errors->has('start_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -154,12 +173,10 @@
                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Окончание приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local"
-                                   name="end_date"
-                                   id="end_date"
-                                   required
-                                   value="{{ old('end_date', now()->addWeek()->format('Y-m-d\TH:i')) }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('end_date') border-red-500 @enderror">
+                            <x-datetime-input name="end_date"
+                                              :value="old('end_date', now()->addWeek()->format('Y-m-d\TH:i'))"
+                                              :required="true"
+                                              :error="$errors->has('end_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -172,12 +189,10 @@
                         <label for="trading_start" class="block text-sm font-medium text-gray-700 mb-2">
                             Дата и время начала торгов <span class="text-red-500">*</span>
                         </label>
-                        <input type="datetime-local" 
-                               name="trading_start" 
-                               id="trading_start" 
-                               required
-                               value="{{ old('trading_start', now()->addWeek()->addDay()->format('Y-m-d\TH:i')) }}"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('trading_start') border-red-500 @enderror">
+                        <x-datetime-input name="trading_start"
+                                          :value="old('trading_start', now()->addWeek()->addDay()->format('Y-m-d\TH:i'))"
+                                          :required="true"
+                                          :error="$errors->has('trading_start')" />
                         <p class="mt-1 text-sm text-gray-500">Время указывается по UTC +3 (Москва)</p>
                         @error('trading_start')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -187,7 +202,7 @@
                     <!-- Начальная максимальная цена -->
                     <div class="mb-6">
                         <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
-                            Начальная максимальная цена (₽) <span class="text-red-500">*</span>
+                            Начальная максимальная цена (<span id="currency-symbol">₽</span>) <span class="text-red-500">*</span>
                         </label>
                         <input type="number"
                                name="starting_price"
@@ -337,10 +352,60 @@
         }
     }
 
+    // G5+A17: Обновление символа валюты в label цены
+    const currencySymbols = {!! json_encode(\App\Models\Auction::CURRENCIES) !!};
+    function updateCurrencyLabel() {
+        const sel = document.getElementById('currency');
+        const span = document.getElementById('currency-symbol');
+        if (sel && span) span.textContent = currencySymbols[sel.value] || '₽';
+    }
+
+    // A12: Авто-заполнение «Начало торгов» = «Окончание приёма» + 1 мин
+    let tradingStartEdited = false;
+
+    function syncTradingStart() {
+        const endDateVal = document.getElementById('end_date').value;
+        if (!endDateVal || tradingStartEdited) return;
+
+        const dt = new Date(endDateVal);
+        dt.setMinutes(dt.getMinutes() + 1);
+        const pad = n => String(n).padStart(2, '0');
+        const newVal = dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+
+        // Обновляем hidden input и Alpine-компонент
+        const tradingInput = document.getElementById('trading_start');
+        tradingInput.value = newVal;
+        tradingInput.dispatchEvent(new Event('input'));
+
+        // Обновляем видимые поля date/time в компоненте trading_start
+        const container = tradingInput.closest('[x-data]');
+        if (container && container.__x) {
+            container.__x.$data.date = newVal.split('T')[0];
+            container.__x.$data.time = newVal.split('T')[1];
+        }
+    }
+
     // Инициализация при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
         toggleInvitations();
         toggleStatusWarning();
+
+        // Наблюдаем за изменением hidden input end_date
+        const endDateInput = document.getElementById('end_date');
+        if (endDateInput) {
+            new MutationObserver(syncTradingStart).observe(endDateInput, { attributes: true, attributeFilter: ['value'] });
+            // Также слушаем input event от Alpine
+            endDateInput.addEventListener('input', syncTradingStart);
+            endDateInput.addEventListener('change', syncTradingStart);
+        }
+
+        // Отслеживаем ручное редактирование trading_start
+        const tradingContainer = document.getElementById('trading_start')?.closest('[x-data]');
+        if (tradingContainer) {
+            tradingContainer.querySelectorAll('input[type="date"], input[type="time"]').forEach(el => {
+                el.addEventListener('input', () => { tradingStartEdited = true; });
+            });
+        }
     });
 </script>
 @endpush

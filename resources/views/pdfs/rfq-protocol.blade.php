@@ -66,7 +66,7 @@
     <div class="info-block">
         <h3>Критерии оценки:</h3>
         <ul>
-            <li>Цена (руб. без НДС) — {{ $rfq->weight_price }}%</li>
+            <li>Цена ({{ $rfq->currency_symbol }} без НДС) — {{ $rfq->weight_price }}%</li>
             <li>Срок выполнения (календарные дни) — {{ $rfq->weight_deadline }}%</li>
             <li>Размер аванса (%) — {{ $rfq->weight_advance }}%</li>
         </ul>
@@ -90,7 +90,7 @@
                 <tr>
                     <th>№</th>
                     <th>Компания-участник</th>
-                    <th>Цена (руб.)</th>
+                    <th>Цена ({{ $rfq->currency_symbol }})</th>
                     <th>Срок (дн.)</th>
                     <th>Аванс (%)</th>
                     <th>Баллы за цену</th>
@@ -123,7 +123,7 @@
                 <p><strong>Итоговый балл:</strong> {{ number_format($rfq->winnerBid->total_score, 2, ',', ' ') }}</p>
                 <p><strong>Предложение:</strong></p>
                 <ul>
-                    <li>Цена: {{ number_format($rfq->winnerBid->price, 2, ',', ' ') }} руб.</li>
+                    <li>Цена: {{ number_format($rfq->winnerBid->price, 2, ',', ' ') }} {{ $rfq->currency_symbol }}</li>
                     <li>Срок: {{ $rfq->winnerBid->deadline }} дней</li>
                     <li>Аванс: {{ $rfq->winnerBid->advance_percent }}%</li>
                 </ul>

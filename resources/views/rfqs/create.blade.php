@@ -97,6 +97,26 @@
                             </label>
                         </div>
                     </div>
+                    <!-- Валюта -->
+                    <div class="mb-6">
+                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
+                            Валюта <span class="text-red-500">*</span>
+                        </label>
+                        <select name="currency"
+                                id="currency"
+                                required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('currency') border-red-500 @enderror">
+                            @foreach(\App\Models\Rfq::CURRENCIES as $code => $symbol)
+                                <option value="{{ $code }}" {{ old('currency', 'RUB') === $code ? 'selected' : '' }}>
+                                    {{ $code }} ({{ $symbol }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('currency')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Статус -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -160,12 +180,10 @@
                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Дата начала приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local"
-                                   name="start_date"
-                                   id="start_date"
-                                   required
-                                   value="{{ old('start_date') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('start_date') border-red-500 @enderror">
+                            <x-datetime-input name="start_date"
+                                              :value="old('start_date', '')"
+                                              :required="true"
+                                              :error="$errors->has('start_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -175,12 +193,10 @@
                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                                 Дата окончания приёма заявок <span class="text-red-500">*</span>
                             </label>
-                            <input type="datetime-local"
-                                   name="end_date"
-                                   id="end_date"
-                                   required
-                                   value="{{ old('end_date') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('end_date') border-red-500 @enderror">
+                            <x-datetime-input name="end_date"
+                                              :value="old('end_date', '')"
+                                              :required="true"
+                                              :error="$errors->has('end_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

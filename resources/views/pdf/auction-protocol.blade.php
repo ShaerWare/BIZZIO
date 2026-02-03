@@ -80,7 +80,7 @@
             <span class="label">Тип процедуры:</span> {{ $auction->type === 'open' ? 'Открытая' : 'Закрытая' }}
         </div>
         <div class="info-row">
-            <span class="label">Начальная (максимальная) цена:</span> {{ number_format($auction->starting_price, 2, '.', ' ') }} ₽
+            <span class="label">Начальная (максимальная) цена:</span> {{ number_format($auction->starting_price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
         </div>
         <div class="info-row">
             <span class="label">Шаг аукциона:</span> {{ $auction->step_percent }}%
@@ -105,7 +105,7 @@
                     <th style="width: 10%;">№</th>
                     <th style="width: 20%;">Код участника</th>
                     <th style="width: 40%;">Компания</th>
-                    <th style="width: 20%;">Цена, ₽</th>
+                    <th style="width: 20%;">Цена, {{ $auction->currency_symbol }}</th>
                     <th style="width: 10%;">Время ставки</th>
                 </tr>
             </thead>
@@ -134,10 +134,10 @@
                 <span class="label">Код участника:</span> {{ $winner->anonymous_code }}
             </div>
             <div class="info-row">
-                <span class="label">Итоговая цена:</span> {{ number_format($winner->price, 2, '.', ' ') }} ₽
+                <span class="label">Итоговая цена:</span> {{ number_format($winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
             </div>
             <div class="info-row">
-                <span class="label">Снижение от начальной цены:</span> {{ number_format($auction->starting_price - $winner->price, 2, '.', ' ') }} ₽ 
+                <span class="label">Снижение от начальной цены:</span> {{ number_format($auction->starting_price - $winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }} 
                 ({{ number_format((($auction->starting_price - $winner->price) / $auction->starting_price) * 100, 2) }}%)
             </div>
         </div>

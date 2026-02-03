@@ -146,6 +146,7 @@ Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name
 // ========================================================================
 
 Route::get('/tenders', [TenderController::class, 'index'])->name('tenders.index');
+Route::get('/tenders/rules', [TenderController::class, 'rules'])->name('tenders.rules');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/my-tenders', [TenderController::class, 'myTenders'])->name('tenders.my');

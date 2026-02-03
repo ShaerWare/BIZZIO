@@ -50,6 +50,9 @@
                                     <a href="{{ route('tenders.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         {{ __('Найти тендер') }}
                                     </a>
+                                    <a href="{{ route('tenders.rules') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        {{ __('Правила проведения') }}
+                                    </a>
                                     @auth
                                         @if(auth()->user()->isModeratorOfAnyCompany())
                                             <div class="border-t border-gray-100"></div>
@@ -328,6 +331,10 @@
 
                 <x-responsive-nav-link :href="route('tenders.index')" :active="request()->routeIs('tenders.index')">
                     {{ __('Найти тендер') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('tenders.rules')" :active="request()->routeIs('tenders.rules')">
+                    {{ __('Правила проведения') }}
                 </x-responsive-nav-link>
 
                 @auth

@@ -34,6 +34,7 @@ class StoreAuctionRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['required', Rule::in(['open', 'closed'])],
+            'currency' => ['required', Rule::in(['RUB', 'USD', 'CNY'])],
             'start_date' => ['required', 'date', 'after:now'],
             'end_date' => ['required', 'date', 'after:start_date'],
             'trading_start' => ['required', 'date', 'after:end_date'],
