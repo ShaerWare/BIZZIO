@@ -12,7 +12,10 @@
         </div>
 
         <!-- Номер и статус -->
-        <div class="flex items-center space-x-2 mb-4">
+        <div class="flex items-center flex-wrap gap-2 mb-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                Запрос котировок
+            </span>
             <span class="text-sm text-gray-500 font-mono">{{ $rfq->number }}</span>
             @php
                 // Определяем статус с учётом дат

@@ -14,6 +14,7 @@ use App\Http\Controllers\UserKeywordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TempUploadController;
+use App\Http\Controllers\TenderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -139,6 +140,18 @@ Route::middleware('auth')->group(function () {
 
 // Публичный просмотр проекта (после auth-группы, чтобы create не конфликтовал)
 Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
+
+// ========================================================================
+// UNIFIED TENDERS ROUTES (RFQ + Аукционы в общем списке)
+// ========================================================================
+
+Route::get('/tenders', [TenderController::class, 'index'])->name('tenders.index');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/my-tenders', [TenderController::class, 'myTenders'])->name('tenders.my');
+    Route::get('/my-bids-all', [TenderController::class, 'myBids'])->name('tenders.bids.my');
+    Route::get('/my-invitations-all', [TenderController::class, 'myInvitations'])->name('tenders.invitations.my');
+});
 
 // ========================================================================
 // RFQ ROUTES
