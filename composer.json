@@ -15,7 +15,6 @@
         "laravel/tinker": "^2.10.1",
         "orchid/platform": "^14.52",
         "socialiteproviders/vkontakte": "^5.1",
-        "socialiteproviders/yandex": "^4.1",
         "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-medialibrary": "^11.0",
         "willvincent/feeds": "^2.7"

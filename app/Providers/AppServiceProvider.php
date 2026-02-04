@@ -49,16 +49,13 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureSocialite(): void
     {
-        if (class_exists('SocialiteProviders\Yandex\Provider')) {
-            $socialite = $this->app->make('Laravel\Socialite\Contracts\Factory');
-            $socialite->extend('yandex', function () use ($socialite) {
-                $config = config('services.yandex');
-                return $socialite->buildProvider(
-                    'SocialiteProviders\Yandex\Provider',
-                    $config
-                );
-            });
-        }
+        $socialite = $this->app->make(\Laravel\Socialite\Contracts\Factory::class);
+        $socialite->extend('yandex', function () use ($socialite) {
+            return $socialite->buildProvider(
+                \App\Socialite\YandexProvider::class,
+                config('services.yandex')
+            );
+        });
     }
 
     /**
