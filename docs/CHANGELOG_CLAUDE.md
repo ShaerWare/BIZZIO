@@ -4,6 +4,25 @@
 
 ---
 
+## 04.02.2026
+
+### Переключение почты Unisender → Beget SMTP
+
+- `.env.example`: SMTP-настройки заменены на Beget (`smtp.beget.com:465`, SSL)
+- `.env`: хост, логин и параметры обновлены для Beget
+- Важно: Beget требует совпадения MAIL_FROM_ADDRESS с MAIL_USERNAME
+
+**Файлы:** .env.example, .env
+
+### Фикс: class_exists() для Socialite в AppServiceProvider
+
+- Обёрнута регистрация Yandex Socialite в `class_exists()` — предотвращает fatal error при `composer install` когда пакет ещё не установлен
+- Убраны `use` импорты для `SocialiteProviders\*` — заменены на строковые литералы
+
+**Файлы:** app/Providers/AppServiceProvider.php
+
+---
+
 ## 03.02.2026
 
 ### Замена авторизации VK → Яндекс OAuth
