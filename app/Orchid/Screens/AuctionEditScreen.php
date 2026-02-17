@@ -116,7 +116,7 @@ class AuctionEditScreen extends Screen
                     ->required(),
 
                 Input::make('auction.starting_price')
-                    ->title('Начальная (максимальная) цена, ₽')
+                    ->title('Начальная (максимальная) цена')
                     ->type('number')
                     ->step('0.01')
                     ->required(),
@@ -134,7 +134,8 @@ class AuctionEditScreen extends Screen
                 Upload::make('auction.technical_specification')
                     ->title('Техническое задание (PDF)')
                     ->acceptedFiles('.pdf')
-                    ->maxFiles(1),
+                    ->maxFiles(1)
+                    ->maxFileSize(10),
 
                 Select::make('auction.status')
                     ->title('Статус')

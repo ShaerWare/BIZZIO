@@ -4,6 +4,81 @@
 
 ---
 
+## 17.02.2026 (сессия 2)
+
+### C8: Admin notification on new company (issue #65) — CLOSED
+- **Задача:** Уведомлять админов при создании новой компании.
+- **Реализация:** Event-driven: `CompanyCreated` → `SendCompanyCreatedNotification` → `CompanyCreatedNotification` (email + database).
+- **Файлы:** `app/Events/CompanyCreated.php` (new), `app/Listeners/SendCompanyCreatedNotification.php` (new), `app/Notifications/CompanyCreatedNotification.php` (new), `AppServiceProvider.php`, `CompanyController.php`.
+
+### C7: Fix admin company verification (issue #64) — CLOSED
+- **Причина 1:** `UpdateCompanyOrchidRequest::authorize()` не проверяла admin-доступ — 403 для администратора.
+- **Причина 2:** `is_verified` отсутствовало в validation rules — checkbox молча игнорировался.
+- **Фикс:** Добавлена admin-проверка в authorize(), `is_verified` в rules(), `sendTrueOrFalse()` в checkbox.
+
+### A22: Fix PDF upload limit (issue #54) — CLOSED
+- **Причина:** Docker-образ не был пересобран после добавления `docker/uploads.ini` (PHP `upload_max_filesize=2M` вместо 100M).
+- **Фикс:** Rebuild нужен: `docker compose build app`. Также добавлен `maxFileSize(10)` в Orchid Upload fields.
+
+### A20: Fix auction status on My Bids page (issue #52) — CLOSED
+- **Причина:** Столбец «Статус» показывал только статус заявки (Ожидание/Принята), не показывая стадию аукциона.
+- **Фикс:** `resources/views/auctions/my-bids.blade.php` — двухуровневый статус: статус аукциона + статус заявки.
+
+### A19: Fix auction currency in trading (issue #53) — CLOSED
+- **Причина:** Hardcoded ₽ в `AuctionController::getState()`, `StoreAuctionBidRequest`, `AuctionEditScreen`.
+- **Фикс:** Заменено на `$auction->currency_symbol` во всех местах.
+
+### G10: Fix logout 419 error (issue #55) — CLOSED
+- **Причина:** CSRF token expired → 419 error page при нажатии Logout.
+- **Фикс:** `bootstrap/app.php` — обработка `TokenMismatchException` → redirect to login.
+
+### S5: Email SMTP (issue #24) — CLOSED (already done)
+- Уже было настроено в commit 718c1b7 (Beget SMTP). Закрыт issue.
+
+### PR1: Fix project editing authorization (issue #73) — CLOSED
+- **Проблема:** Orchid admin-экраны `ProjectEditScreen` и `ProjectListScreen` не проверяли права доступа к конкретному проекту — любой пользователь с доступом к админ-панели мог редактировать/удалять чужие проекты.
+- **Фикс 1:** `app/Orchid/Screens/ProjectEditScreen.php` — добавлены проверки `canManage()` в `query()`, `save()`, `remove()`.
+- **Фикс 2:** `app/Orchid/Screens/ProjectListScreen.php` — добавлена проверка `canManage()` в `remove()`.
+- **Фикс 3:** `app/Http/Controllers/ProjectController.php` — `destroy()`: заменена неконсистентная проверка `created_by` на `canManage()`.
+- **Тесты:** 185/185 passed.
+
+### A18: Fix auction PDF protocol (issue #57) — CLOSED
+- **Причина:** stale model — `$auction->winner_bid_id` был `null` в памяти при генерации PDF (хотя в БД уже записан).
+- **Фикс 1:** `app/Jobs/CloseAuctionJob.php` — добавлен `$auction->refresh()` после `determineWinner()`.
+- **Фикс 2:** `app/Models/Auction.php` — `winnerBid()`: `hasOne` → `belongsTo`.
+- **Тесты:** 185/185 passed.
+
+### T10: Fix RFQ creation bug (issue #51) — CLOSED
+- **BUG 1 (CRITICAL):** `RfqController::show()` — падал 500 для неавторизованных пользователей на закрытых RFQ. Добавлена проверка `auth()->check()`.
+- **BUG 2 (CRITICAL):** `StoreRfqRequest` — валидация `required|file` для `technical_specification` блокировала temp-upload. Исправлено на `nullable|file` + проверка в `withValidator`.
+- **BUG 4:** `UpdateRfqRequest` — `after:start_date` ссылался на пустое поле. Исправлено на `$rfq->start_date`.
+- **BUG 7:** `Rfq::winnerBid()` — `hasOne` заменён на `belongsTo`.
+- **Тесты:** добавлено поле `currency` в 5 RFQ-тестах и 3 Auction-тестах (pre-existing failures).
+- **Файлы:** `app/Http/Controllers/RfqController.php`, `app/Http/Requests/StoreRfqRequest.php`, `app/Http/Requests/UpdateRfqRequest.php`, `app/Models/Rfq.php`, `tests/Feature/RfqTest.php`, `tests/Feature/AuctionTest.php`
+- **Тесты:** 185/185 passed.
+
+### Обновление бэклога: интеграция GitHub Issues #46-#80
+- **Что сделано:** Проверены открытые GitHub Issues, обнаружено 6 новых (#75-#80: AI-идеи, переименование, мобильное приложение). Все issues #46-#80 интегрированы в бэклог.
+- **Изменённые файлы:**
+  - `docs/04_БЭКЛОГ_ФИКСОВ.md` — добавлено 31 новых задач. Новые категории: Проекты (PR1-PR2), AI/Этап 2 (AI1-AI4), Мобильное приложение (M1). Итого: 75 задач (21 готово, 54 ожидает). Обновлены фазы выполнения (6 фаз вместо 5).
+  - `docs/05_АНАЛИЗ_GITHUB_ISSUES.md` — добавлен раздел 4 (issues #75-#80), обновлена сводка и связь с бэклогом.
+  - `CLAUDE.md` — исправлены устаревшие ссылки на VKIDProvider (заменён на YandexProvider), обновлены OAuth-провайдеры, пакеты, Docker-конфиг, jobs, factories.
+
+---
+
+## 12.02.2026
+
+### Анализ GitHub Issues vs ТЗ (Этап 1)
+
+- Создан документ `docs/05_АНАЛИЗ_GITHUB_ISSUES.md` — анализ 26 открытых GitHub issues
+- Сопоставление с ТЗ первого этапа: 67% задач — из ТЗ, 33% — новые
+- Расчёт трудозатрат: 60–107 часов (~3–4 недели)
+- Рекомендуемый порядок выполнения в 4 фазах
+
+**Файлы:** docs/05_АНАЛИЗ_GITHUB_ISSUES.md
+
+---
+
 ## 04.02.2026
 
 ### Переключение почты Unisender → Beget SMTP

@@ -77,6 +77,9 @@ class CompanyController extends Controller
         // Назначить создателя владельцем
         $company->assignModerator(auth()->user(), 'owner');
 
+        // Уведомить администраторов о новой компании
+        event(new \App\Events\CompanyCreated($company));
+
         return redirect()->route('companies.show', $company)
             ->with('success', 'Компания успешно создана!');
     }

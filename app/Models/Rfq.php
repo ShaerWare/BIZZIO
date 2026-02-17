@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
@@ -97,9 +96,9 @@ class Rfq extends Model implements HasMedia
     /**
      * Заявка-победитель
      */
-    public function winnerBid(): HasOne
+    public function winnerBid(): BelongsTo
     {
-        return $this->hasOne(RfqBid::class, 'id', 'winner_bid_id');
+        return $this->belongsTo(RfqBid::class, 'winner_bid_id');
     }
 
     // ========================

@@ -201,6 +201,7 @@ class RfqEditScreen extends Screen
                     ->title('Техническое задание (PDF)')
                     ->acceptedFiles('.pdf')
                     ->maxFiles(1)
+                    ->maxFileSize(10)
                     ->help('Загрузите техническое задание в формате PDF (макс. 10 МБ)'),
             ]))
                 ->title('Документы')

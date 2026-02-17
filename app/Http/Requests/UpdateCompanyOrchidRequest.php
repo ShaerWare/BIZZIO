@@ -22,7 +22,8 @@ class UpdateCompanyOrchidRequest extends FormRequest
 
         return auth()->check() && (
             $this->companyModel->created_by === auth()->id() ||
-            $this->companyModel->isModerator(auth()->user())
+            $this->companyModel->isModerator(auth()->user()) ||
+            auth()->user()->hasAccess('platform.systems.roles')
         );
     }
 
@@ -51,6 +52,8 @@ class UpdateCompanyOrchidRequest extends FormRequest
 
             'company.documents'         => ['sometimes', 'nullable', 'array'],
             'company.documents.*'       => ['sometimes', 'file', 'mimes:pdf', 'max:10240'],
+
+            'company.is_verified'       => ['nullable', 'boolean'],
 
             'company.moderators'        => ['nullable', 'array'],
             'company.moderators.*'      => ['exists:users,id'],
