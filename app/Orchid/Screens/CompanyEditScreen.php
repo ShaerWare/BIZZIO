@@ -132,6 +132,7 @@ class CompanyEditScreen extends Screen
                 CheckBox::make('company.is_verified')
                     ->title('Верифицирована')
                     ->placeholder('Компания прошла проверку')
+                    ->sendTrueOrFalse()
                     ->help('Только администратор может верифицировать компанию')
                     ->canSee(auth()->user()->hasAccess('platform.systems.roles')),
 

@@ -86,12 +86,26 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($bid->status === 'winner')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Победитель</span>
-                                            @elseif($bid->status === 'accepted')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">Принята</span>
+                                            {{-- Статус аукциона --}}
+                                            @if($bid->auction->status === 'active')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Приём заявок</span>
+                                            @elseif($bid->auction->status === 'trading')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Торги</span>
+                                            @elseif($bid->auction->status === 'closed')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Завершён</span>
                                             @else
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Ожидание</span>
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500">Черновик</span>
+                                            @endif
+                                            <br>
+                                            {{-- Статус заявки/ставки --}}
+                                            @if($bid->status === 'winner')
+                                                <span class="mt-1 inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Победитель</span>
+                                            @elseif($bid->status === 'accepted')
+                                                <span class="mt-1 inline-block px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">Принята</span>
+                                            @elseif($bid->status === 'rejected')
+                                                <span class="mt-1 inline-block px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Отклонена</span>
+                                            @else
+                                                <span class="mt-1 inline-block px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-600">Ожидание</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

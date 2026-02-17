@@ -6,24 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Bizzio.ru — B2B business network for the construction industry. Laravel 12 + Orchid admin panel + PostgreSQL.
 
-**Status:** 9/10 sprints completed (90% MVP), ~380 hours of development.
-**Tests:** 185 feature tests, 377 assertions.
-
 ## Development Commands
 
 ### Docker (Primary)
 ```bash
-docker compose up -d                              # Start containers
-docker compose down                               # Stop containers
-docker exec my_project_app php artisan <command>  # Run artisan in container
-docker exec my_project_app composer install       # Install dependencies
+docker compose up -d                                    # Start containers
+docker compose down                                     # Stop containers
+docker compose exec app php artisan <command>           # Run artisan in container
+docker compose exec app composer install                # Install dependencies
 ```
 
 ### Local Development
 ```bash
-composer run dev          # Start all: Laravel + Queue + Logs + Vite (uses concurrently)
+composer run dev          # Start all: Laravel + Queue (queue:listen) + Logs (pail) + Vite
 php artisan serve         # Start Laravel server only
-php artisan queue:work    # Process queue jobs (use queue:listen for auto-reload on code changes)
+php artisan queue:work    # Process queue jobs (production)
+php artisan queue:listen  # Process queue jobs with auto-reload on code changes (dev)
 ```
 
 ### Testing
@@ -32,6 +30,7 @@ composer run test                        # Run all tests (clears config first)
 php artisan test --filter=TestName       # Run specific test
 php artisan test --filter=TestClass::testMethod  # Run single test method
 ```
+**Note:** Tests use SQLite in-memory (`phpunit.xml`), not PostgreSQL. PostgreSQL-specific features (e.g. `jsonb`, full-text search) are not tested.
 
 ### Code Style
 ```bash
@@ -95,9 +94,9 @@ app/
 ├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, *ProtocolService, NewsFilterService
 ├── Events/         # Domain events (registered in AppServiceProvider@registerEventListeners)
 ├── Listeners/      # Send*Notification handlers
-├── Jobs/           # CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses
-├── Policies/       # RfqPolicy, AuctionPolicy
-├── Socialite/      # VKIDProvider (custom VK ID API implementation)
+├── Jobs/           # CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, NotifyAdminOnRSSErrorJob
+├── Policies/       # RfqPolicy, AuctionPolicy (registered via Gate::policy in AppServiceProvider)
+├── Socialite/      # YandexProvider (custom Yandex OAuth implementation)
 ├── Orchid/         # Admin panel screens and layouts
 └── Http/Controllers/Api/  # API endpoints (v1/chat - Gemini AI proxy)
 ```
@@ -115,11 +114,14 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - `spatie/laravel-activitylog` — Activity feed logging
 - `spatie/laravel-medialibrary` — File/image management
 - `barryvdh/laravel-dompdf` — PDF protocol generation
-- `laravel/socialite` + `app/Socialite/VKIDProvider.php` — OAuth (Google, VK ID)
+- `google-gemini-php/client` — Gemini AI chat proxy
+- `willvincent/feeds` — RSS feed parsing
+- `laravel/socialite` — OAuth (Google, Yandex)
 
-### VK ID OAuth
-Custom provider at `app/Socialite/VKIDProvider.php` for new VK ID API.
-Requires `.env`: `VKID_CLIENT_ID`, `VKID_CLIENT_SECRET`, `VKID_REDIRECT_URI`
+### OAuth Providers
+- **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
+- **Yandex** — Custom provider at `app/Socialite/YandexProvider.php`, registered in `AppServiceProvider::configureSocialite()`. `.env`: `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
+- **VK** — Package `socialiteproviders/vkontakte` is installed but not yet wired up (backlog item)
 
 ### AI Chat API
 `POST /api/v1/chat` — Proxies chat to Google Gemini API.
@@ -150,82 +152,26 @@ Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom
 
 ## Docker Setup
 
-- **app** container: PHP 8.2-FPM + Nginx + Supervisor, port 80, timezone Europe/Moscow
-- **db** container: PostgreSQL 14 Alpine, host port 5435, timezone Europe/Moscow
-- Timezone configured via tzdata in Dockerfile + TZ environment variable
+- **app** container (`my_project_app`): PHP 8.2-FPM + Nginx + Supervisor, timezone Europe/Moscow, resource limits: 1 CPU / 0.9G RAM. Port 80 not exposed by default (use nginx-proxy in production)
+- **db** container (`my_project_db`): PostgreSQL 14 Alpine, host port 5435, timezone Europe/Moscow
 - Production: `docker-compose.override.yml.prod` with nginx-proxy + Let's Encrypt
 
 ## Production Deployment
 
-### Deploy from Git
+Supervisor (configured in `docker/supervisord.conf`) auto-starts: php-fpm, nginx, queue worker (`queue:work database`), and scheduler (`schedule:run` every 60 sec).
+
 ```bash
-cd /path/to/project
+# Deploy
 git pull origin main
 docker compose exec app composer install --no-dev --optimize-autoloader
 docker compose exec app php artisan migrate --force
-docker compose exec app php artisan config:cache
-docker compose exec app php artisan route:cache
-docker compose exec app php artisan view:cache
-docker compose exec app php artisan storage:link
-```
-
-### Server Commands (docker compose exec app)
-```bash
-# Artisan commands
-docker compose exec app php artisan migrate              # Run migrations
-docker compose exec app php artisan db:seed              # Run seeders
-docker compose exec app php artisan tinker               # Laravel REPL
-
-# Queue & Jobs
-docker compose exec app php artisan queue:work           # Process jobs (auto-started by Supervisor)
-docker compose exec app php artisan queue:restart        # Restart queue workers after code changes
-docker compose exec app php artisan queue:failed         # List failed jobs
-docker compose exec app php artisan queue:retry all      # Retry failed jobs
-
-# Scheduler (auto-runs every minute via Supervisor)
-docker compose exec app php artisan schedule:run         # Manual run
-docker compose exec app php artisan schedule:list        # List scheduled tasks
-
-# Custom commands
-docker compose exec app php artisan auctions:check-expired   # Close expired auctions
-docker compose exec app php artisan rss:parse                # Parse RSS feeds
-
-# Cache management
-docker compose exec app php artisan config:cache        # Cache config (production)
-docker compose exec app php artisan route:cache         # Cache routes (production)
-docker compose exec app php artisan view:cache          # Cache views (production)
-docker compose exec app php artisan optimize:clear      # Clear all caches
+docker compose exec app php artisan config:cache && docker compose exec app php artisan route:cache && docker compose exec app php artisan view:cache
+docker compose exec app php artisan queue:restart
 
 # Logs
-docker compose exec app tail -f /var/log/queue-worker.log    # Queue worker logs
-docker compose exec app tail -f /var/log/scheduler.log       # Scheduler logs
-docker compose logs -f app                                    # Container logs
-```
-
-### What Supervisor Auto-Starts
-Configured in `docker/supervisord.conf`:
-- **php-fpm** — PHP FastCGI Process Manager
-- **nginx** — Web server
-- **laravel-worker** — Queue worker (`queue:work database`)
-- **laravel-scheduler** — Cron scheduler (`schedule:run` every 60 sec)
-
-### Restart Services After Deploy
-```bash
-docker compose restart app                              # Restart entire container
-docker compose exec app php artisan queue:restart       # Graceful queue restart
-docker compose exec app supervisorctl restart all       # Restart all Supervisor programs
-```
-
-### First-Time Setup on Server
-```bash
-git clone <repo> /path/to/project
-cd /path/to/project
-cp .env.example .env
-# Edit .env with production values (DB, MAIL, APP_URL, etc.)
-docker compose up -d
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --seed
-docker compose exec app php artisan storage:link
+docker compose exec app tail -f /var/log/queue-worker.log    # Queue worker
+docker compose exec app tail -f /var/log/scheduler.log       # Scheduler
+docker compose logs -f app                                    # Container
 ```
 
 ## Environment Notes
@@ -260,6 +206,8 @@ protected function setUp(): void {
 }
 ```
 Helper methods like `createRfq()`, `createAuction()` are defined in each test class.
+
+**Factories:** Only `UserFactory`, `CompanyFactory`, `ProjectFactory` exist. Rfq, Auction, and bid models must be created manually in tests via helper methods.
 
 ## Documentation
 

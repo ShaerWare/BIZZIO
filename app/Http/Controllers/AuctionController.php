@@ -397,7 +397,7 @@ public function getState(Auction $auction)
                 'anonymous_code' => $bid->anonymous_code,
                 'company_name' => $canSeeCompany ? $bid->company->name : null,
                 'price' => number_format($bid->price, 2, '.', ''),
-                'price_formatted' => number_format($bid->price, 2, '.', ' ') . ' ₽',
+                'price_formatted' => number_format($bid->price, 2, '.', ' ') . ' ' . $auction->currency_symbol,
                 'created_at' => $bid->created_at->format('H:i:s'),
                 'is_mine' => in_array($bid->company_id, $userCompanies),
             ];
@@ -419,7 +419,7 @@ public function getState(Auction $auction)
         'status' => 'trading',
         'auction_status' => $auction->status,
         'current_price' => number_format($currentPrice, 2, '.', ''),
-        'current_price_formatted' => number_format($currentPrice, 2, '.', ' ') . ' ₽',
+        'current_price_formatted' => number_format($currentPrice, 2, '.', ' ') . ' ' . $auction->currency_symbol,
         'bids_count' => $bids->count(),
         'bids' => $bids,
         'time_remaining' => $timeRemaining,

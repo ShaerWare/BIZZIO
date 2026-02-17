@@ -165,6 +165,12 @@ class ProjectListScreen extends Screen
      */
     public function remove(Project $project)
     {
+        // Проверка прав
+        if (!$project->canManage(auth()->user())) {
+            \Orchid\Support\Facades\Toast::error('У вас нет прав для удаления этого проекта.');
+            return redirect()->route('platform.projects');
+        }
+
         $project->delete();
 
         \Orchid\Support\Facades\Toast::info('Проект успешно удалён');

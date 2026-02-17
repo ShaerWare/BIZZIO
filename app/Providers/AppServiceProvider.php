@@ -7,8 +7,10 @@ use App\Events\CommentCreated;
 use App\Events\ProjectInvitationSent;
 use App\Events\TenderClosed;
 use App\Events\TenderInvitationSent;
+use App\Events\CompanyCreated;
 use App\Listeners\SendAuctionTradingStartedNotification;
 use App\Listeners\SendCommentNotification;
+use App\Listeners\SendCompanyCreatedNotification;
 use App\Listeners\SendProjectInvitationNotification;
 use App\Listeners\SendTenderClosedNotification;
 use App\Listeners\SendTenderInvitationNotification;
@@ -93,5 +95,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(CommentCreated::class, SendCommentNotification::class);
         Event::listen(TenderClosed::class, SendTenderClosedNotification::class);
         Event::listen(AuctionTradingStarted::class, SendAuctionTradingStartedNotification::class);
+        Event::listen(CompanyCreated::class, SendCompanyCreatedNotification::class);
     }
 }

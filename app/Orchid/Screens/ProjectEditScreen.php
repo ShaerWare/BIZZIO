@@ -29,6 +29,11 @@ class ProjectEditScreen extends Screen
      */
     public function query(Project $project): iterable
     {
+        // Проверка прав: только модератор компании-заказчика или админ
+        if ($project->exists && !$project->canManage(auth()->user())) {
+            abort(403, 'У вас нет прав для редактирования этого проекта.');
+        }
+
         $project->load(['company', 'participants']);
 
         return [
@@ -149,6 +154,12 @@ class ProjectEditScreen extends Screen
      */
     public function save(Request $request, Project $project)
     {
+        // Проверка прав при редактировании существующего проекта
+        if ($project->exists && !$project->canManage(auth()->user())) {
+            Toast::error('У вас нет прав для редактирования этого проекта.');
+            return redirect()->route('platform.projects');
+        }
+
         $data = $request->get('project');
 
         // Валидация
@@ -193,6 +204,12 @@ class ProjectEditScreen extends Screen
      */
     public function remove(Project $project)
     {
+        // Проверка прав
+        if (!$project->canManage(auth()->user())) {
+            Toast::error('У вас нет прав для удаления этого проекта.');
+            return redirect()->route('platform.projects');
+        }
+
         $project->delete();
 
         Toast::info('Проект успешно удалён!');

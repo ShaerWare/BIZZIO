@@ -158,9 +158,11 @@ class RfqController extends Controller
         ]);
 
         // Проверка доступа к закрытым RFQ
-        $canView = $rfq->type === 'open' || 
-                   $rfq->company->isModerator(auth()->user()) ||
-                   $rfq->invitations()->whereIn('company_id', auth()->user()->moderatedCompanies->pluck('id'))->exists();
+        $canView = $rfq->type === 'open' ||
+                   (auth()->check() && (
+                       $rfq->company->isModerator(auth()->user()) ||
+                       $rfq->invitations()->whereIn('company_id', auth()->user()->moderatedCompanies->pluck('id'))->exists()
+                   ));
 
         if (!$canView) {
             abort(403, 'У вас нет доступа к этому запросу котировок.');
@@ -168,7 +170,7 @@ class RfqController extends Controller
 
         // Проверка: может ли пользователь подать заявку
         $canBid = false;
-        $userCompanies = auth()->user()->moderatedCompanies;
+        $userCompanies = auth()->check() ? auth()->user()->moderatedCompanies : collect();
         $alreadyBid = false;
 
         if ($rfq->isActive() && !$rfq->isExpired()) {

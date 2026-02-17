@@ -198,8 +198,7 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        // ИСПРАВЛЕНО: hasRole() → inRole()
-        if ($project->created_by !== auth()->id() && !auth()->user()->inRole('admin')) {
+        if (!$project->canManage(auth()->user())) {
             abort(403, 'У вас нет прав для удаления этого проекта.');
         }
 

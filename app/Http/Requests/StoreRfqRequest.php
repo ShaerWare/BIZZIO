@@ -34,7 +34,8 @@ class StoreRfqRequest extends FormRequest
             'weight_price' => 'required|numeric|min:0|max:100',
             'weight_deadline' => 'required|numeric|min:0|max:100',
             'weight_advance' => 'required|numeric|min:0|max:100',
-            'technical_specification' => 'required|file|mimes:pdf|max:10240', // 10MB
+            'technical_specification' => 'nullable|file|mimes:pdf|max:10240', // 10MB
+            'technical_specification_temp' => 'nullable|string',
             'invited_companies' => 'nullable|array',
             'invited_companies.*' => 'exists:companies,id',
         ];
@@ -46,6 +47,11 @@ class StoreRfqRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            // Проверка: техническое задание обязательно (файл или temp-upload)
+            if (!$this->hasFile('technical_specification') && !$this->filled('technical_specification_temp')) {
+                $validator->errors()->add('technical_specification', 'Загрузите техническое задание (PDF)');
+            }
+
             // Проверка: сумма весов = 100%
             $totalWeight = $this->weight_price + $this->weight_deadline + $this->weight_advance;
             if (abs($totalWeight - 100) > 0.01) {

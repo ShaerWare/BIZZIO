@@ -56,7 +56,10 @@ class CloseAuctionJob implements ShouldQueue
             // Если нет ставок, закрываем без победителя
             $winnerService->closeWithoutWinner($auction);
         }
-        
+
+        // Обновляем модель из БД (winner_bid_id, status обновились в determineWinner)
+        $auction->refresh();
+
         // Шаг 2: Генерируем PDF-протокол
         $protocolService->generate($auction);
         

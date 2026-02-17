@@ -50,8 +50,8 @@ class StoreAuctionBidRequest extends FormRequest
             'acknowledgement.accepted' => 'Необходимо принять условия проведения аукциона.',
             'price.required' => 'Необходимо указать цену ставки.',
             'price.numeric' => 'Цена должна быть числом.',
-            'price.min' => 'Ставка слишком низкая. Минимальная цена: :min ₽',
-            'price.max' => 'Ставка слишком высокая. Максимальная цена: :max ₽',
+            'price.min' => 'Ставка слишком низкая. Минимальная цена: :min ' . ($this->route('auction')?->currency_symbol ?? '₽'),
+            'price.max' => 'Ставка слишком высокая. Максимальная цена: :max ' . ($this->route('auction')?->currency_symbol ?? '₽'),
             'comment.max' => 'Комментарий не может быть длиннее 1000 символов.',
         ];
     }
