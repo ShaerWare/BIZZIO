@@ -140,7 +140,7 @@ class Company extends Model implements HasMedia
     }
 
     /**
-     * Запросы котировок (RFQ) компании
+     * Запросы цен (RFQ) компании
      */
     public function rfqs(): HasMany
     {
@@ -276,8 +276,9 @@ class Company extends Model implements HasMedia
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('inn', 'like', "%{$search}%");
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $q->where('name', $op, "%{$search}%")
+              ->orWhere('inn', $op, "%{$search}%");
         });
     }
 

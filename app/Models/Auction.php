@@ -278,8 +278,9 @@ class Auction extends Model implements HasMedia
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('title', 'like', "%{$search}%")
-              ->orWhere('number', 'like', "%{$search}%");
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $q->where('title', $op, "%{$search}%")
+              ->orWhere('number', $op, "%{$search}%");
         });
     }
 

@@ -61,7 +61,7 @@
                                     </a>
                                     <a href="{{ route('search.index', ['q' => $query, 'type' => 'rfqs']) }}"
                                        class="flex items-center justify-between px-3 py-2 rounded-md text-sm {{ $type === 'rfqs' ? 'bg-emerald-100 text-emerald-700 font-medium' : 'text-gray-600 hover:bg-gray-100' }}">
-                                        <span>Запросы котировок</span>
+                                        <span>Запросы цен</span>
                                         <span class="text-xs {{ $type === 'rfqs' ? 'text-emerald-600' : 'text-gray-400' }}">{{ $counts['rfqs'] }}</span>
                                     </a>
                                     <a href="{{ route('search.index', ['q' => $query, 'type' => 'auctions']) }}"

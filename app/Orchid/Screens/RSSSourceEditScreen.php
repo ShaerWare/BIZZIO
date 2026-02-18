@@ -74,6 +74,12 @@ class RSSSourceEditScreen extends Screen
                     ->required()
                     ->help('Полный URL до RSS-ленты'),
 
+                Input::make('source.parse_interval')
+                    ->title('Интервал обновления (минуты)')
+                    ->type('number')
+                    ->value(15)
+                    ->help('Как часто обновлять этот источник (по умолчанию 15 мин)'),
+
                 Switcher::make('source.enabled')
                     ->title('Статус')
                     ->sendTrueOrFalse()
@@ -93,6 +99,7 @@ class RSSSourceEditScreen extends Screen
         $request->validate([
             'source.name' => 'required|string|max:255',
             'source.url' => 'required|url|max:500',
+            'source.parse_interval' => 'nullable|integer|min:1|max:1440',
             'source.enabled' => 'boolean',
         ]);
 

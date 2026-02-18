@@ -4,6 +4,107 @@
 
 ---
 
+## 2026-02-17 (сессия 4) — Выполнение бэклога: 7 задач
+
+### A14 — Удалить примечание о торгах
+**Статус:** Текст не найден в коде — уже удалён или не добавлялся. Задача закрыта.
+
+### A13 — Примечание UTC+3 ко всем полям времени
+**Добавлено:**
+- `resources/views/auctions/edit.blade.php` — UTC+3 к полям end_date, trading_start
+- `resources/views/rfqs/edit.blade.php` — UTC+3 к полю end_date
+- `resources/views/auctions/show.blade.php` — (МСК) к датам приёма заявок и начала торгов
+- `resources/views/rfqs/show.blade.php` — (МСК) к датам начала и окончания
+
+### G12 (#61) — Яндекс.Метрика
+**Добавлено:** Счётчик Яндекс.Метрика (id=106718528) в `<head>` всех layout'ов:
+- `resources/views/layouts/app.blade.php`
+- `resources/views/layouts/guest.blade.php`
+- `resources/views/welcome.blade.php`
+- Работает только в production (`@production`)
+
+### C6 (#63) — Запросы на присоединение → вкладка «Люди»
+**Перенесено:** Блок запросов на присоединение из вкладки «Управление» во вкладку «Люди» на странице компании.
+**Добавлено:** Уведомление модераторам компании при получении запроса (email + database):
+- `app/Notifications/JoinRequestNotification.php` — новый файл
+- `app/Http/Controllers/CompanyJoinRequestController.php` — отправка уведомлений в store()
+- `resources/views/partials/notification-text.blade.php` — текст уведомления
+- `resources/views/notifications/index.blade.php` — иконка уведомления
+
+### G14 (#69) — Форма обратной связи
+**Добавлено:** Форма обратной связи в профиле пользователя:
+- `resources/views/profile/partials/feedback-form.blade.php` — новый файл
+- `resources/views/profile/edit.blade.php` — подключение формы
+- `app/Http/Controllers/ProfileController.php` — метод feedback()
+- `routes/web.php` — маршрут POST /profile/feedback
+- Отправка на admin@bizzio.ru с reply-to пользователя
+
+### G15 (#70) — PDF-протоколы: логотип, ссылки, нумерация
+**Обновлено:** PDF-протоколы аукционов и RFQ:
+- `resources/views/pdf/auction-protocol.blade.php` — логотип, ссылка, нумерация страниц
+- `resources/views/pdfs/rfq-protocol.blade.php` — логотип, ссылка, нумерация страниц
+- Фирменный зелёный (#28a745) в заголовке и футере
+
+### N1 — Настройка таймаута RSS в админке
+**Добавлено:** Индивидуальный интервал обновления для каждого RSS-источника:
+- Миграция: поле `parse_interval` (по умолчанию 15 мин)
+- `app/Models/RSSSource.php` — поле parse_interval
+- `app/Orchid/Screens/RSSSourceEditScreen.php` — поле в админке
+- `app/Console/Commands/ParseRSSCommand.php` — пропуск источников до истечения интервала
+- `bootstrap/app.php` — scheduler: everyFifteenMinutes → everyFiveMinutes
+
+---
+
+## 2026-02-17 — T11 (#79): Переименование «Запрос котировок» → «Запрос цен»
+
+**Изменено:** Замена терминологии по всему проекту (27 файлов):
+- 15 Blade-шаблонов, 10 PHP-файлов, 2 файла маршрутов
+- Все формы слова: «Запрос/Запросы/Запроса/запрос/запросу котировок» → «цен»
+
+## 2026-02-17 — G16 (#67): Ограничение размера фото до 2 МБ
+
+**Исправлено:** `app/Http/Controllers/CompanyController.php` — `uploadPhotos()`: `max:5120` → `max:2048`
+
+## 2026-02-17 — G13 (#50): Подтверждение соответствия ТЗ
+
+**Добавлено:** Обязательный чекбокс «Настоящим подтверждаю соответствие своего предложения Техническому заданию (ТЗ)» на формах подачи заявок:
+- `resources/views/rfqs/show.blade.php` — форма подачи предложения RFQ
+- `resources/views/auctions/show.blade.php` — форма подачи заявки на аукцион
+
+## 2026-02-17 — C4+C5 (#72, #71): Управление участниками компании
+
+**C4 (#72):** Добавлена возможность изменения роли и прав модераторов:
+- `resources/views/companies/show.blade.php` — кнопка «Изменить» + модальное окно с формой редактирования роли и прав
+
+**C5 (#71):** Выпадающий список пользователей заменён на поиск:
+- `resources/views/companies/show.blade.php` — Alpine.js компонент `userSearch()` с динамическим поиском
+- `app/Http/Controllers/SearchController.php` — добавлены пользователи в quick search API, API теперь возвращает плоский массив JSON
+- `tests/Feature/SearchTest.php` — обновлены тесты под новый формат ответа
+
+## 2026-02-17 — G11 (#62): Поиск без учёта регистра
+
+**Проблема:** PostgreSQL `LIKE` регистрозависим — «АРИС» не находил «Арис».
+
+**Исправлено:** Заменён `like` на `ilike` (PostgreSQL) во всех поисковых запросах:
+- `app/Models/Company.php` — `scopeSearch()` (name, inn)
+- `app/Models/Project.php` — `scopeSearch()` (name)
+- `app/Models/Rfq.php` — `scopeSearch()` (title, number)
+- `app/Models/Auction.php` — `scopeSearch()` (title, number)
+- `app/Orchid/Screens/ProjectListScreen.php` — фильтр поиска
+- `app/Http/Controllers/CompanyController.php` — поиск компаний
+
+Кросс-БД совместимость: `ilike` для PostgreSQL, `like` для SQLite (тесты).
+
+## 2026-02-17 — A21 (#66): Поиск компаний-участников для аукциона
+
+**Проблема:** Статический `<select multiple>` для приглашения компаний — неудобно при большом количестве компаний.
+
+**Исправлено:** Заменён на Alpine.js компонент `companySearch()` с динамическим поиском:
+- `resources/views/auctions/create.blade.php` — интерактивный поиск через `/search/quick` API
+- `app/Http/Controllers/AuctionController.php` — удалён избыточный запрос `$allCompanies`
+
+---
+
 ## 17.02.2026 (сессия 2)
 
 ### C8: Admin notification on new company (issue #65) — CLOSED

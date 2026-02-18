@@ -19,6 +19,7 @@ class RSSSource extends Model
         'name',
         'url',
         'enabled',
+        'parse_interval',
         'last_parsed_at',
     ];
 

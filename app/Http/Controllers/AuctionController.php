@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
-use App\Models\Company;
 use App\Http\Requests\StoreAuctionRequest;
 use App\Http\Requests\UpdateAuctionRequest;
 use App\Http\Requests\StoreAuctionBidRequest;
@@ -63,13 +62,8 @@ class AuctionController extends Controller
         $this->authorize('create', Auction::class);
         
         $companies = auth()->user()->moderatedCompanies;
-        
-        $allCompanies = Company::where('is_verified', true)
-            ->whereNotIn('id', $companies->pluck('id'))
-            ->orderBy('name')
-            ->get();
-        
-        return view('auctions.create', compact('companies', 'allCompanies'));
+
+        return view('auctions.create', compact('companies'));
     }
 
     public function store(StoreAuctionRequest $request)

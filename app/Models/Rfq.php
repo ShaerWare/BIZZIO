@@ -196,8 +196,9 @@ class Rfq extends Model implements HasMedia
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('title', 'like', "%{$search}%")
-              ->orWhere('number', 'like', "%{$search}%");
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $q->where('title', $op, "%{$search}%")
+              ->orWhere('number', $op, "%{$search}%");
         });
     }
 
@@ -211,9 +212,9 @@ class Rfq extends Model implements HasMedia
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
-                'created' => 'разместил(а) запрос котировок',
-                'updated' => 'обновил(а) запрос котировок',
-                'deleted' => 'удалил(а) запрос котировок',
+                'created' => 'разместил(а) запрос цен',
+                'updated' => 'обновил(а) запрос цен',
+                'deleted' => 'удалил(а) запрос цен',
                 default => $eventName,
             });
     }

@@ -28,7 +28,8 @@ class ProjectListScreen extends Screen
 
         // Фильтр по поиску
         if ($request->filled('filter.search')) {
-            $query->where('name', 'like', '%' . $request->input('filter.search') . '%');
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $query->where('name', $op, '%' . $request->input('filter.search') . '%');
         }
 
         // Фильтр по статусу

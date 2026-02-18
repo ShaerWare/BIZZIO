@@ -59,7 +59,7 @@ class RfqEditScreen extends Screen
     {
         return $this->rfq->exists 
             ? $this->rfq->title 
-            : 'Размещение нового запроса котировок';
+            : 'Размещение нового запроса цен';
     }
 
     /**
@@ -111,14 +111,14 @@ class RfqEditScreen extends Screen
 
                 Input::make('rfq.title')
                     ->title('Название')
-                    ->placeholder('Введите название запроса котировок')
+                    ->placeholder('Введите название запроса цен')
                     ->required()
                     ->maxlength(255)
                     ->help('Краткое и понятное название'),
 
                 TextArea::make('rfq.description')
                     ->title('Описание')
-                    ->placeholder('Введите описание запроса котировок')
+                    ->placeholder('Введите описание запроса цен')
                     ->rows(5)
                     ->help('Подробное описание требований и условий'),
 
@@ -140,11 +140,11 @@ class RfqEditScreen extends Screen
                         'cancelled' => 'Отменён',
                     ])
                     ->required()
-                    ->help('Статус запроса котировок'),
+                    ->help('Статус запроса цен'),
 
             ]))
                 ->title('Основная информация')
-                ->description('Основные данные о запросе котировок'),
+                ->description('Основные данные о запросе цен'),
 
             Layout::block(Layout::rows([
                 DateTimer::make('rfq.start_date')

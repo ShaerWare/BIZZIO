@@ -57,7 +57,7 @@
                                         @if(auth()->user()->isModeratorOfAnyCompany())
                                             <div class="border-t border-gray-100"></div>
                                             <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                {{ __('Разместить Запрос котировок') }}
+                                                {{ __('Разместить Запрос цен') }}
                                             </a>
                                             <a href="{{ route('auctions.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 {{ __('Разместить аукцион') }}
@@ -342,7 +342,7 @@
                         <div class="border-t border-gray-100 my-2"></div>
 
                         <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create')">
-                            {{ __('Разместить Запрос котировок') }}
+                            {{ __('Разместить Запрос цен') }}
                         </x-responsive-nav-link>
 
                         <x-responsive-nav-link :href="route('auctions.create')" :active="request()->routeIs('auctions.create')">

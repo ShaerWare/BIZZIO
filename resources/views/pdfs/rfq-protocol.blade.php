@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>Протокол подведения итогов</title>
     <style>
+        @page {
+            margin: 2cm 2cm 3cm 2cm;
+        }
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
@@ -12,6 +15,14 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
+        }
+        .header-logo {
+            margin-bottom: 10px;
+        }
+        .header-logo img {
+            height: 40px;
         }
         .header h1 {
             font-size: 16px;
@@ -42,16 +53,40 @@
             background-color: #d4edda;
         }
         .footer {
-            margin-top: 40px;
-            font-size: 10px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 2cm;
+            border-top: 1px solid #28a745;
+            font-size: 9px;
             text-align: center;
+            color: #666;
+        }
+        .footer .page-number:after {
+            content: counter(page);
+        }
+        .footer a {
+            color: #28a745;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
+    <!-- Фиксированный футер с нумерацией -->
+    <div class="footer">
+        <span>Bizzio.ru — B2B платформа для строительной индустрии</span> |
+        <a href="{{ route('rfqs.show', $rfq) }}">{{ route('rfqs.show', $rfq) }}</a>
+        <br>
+        Стр. <span class="page-number"></span>
+    </div>
+
     <div class="header">
+        <div class="header-logo">
+            <img src="{{ public_path('images/android-chrome-192x192.png') }}" alt="Bizzio" style="height: 40px;">
+        </div>
         <h1>ПРОТОКОЛ ПОДВЕДЕНИЯ ИТОГОВ</h1>
-        <p>Запрос котировок № {{ $rfq->number }}</p>
+        <p>Запрос цен № {{ $rfq->number }}</p>
         <p>Дата формирования: {{ $generatedAt }}</p>
     </div>
 
@@ -132,10 +167,5 @@
     @else
         <p><em>Заявок не поступило</em></p>
     @endif
-
-    <div class="footer">
-        <p>Документ сформирован автоматически системой Bizzio.ru</p>
-        <p>Запрос котировок № {{ $rfq->number }} | {{ $generatedAt }}</p>
-    </div>
 </body>
 </html>

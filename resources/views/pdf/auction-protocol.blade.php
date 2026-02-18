@@ -6,7 +6,7 @@
     <title>Протокол аукциона {{ $auction->number }}</title>
     <style>
         @page {
-            margin: 2cm;
+            margin: 2cm 2cm 3cm 2cm;
         }
         body {
             font-family: 'DejaVu Sans', sans-serif;
@@ -16,8 +16,14 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #000;
+            border-bottom: 2px solid #28a745;
             padding-bottom: 10px;
+        }
+        .header-logo {
+            margin-bottom: 10px;
+        }
+        .header-logo img {
+            height: 40px;
         }
         .title {
             font-size: 16pt;
@@ -52,17 +58,39 @@
             background-color: #d4edda;
         }
         .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #000;
-            font-size: 10pt;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 2cm;
+            border-top: 1px solid #28a745;
+            font-size: 9pt;
             text-align: center;
+            color: #666;
+        }
+        .footer .page-number:after {
+            content: counter(page);
+        }
+        .footer a {
+            color: #28a745;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
+    <!-- Фиксированный футер с нумерацией -->
+    <div class="footer">
+        <span>Bizzio.ru — B2B платформа для строительной индустрии</span> |
+        <a href="{{ route('auctions.show', $auction) }}">{{ route('auctions.show', $auction) }}</a>
+        <br>
+        Стр. <span class="page-number"></span>
+    </div>
+
     <!-- Заголовок -->
     <div class="header">
+        <div class="header-logo">
+            <img src="{{ public_path('images/android-chrome-192x192.png') }}" alt="Bizzio" style="height: 40px;">
+        </div>
         <div class="title">ПРОТОКОЛ ПОДВЕДЕНИЯ ИТОГОВ</div>
         <div>Аукцион № {{ $auction->number }}</div>
         <div>от {{ now()->format('d.m.Y H:i') }}</div>
@@ -95,7 +123,7 @@
 
     <!-- Таблица результатов -->
     <h3>Результаты торгов:</h3>
-    
+
     @if($bids->isEmpty())
         <p>Ставки не были поданы.</p>
     @else
@@ -137,7 +165,7 @@
                 <span class="label">Итоговая цена:</span> {{ number_format($winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
             </div>
             <div class="info-row">
-                <span class="label">Снижение от начальной цены:</span> {{ number_format($auction->starting_price - $winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }} 
+                <span class="label">Снижение от начальной цены:</span> {{ number_format($auction->starting_price - $winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
                 ({{ number_format((($auction->starting_price - $winner->price) / $auction->starting_price) * 100, 2) }}%)
             </div>
         </div>
@@ -146,11 +174,5 @@
             <p><strong>Победитель не определён (отсутствуют ставки).</strong></p>
         </div>
     @endif
-
-    <!-- Футер -->
-    <div class="footer">
-        <p>Протокол сгенерирован автоматически на платформе Bizzio.ru</p>
-        <p>{{ now()->format('d.m.Y H:i:s') }}</p>
-    </div>
 </body>
 </html>

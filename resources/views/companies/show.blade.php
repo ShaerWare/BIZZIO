@@ -348,26 +348,23 @@
                     @else
                         <p class="text-gray-500 text-center py-8">Модераторы не назначены</p>
                     @endif
-                </div>
 
-                <!-- Вкладка: Управление (только для модераторов) -->
-                @auth
-                    @if($company->canManageModerators(auth()->user()))
-                        <div id="content-management" class="tab-content hidden">
-                            <!-- Запросы на присоединение -->
+                    {{-- C6: Запросы на присоединение (перенесены из «Управление» во «Люди») --}}
+                    @auth
+                        @if($company->canManageModerators(auth()->user()))
                             @php
                                 $pendingRequests = $company->joinRequests()->pending()->with('user')->get();
                             @endphp
-                            
+
                             @if($pendingRequests->isNotEmpty())
-                                <div class="mb-8">
+                                <div class="mt-8 border-t border-gray-200 pt-6">
                                     <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                                         <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                         </svg>
                                         Запросы на присоединение ({{ $pendingRequests->count() }})
                                     </h3>
-                                    
+
                                     <div class="space-y-4">
                                         @foreach($pendingRequests as $joinRequest)
                                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -383,7 +380,7 @@
                                                                 {{ $joinRequest->user->name }}
                                                             </h4>
                                                             <p class="text-sm text-gray-600">{{ $joinRequest->user->email }}</p>
-                                                            
+
                                                             @if($joinRequest->desired_role)
                                                                 <div class="mt-2">
                                                                     <span class="text-xs text-gray-500">Желаемая роль:</span>
@@ -392,19 +389,19 @@
                                                                     </span>
                                                                 </div>
                                                             @endif
-                                                            
+
                                                             @if($joinRequest->message)
                                                                 <div class="mt-2 p-3 bg-white rounded border border-gray-200">
                                                                     <p class="text-sm text-gray-700">{{ $joinRequest->message }}</p>
                                                                 </div>
                                                             @endif
-                                                            
+
                                                             <p class="text-xs text-gray-500 mt-2">
                                                                 Запрос отправлен: {{ $joinRequest->created_at->format('d.m.Y H:i') }}
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <!-- Кнопки действий -->
                                                     <div class="flex space-x-2 ml-4">
                                                         <button onclick="showApproveModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->name) }}, {{ Js::from($joinRequest->desired_role) }})"
@@ -422,53 +419,92 @@
                                     </div>
                                 </div>
                             @endif
+                        @endif
+                    @endauth
+                </div>
 
+                <!-- Вкладка: Управление (только для модераторов) -->
+                @auth
+                    @if($company->canManageModerators(auth()->user()))
+                        <div id="content-management" class="tab-content hidden">
                             <!-- Добавить модератора -->
                             <div class="mb-8">
                                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Добавить модератора</h3>
                                 
-                                <form method="POST" action="{{ route('companies.moderators.store', $company) }}" class="bg-gray-50 rounded-lg p-6">
+                                <form method="POST" action="{{ route('companies.moderators.store', $company) }}" class="bg-gray-50 rounded-lg p-6" x-data="userSearch()">
                                     @csrf
-                                    
+
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                        <div>
-                                            <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Выберите пользователя <span class="text-red-500">*</span>
+                                        <div class="relative">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Найти пользователя <span class="text-red-500">*</span>
                                             </label>
-                                            <select name="user_id" 
-                                                    id="user_id" 
-                                                    required
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                                <option value="">Выберите...</option>
-                                                @foreach(\App\Models\User::whereNotIn('id', $company->moderators->pluck('id'))->orderBy('name')->get() as $user)
-                                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                                                @endforeach
-                                            </select>
+                                            <input type="hidden" name="user_id" :value="selectedUserId" required>
+                                            <input type="text"
+                                                   x-model="query"
+                                                   @input.debounce.300ms="search()"
+                                                   @click.away="showResults = false"
+                                                   @focus="if (results.length) showResults = true"
+                                                   placeholder="Поиск по имени или email..."
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+
+                                            <!-- Результаты поиска -->
+                                            <div x-show="showResults && results.length > 0" x-cloak
+                                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
+                                                <template x-for="user in results" :key="user.id">
+                                                    <button type="button"
+                                                            @click="selectUser(user)"
+                                                            class="w-full text-left px-3 py-2 hover:bg-emerald-50 text-sm border-b border-gray-100 last:border-0">
+                                                        <span class="font-medium text-gray-900" x-text="user.name"></span>
+                                                        <span class="text-gray-500 text-xs ml-1" x-text="user.email"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+
+                                            <div x-show="showResults && results.length === 0 && query.length >= 2 && !loading" x-cloak
+                                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm text-gray-500">
+                                                Пользователи не найдены
+                                            </div>
+
+                                            <div x-show="loading" x-cloak
+                                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm text-gray-500">
+                                                Поиск...
+                                            </div>
+
+                                            <!-- Выбранный пользователь -->
+                                            <div x-show="selectedUserId" x-cloak class="mt-2 flex items-center justify-between bg-emerald-50 rounded px-3 py-2 text-sm">
+                                                <span class="text-emerald-800 font-medium" x-text="selectedUserName"></span>
+                                                <button type="button" @click="clearSelection()" class="text-red-400 hover:text-red-600">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
-                                        
+
                                         <div>
                                             <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
                                                 Роль
                                             </label>
-                                            <input type="text" 
-                                                   name="role" 
+                                            <input type="text"
+                                                   name="role"
                                                    id="role"
                                                    placeholder="Например: Менеджер"
                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                         </div>
-                                        
+
                                         <div class="flex items-end">
                                             <label class="flex items-center">
-                                                <input type="checkbox" 
-                                                       name="can_manage_moderators" 
+                                                <input type="checkbox"
+                                                       name="can_manage_moderators"
                                                        value="1"
                                                        class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                                 <span class="ml-2 text-sm text-gray-700">Может управлять модераторами</span>
                                             </label>
                                         </div>
                                     </div>
-                                    
-                                    <button type="submit" 
+
+                                    <button type="submit"
                                             class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                         Добавить модератора
                                     </button>
@@ -512,8 +548,13 @@
                                                 </div>
                                                 
                                                 @if($company->created_by !== $moderator->id)
-                                                    <div class="flex space-x-2 ml-4">
-                                                        <form method="POST" 
+                                                    <div class="flex space-x-3 ml-4">
+                                                        <button type="button"
+                                                                onclick="openEditModal({{ $moderator->id }}, '{{ addslashes($moderator->name) }}', '{{ addslashes($moderator->pivot->role ?? '') }}', {{ $moderator->pivot->can_manage_moderators ? 'true' : 'false' }})"
+                                                                class="text-sm text-emerald-600 hover:text-emerald-800 font-medium">
+                                                            Изменить
+                                                        </button>
+                                                        <form method="POST"
                                                               action="{{ route('companies.moderators.destroy', [$company, $moderator]) }}"
                                                               onsubmit="return confirm('Удалить модератора {{ $moderator->name }}?');">
                                                             @csrf
@@ -534,6 +575,43 @@
                 @endauth
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Редактирование роли модератора -->
+<div id="edit-moderator-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Изменить роль: <span id="edit-mod-name"></span></h3>
+        <form id="edit-moderator-form" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Роль</label>
+                <input type="text"
+                       name="role"
+                       id="edit-mod-role"
+                       placeholder="Например: Менеджер"
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+            </div>
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox"
+                           name="can_manage_moderators"
+                           id="edit-mod-manage"
+                           value="1"
+                           class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <span class="ml-2 text-sm text-gray-700">Может управлять модераторами</span>
+                </label>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-400">
+                    Отмена
+                </button>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 rounded-md text-sm font-medium text-white hover:bg-emerald-700">
+                    Сохранить
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -750,6 +828,72 @@ function closeRejectModal() {
     document.getElementById('review_comment').value = '';
 }
 
+// Модальное окно редактирования модератора
+function openEditModal(userId, userName, role, canManage) {
+    document.getElementById('edit-mod-name').textContent = userName;
+    document.getElementById('edit-mod-role').value = role || '';
+    document.getElementById('edit-mod-manage').checked = canManage;
+    document.getElementById('edit-moderator-form').action = '{{ url("companies") }}/{{ $company->id }}/moderators/' + userId;
+    document.getElementById('edit-moderator-modal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('edit-moderator-modal').classList.add('hidden');
+}
+
+// C5: Alpine.js компонент поиска пользователей
+function userSearch() {
+    const companyId = {{ $company->id }};
+    const moderatorIds = @json($company->moderators->pluck('id'));
+
+    return {
+        query: '',
+        results: [],
+        showResults: false,
+        loading: false,
+        selectedUserId: '',
+        selectedUserName: '',
+
+        async search() {
+            if (this.query.length < 2) {
+                this.results = [];
+                this.showResults = false;
+                return;
+            }
+
+            this.loading = true;
+            this.showResults = true;
+
+            try {
+                const response = await fetch(`/search/quick?q=${encodeURIComponent(this.query)}`);
+                const data = await response.json();
+
+                this.results = data
+                    .filter(item => item.type === 'user')
+                    .filter(item => !moderatorIds.includes(item.id));
+            } catch (e) {
+                this.results = [];
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        selectUser(user) {
+            this.selectedUserId = user.id;
+            this.selectedUserName = user.title + (user.subtitle ? ' (' + user.subtitle + ')' : '');
+            this.query = '';
+            this.results = [];
+            this.showResults = false;
+        },
+
+        clearSelection() {
+            this.selectedUserId = '';
+            this.selectedUserName = '';
+            this.query = '';
+        }
+    };
+}
+
 // Закрытие по клику вне окна
 window.onclick = function(event) {
     if (event.target.id === 'join-modal') {
@@ -760,6 +904,9 @@ window.onclick = function(event) {
     }
     if (event.target.id === 'reject-modal') {
         closeRejectModal();
+    }
+    if (event.target.id === 'edit-moderator-modal') {
+        closeEditModal();
     }
 }
 </script>

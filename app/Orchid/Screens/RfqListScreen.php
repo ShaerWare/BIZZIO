@@ -32,7 +32,7 @@ class RfqListScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'Запросы котировок (RFQ)';
+        return 'Запросы цен (RFQ)';
     }
 
     /**
@@ -42,7 +42,7 @@ class RfqListScreen extends Screen
      */
     public function description(): ?string
     {
-        return 'Управление запросами котировок';
+        return 'Управление запросами цен';
     }
 
     /**

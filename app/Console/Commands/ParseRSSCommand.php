@@ -31,8 +31,15 @@ class ParseRSSCommand extends Command
 
         foreach ($sources as $source) {
             try {
+                // N1: Пропускаем источник, если не прошёл интервал обновления
+                $interval = $source->parse_interval ?? 15;
+                if ($source->last_parsed_at && $source->last_parsed_at->diffInMinutes(now()) < $interval) {
+                    $this->line("⏭️  Пропускаем {$source->name} (интервал {$interval} мин, последний парсинг: {$source->last_parsed_at->format('H:i')})");
+                    continue;
+                }
+
                 $this->info("📡 Парсим: {$source->name} ({$source->url})");
-                
+
                 $feed = Feeds::make($source->url);
                 
                 if (!$feed) {

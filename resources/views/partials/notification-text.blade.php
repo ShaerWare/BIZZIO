@@ -35,6 +35,11 @@
         Торги начались: <strong>{{ $notification->data['auction_number'] ?? '' }}</strong>
         @break
 
+    @case('join_request')
+        Запрос на присоединение к <strong>{{ $notification->data['company_name'] ?? '' }}</strong>
+        от {{ $notification->data['user_name'] ?? '' }}
+        @break
+
     @default
         {{ $notification->data['message'] ?? 'Новое уведомление' }}
 @endswitch

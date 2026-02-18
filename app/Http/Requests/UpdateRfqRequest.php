@@ -38,7 +38,7 @@ class UpdateRfqRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.required' => 'Укажите название запроса котировок',
+            'title.required' => 'Укажите название запроса цен',
             'end_date.after' => 'Дата окончания должна быть позже даты начала',
         ];
     }

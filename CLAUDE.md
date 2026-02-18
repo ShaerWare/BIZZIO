@@ -46,10 +46,17 @@ php artisan config:clear && php artisan cache:clear && php artisan route:clear &
 
 ### Custom Artisan Commands
 ```bash
-php artisan auctions:check-expired   # Close expired auctions (scheduler runs every minute)
-php artisan auctions:update-status   # Update auction statuses
-php artisan rss:parse                # Parse RSS news sources
+php artisan auctions:check-expired   # Close expired auctions (manual or one-off use)
+php artisan auctions:update-statuses # Update auction statuses (scheduled every minute)
+php artisan rss:parse                # Parse RSS news sources (scheduled every 5 min)
+php artisan news:clean-old           # Clean old news articles (scheduled daily at 02:00)
 ```
+
+### Scheduler
+Configured in `bootstrap/app.php` via `withSchedule()`:
+- `rss:parse` — every 5 minutes (with `withoutOverlapping`)
+- `auctions:update-statuses` — every minute (with `withoutOverlapping`)
+- `news:clean-old` — daily at 02:00
 
 ### Testing PDF Generation
 Queue worker must be running: `php artisan queue:work`
@@ -70,7 +77,7 @@ php artisan tinker
 ### Core Modules
 - **Companies** — Profiles with verification, documents, moderator assignment, join requests
 - **Projects** — Company invitations, comments, participant roles
-- **RFQ (Тендеры)** — Weighted scoring criteria, auto-calculation, PDF protocols
+- **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **News** — RSS aggregator with keyword filtering, personalized feed
 - **Search** — Laravel Scout (database driver) across User, Company, Project, Rfq, Auction
@@ -108,6 +115,7 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - `TenderClosed` → `SendTenderClosedNotification`
 - `AuctionTradingStarted` → `SendAuctionTradingStartedNotification`
 - `CommentCreated` → `SendCommentNotification`
+- `CompanyCreated` → `SendCompanyCreatedNotification`
 
 ### Key Packages
 - `orchid/platform` — Admin panel
@@ -121,11 +129,21 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 ### OAuth Providers
 - **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
 - **Yandex** — Custom provider at `app/Socialite/YandexProvider.php`, registered in `AppServiceProvider::configureSocialite()`. `.env`: `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
-- **VK** — Package `socialiteproviders/vkontakte` is installed but not yet wired up (backlog item)
+- **VK** — Package `socialiteproviders/vkontakte` is installed and configured (backlog item G1 completed)
 
 ### AI Chat API
 `POST /api/v1/chat` — Proxies chat to Google Gemini API.
 Requires `.env`: `GEMINI_API_KEY`
+
+### Search Conventions
+- PostgreSQL `LIKE` is case-sensitive. All search queries use `ilike` for PostgreSQL, `like` for SQLite (tests):
+  ```php
+  $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+  $query->where('name', $op, "%{$search}%");
+  ```
+- Quick search API (`GET /search/quick?q=...`) returns a flat JSON array of results (not wrapped in `{results: [...]}`)
+- Each result has: `type`, `type_label`, `id`, `title`, `subtitle`, `url`
+- Types: `company`, `project`, `rfq`, `auction`, `user`
 
 ### Routing Conventions
 **Important:** Fixed routes MUST be defined BEFORE dynamic `{param}` routes to avoid conflicts.
@@ -179,6 +197,8 @@ docker compose logs -f app                                    # Container
 - `APP_URL` must match actual URL (http://localhost:8080 for local dev)
 - `SESSION_SECURE_COOKIE=false` for HTTP development
 - HTTPS forced when `APP_ENV=production` or `APP_URL` starts with https
+- Session and queue both use `database` driver (`SESSION_DRIVER=database`, `QUEUE_CONNECTION=database`)
+- CSRF token expiry (419) is handled globally in `bootstrap/app.php` — redirects to login with a flash message instead of showing an error page
 
 ## Key Model Relationships
 
@@ -214,7 +234,7 @@ Helper methods like `createRfq()`, `createAuction()` are defined in each test cl
 All project docs in `docs/`:
 - `00_ТЕХНИЧЕСКОЕ_ЗАДАНИЕ.md` — Original requirements
 - `01_ПЛАН_РАЗРАБОТКИ.md` — Development plan (10 sprints)
-- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities (21/38 completed)
+- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities (53/75 completed)
 - `sprints/*.md` — Sprint reports (1-9 completed)
 - `CHANGELOG_CLAUDE.md` — Log of Claude Code changes
 - `claude/start_message.md` — Context for new Claude Code sessions
