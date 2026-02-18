@@ -31,9 +31,10 @@ class CompanyController extends Controller
         // Поиск по названию или ИНН
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('inn', 'like', "%{$search}%");
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $query->where(function ($q) use ($search, $op) {
+                $q->where('name', $op, "%{$search}%")
+                  ->orWhere('inn', $op, "%{$search}%");
             });
         }
 
@@ -179,7 +180,7 @@ class CompanyController extends Controller
 
         $request->validate([
             'photos' => ['required', 'array', 'max:10'],
-            'photos.*' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+            'photos.*' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
 
         foreach ($request->file('photos') as $photo) {

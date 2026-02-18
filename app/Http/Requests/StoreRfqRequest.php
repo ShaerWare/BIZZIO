@@ -78,7 +78,7 @@ class StoreRfqRequest extends FormRequest
         return [
             'company_id.required' => 'Выберите компанию-организатора',
             'company_id.exists' => 'Выбранная компания не найдена',
-            'title.required' => 'Укажите название запроса котировок',
+            'title.required' => 'Укажите название запроса цен',
             'title.max' => 'Название не должно превышать 255 символов',
             'type.required' => 'Выберите тип процедуры',
             'type.in' => 'Недопустимый тип процедуры (выберите: открытая или закрытая)',

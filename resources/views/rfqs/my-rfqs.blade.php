@@ -26,7 +26,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     <h3 class="mt-2 text-sm font-medium text-gray-900">У вас пока нет тендеров</h3>
-                    <p class="mt-1 text-sm text-gray-500">Разместите первый запрос котировок</p>
+                    <p class="mt-1 text-sm text-gray-500">Разместите первый запрос цен</p>
                     <div class="mt-6">
                         <a href="{{ route('rfqs.create') }}" 
                            class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">

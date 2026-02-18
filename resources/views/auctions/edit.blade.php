@@ -61,9 +61,7 @@
                         @error('end_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-1 text-sm text-gray-500">
-                            Текущее значение: {{ $auction->end_date->format('d.m.Y H:i') }}
-                        </p>
+                        <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $auction->end_date->format('d.m.Y H:i') }}</p>
                     </div>
 
                     <!-- Дата начала торгов -->
@@ -78,9 +76,7 @@
                         @error('trading_start')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-1 text-sm text-gray-500">
-                            Текущее значение: {{ $auction->trading_start->format('d.m.Y H:i') }}
-                        </p>
+                        <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $auction->trading_start->format('d.m.Y H:i') }}</p>
                     </div>
 
                     <!-- Начальная максимальная цена -->

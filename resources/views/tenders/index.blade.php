@@ -10,7 +10,7 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Тендеры</h1>
-                <p class="mt-1 text-sm text-gray-500">Запросы котировок и аукционы</p>
+                <p class="mt-1 text-sm text-gray-500">Запросы цен и аукционы</p>
             </div>
             @auth
                 @if(auth()->user()->isModeratorOfAnyCompany())
@@ -30,7 +30,7 @@
                              style="display: none;">
                             <div class="py-1">
                                 <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    Запрос котировок
+                                    Запрос цен
                                 </a>
                                 <a href="{{ route('auctions.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     Аукцион
@@ -62,7 +62,7 @@
                             <select name="kind" id="kind"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все виды</option>
-                                <option value="rfq" {{ request('kind') === 'rfq' ? 'selected' : '' }}>Запрос котировок</option>
+                                <option value="rfq" {{ request('kind') === 'rfq' ? 'selected' : '' }}>Запрос цен</option>
                                 <option value="auction" {{ request('kind') === 'auction' ? 'selected' : '' }}>Аукцион</option>
                             </select>
                         </div>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Редактировать Запрос котировок')
+@section('title', 'Редактировать Запрос цен')
 
 @section('content')
 <div class="py-12">
@@ -8,7 +8,7 @@
         
         <!-- Заголовок -->
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Редактировать Запрос котировок</h1>
+            <h1 class="text-3xl font-bold text-gray-900">Редактировать Запрос цен</h1>
             <p class="mt-2 text-sm text-gray-600">{{ $rfq->number }} — {{ $rfq->title }}</p>
         </div>
 
@@ -61,9 +61,7 @@
                         @error('end_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-1 text-sm text-gray-500">
-                            Текущее значение: {{ $rfq->end_date->format('d.m.Y H:i') }}
-                        </p>
+                        <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $rfq->end_date->format('d.m.Y H:i') }}</p>
                     </div>
 
                     <!-- Техническое задание (замена) -->

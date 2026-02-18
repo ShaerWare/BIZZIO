@@ -150,7 +150,7 @@ Route::screen('rfqs', RfqListScreen::class)
     ->name('platform.rfqs.list')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push('Запросы котировок', route('platform.rfqs.list')));
+        ->push('Запросы цен', route('platform.rfqs.list')));
 
 Route::screen('rfqs/create', RfqEditScreen::class)
     ->name('platform.rfqs.create')

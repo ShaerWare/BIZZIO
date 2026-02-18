@@ -54,7 +54,7 @@ class PlatformProvider extends OrchidServiceProvider
                 ->route('platform.projects')
                 ->divider(),
 
-            Menu::make('Запросы котировок')
+            Menu::make('Запросы цен')
                 ->icon('stars')
                 ->route('platform.rfqs.list')
                 ->title('Тендеры и аукционы'),

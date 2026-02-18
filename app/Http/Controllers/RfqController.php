@@ -134,8 +134,8 @@ class RfqController extends Controller
 
             // ✅ РАЗНЫЕ СООБЩЕНИЯ В ЗАВИСИМОСТИ ОТ СТАТУСА
             $message = $rfq->status === 'active' 
-                ? 'Запрос котировок создан и активирован. Приём заявок открыт!' 
-                : 'Запрос котировок создан как черновик. Активируйте его для начала приёма заявок.';
+                ? 'Запрос цен создан и активирован. Приём заявок открыт!' 
+                : 'Запрос цен создан как черновик. Активируйте его для начала приёма заявок.';
 
             return redirect()->route('rfqs.show', $rfq)
                 ->with('success', $message);
@@ -165,7 +165,7 @@ class RfqController extends Controller
                    ));
 
         if (!$canView) {
-            abort(403, 'У вас нет доступа к этому запросу котировок.');
+            abort(403, 'У вас нет доступа к этому запросу цен.');
         }
 
         // Проверка: может ли пользователь подать заявку
@@ -262,7 +262,7 @@ class RfqController extends Controller
             DB::commit();
 
             return redirect()->route('rfqs.show', $rfq)
-                ->with('success', 'Запрос котировок обновлён');
+                ->with('success', 'Запрос цен обновлён');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Ошибка при обновлении: ' . $e->getMessage());
@@ -279,7 +279,7 @@ class RfqController extends Controller
         $rfq->delete();
 
         return redirect()->route('rfqs.index')
-            ->with('success', 'Запрос котировок удалён');
+            ->with('success', 'Запрос цен удалён');
     }
 
     /**

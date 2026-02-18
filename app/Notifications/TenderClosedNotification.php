@@ -38,7 +38,7 @@ class TenderClosedNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $tenderTypeName = $this->tenderType === 'rfq' ? 'Запрос котировок' : 'Аукцион';
+        $tenderTypeName = $this->tenderType === 'rfq' ? 'Запрос цен' : 'Аукцион';
         $route = $this->tenderType === 'rfq' 
             ? route('rfqs.show', $this->tender) 
             : route('auctions.show', $this->tender);

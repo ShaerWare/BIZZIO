@@ -206,7 +206,8 @@ class Project extends Model
      */
     public function scopeSearch($query, $search)
     {
-        return $query->where('name', 'like', '%' . $search . '%');
+        $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+        return $query->where('name', $op, '%' . $search . '%');
     }
 
     public function getContent(): string

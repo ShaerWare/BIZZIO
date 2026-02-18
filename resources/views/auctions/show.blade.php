@@ -157,13 +157,13 @@
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <span><strong>Приём заявок:</strong> {{ $auction->start_date->format('d.m.Y H:i') }} — {{ $auction->end_date->format('d.m.Y H:i') }}</span>
+                            <span><strong>Приём заявок:</strong> {{ $auction->start_date->format('d.m.Y H:i') }} — {{ $auction->end_date->format('d.m.Y H:i') }} (МСК)</span>
                         </div>
                         <div class="flex items-center text-gray-600 mb-2">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
-                            <span><strong>Начало торгов:</strong> {{ $auction->trading_start->format('d.m.Y H:i') }}</span>
+                            <span><strong>Начало торгов:</strong> {{ $auction->trading_start->format('d.m.Y H:i') }} (МСК)</span>
                         </div>
 
                         <!-- Создатель -->
@@ -544,16 +544,30 @@
                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"></textarea>
                                     </div>
 
+                                    <!-- Подтверждение соответствия ТЗ -->
+                                    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                                        <div class="flex items-start">
+                                            <input type="checkbox"
+                                                   name="confirms_ts_compliance"
+                                                   id="confirms_ts_compliance"
+                                                   required
+                                                   class="mt-1 rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                            <label for="confirms_ts_compliance" class="ml-3 text-sm text-gray-700">
+                                                Настоящим подтверждаю соответствие своего предложения Техническому заданию (ТЗ).
+                                            </label>
+                                        </div>
+                                    </div>
+
                                     <!-- Уведомление -->
                                     <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
                                         <div class="flex items-start">
-                                            <input type="checkbox" 
-                                                   name="acknowledgement" 
+                                            <input type="checkbox"
+                                                   name="acknowledgement"
                                                    id="acknowledgement"
                                                    required
                                                    class="mt-1 rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500">
                                             <label for="acknowledgement" class="ml-3 text-sm text-gray-700">
-                                                Я уведомлён, что процедура проведения Аукциона не является торгами и не обязывает к заключению договора. 
+                                                Я уведомлён, что процедура проведения Аукциона не является торгами и не обязывает к заключению договора.
                                                 Результаты подведения итогов носят информационный характер.
                                             </label>
                                         </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\CompanyJoinRequest;
+use App\Notifications\JoinRequestNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -45,7 +46,7 @@ class CompanyJoinRequestController extends Controller
             'message' => 'nullable|string|max:1000',
         ]);
 
-        CompanyJoinRequest::create([
+        $joinRequest = CompanyJoinRequest::create([
             'company_id' => $company->id,
             'user_id' => auth()->id(),
             'desired_role' => $validated['desired_role'] ?? null,
@@ -53,7 +54,11 @@ class CompanyJoinRequestController extends Controller
             'status' => 'pending',
         ]);
 
-        // TODO: Отправить уведомление модераторам компании (Спринт 7)
+        // C6: Уведомление модераторам компании о запросе на присоединение
+        $joinRequest->load(['user', 'company']);
+        foreach ($company->moderators as $moderator) {
+            $moderator->notify(new JoinRequestNotification($joinRequest));
+        }
 
         return back()->with('success', 'Запрос на присоединение отправлен! Ожидайте ответа от модераторов компании.');
     }

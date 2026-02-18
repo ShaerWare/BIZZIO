@@ -48,7 +48,7 @@ class SearchController extends Controller
         $query = $request->get('q', '');
 
         if (strlen($query) < 2) {
-            return response()->json(['results' => []]);
+            return response()->json([]);
         }
 
         $results = [];
@@ -84,7 +84,7 @@ class SearchController extends Controller
         foreach ($rfqs as $rfq) {
             $results[] = [
                 'type' => 'rfq',
-                'type_label' => 'Запрос котировок',
+                'type_label' => 'Запрос цен',
                 'id' => $rfq->id,
                 'title' => $rfq->title,
                 'subtitle' => $rfq->number,
@@ -105,11 +105,20 @@ class SearchController extends Controller
             ];
         }
 
-        return response()->json([
-            'results' => $results,
-            'total' => count($results),
-            'query' => $query,
-        ]);
+        // Пользователи (максимум 3)
+        $users = User::search($query)->take(3)->get();
+        foreach ($users as $user) {
+            $results[] = [
+                'type' => 'user',
+                'type_label' => 'Пользователь',
+                'id' => $user->id,
+                'title' => $user->name,
+                'subtitle' => $user->email,
+                'url' => '#',
+            ];
+        }
+
+        return response()->json($results);
     }
 
     /**
@@ -247,7 +256,7 @@ class SearchController extends Controller
     {
         return [
             'type' => 'rfq',
-            'type_label' => 'Запрос котировок',
+            'type_label' => 'Запрос цен',
             'icon' => 'document-text',
             'id' => $rfq->id,
             'title' => $rfq->title,

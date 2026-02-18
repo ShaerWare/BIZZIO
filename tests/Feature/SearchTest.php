@@ -74,9 +74,7 @@ class SearchTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            'results',
-            'total',
-            'query',
+            '*' => ['type', 'id', 'title'],
         ]);
     }
 
@@ -88,7 +86,7 @@ class SearchTest extends TestCase
         $response = $this->getJson(route('search.quick', ['q' => 'a']));
 
         $response->assertStatus(200);
-        $response->assertJson(['results' => []]);
+        $response->assertJson([]);
     }
 
     /**
@@ -133,14 +131,12 @@ class SearchTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            'results' => [
-                '*' => [
-                    'type',
-                    'type_label',
-                    'id',
-                    'title',
-                    'url',
-                ],
+            '*' => [
+                'type',
+                'type_label',
+                'id',
+                'title',
+                'url',
             ],
         ]);
     }

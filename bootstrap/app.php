@@ -17,9 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule) {
-        // Парсинг RSS каждые 15 минут
+        // N1: Парсинг RSS каждые 5 минут (источники сами контролируют свой интервал)
         $schedule->command('rss:parse')
-            ->everyFifteenMinutes()
+            ->everyFiveMinutes()
             ->withoutOverlapping()
             ->runInBackground();
 
