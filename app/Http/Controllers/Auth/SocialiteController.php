@@ -74,6 +74,6 @@ class SocialiteController extends Controller
         // Входим в систему
         Auth::login($user, true);
 
-        return redirect()->intended('/companies');
+        return redirect()->intended(route('dashboard'));
     }
 }

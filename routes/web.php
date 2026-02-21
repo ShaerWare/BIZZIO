@@ -28,6 +28,9 @@ use App\Http\Controllers\TenderController;
 */
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
     return view('welcome');
 });
 

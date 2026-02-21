@@ -41,7 +41,11 @@ class CompanyController extends Controller
         $companies = $query->paginate(20);
         $industries = Industry::orderBy('name')->get();
 
-        return view('companies.index', compact('companies', 'industries'));
+        $pendingJoinRequests = auth()->check()
+            ? auth()->user()->companyJoinRequests()->with('company')->where('status', 'pending')->get()
+            : null;
+
+        return view('companies.index', compact('companies', 'industries', 'pendingJoinRequests'));
     }
 
     /**

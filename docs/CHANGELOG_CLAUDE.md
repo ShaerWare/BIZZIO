@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-02-21 — G7 (#58): Изменение структуры меню
+
+**Задача:** Реструктуризация навигации — «Тендеры» → «Закупки», Dashboard как главная, перенос «Мои запросы» на страницу компаний.
+
+**Изменённые файлы:**
+- `resources/views/layouts/navigation.blade.php` — Logo ведёт на dashboard (auth) / welcome (guest); убран пункт «Dashboard» из навбара; dropdown «Тендеры» → «Закупки» с новой структурой (Найти закупку, Мои заявки, Мои приглашения, Мои закупки, Создать запрос цен, Создать аукцион, Правила проведения); убран «Мои запросы на присоединение»; добавлена «Лента активности» в user dropdown; зеркальные изменения в мобильном меню
+- `routes/web.php` — `/` для auth-пользователей редиректит на dashboard
+- `app/Http/Controllers/CompanyController.php` — `index()` передаёт `$pendingJoinRequests` во view
+- `resources/views/companies/index.blade.php` — Amber-блок ожидающих запросов на присоединение сверху страницы
+- `app/Http/Controllers/Auth/SocialiteController.php` — OAuth redirect → dashboard вместо /companies
+
+**Тесты:** 185 passed (377 assertions) — все тесты проходят.
+
+---
+
 ## 2026-02-17 (сессия 4) — Выполнение бэклога: 7 задач
 
 ### A14 — Удалить примечание о торгах

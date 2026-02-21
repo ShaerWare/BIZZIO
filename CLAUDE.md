@@ -31,6 +31,7 @@ php artisan test --filter=TestName       # Run specific test
 php artisan test --filter=TestClass::testMethod  # Run single test method
 ```
 **Note:** Tests use SQLite in-memory (`phpunit.xml`), not PostgreSQL. PostgreSQL-specific features (e.g. `jsonb`, full-text search) are not tested.
+Test env: `QUEUE_CONNECTION=sync` (jobs run synchronously unless `Queue::fake()` used), `SESSION_DRIVER=array`, `CACHE_STORE=array`, `BCRYPT_ROUNDS=4`.
 
 ### Code Style
 ```bash
@@ -80,7 +81,8 @@ php artisan tinker
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **News** — RSS aggregator with keyword filtering, personalized feed
-- **Search** — Laravel Scout (database driver) across User, Company, Project, Rfq, Auction
+- **Search** — Search via model `scopeSearch()` with `ilike`/`like` queries (Scout uses `collection` driver; search is not index-based)
+- **Tenders** — Unified view (`/tenders`) combining RFQs and Auctions with shared filters
 
 ### Status Lifecycles
 
@@ -89,11 +91,12 @@ php artisan tinker
 - `active`: Accepting bids (between start_date and end_date)
 - `closed`: CloseRfqJob runs at end_date, generates PDF protocol, determines winner
 
-**Auction:** `draft` → `active` → `trading` → `closed`
+**Auction:** `draft` → `active` → `trading` → `closed` / `cancelled`
 - `draft`: Only visible to owner/moderators
 - `active`: Accepting initial applications (between start_date and end_date)
 - `trading`: Real-time bidding (started via `startTrading()`, uses long-polling)
 - `closed`: CloseAuctionJob runs 20min after last bid, generates PDF protocol
+- `cancelled`: Active with no bids at transition, or trading with no bids after 24h
 
 ### Key Directories
 ```
@@ -129,10 +132,11 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 ### OAuth Providers
 - **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
 - **Yandex** — Custom provider at `app/Socialite/YandexProvider.php`, registered in `AppServiceProvider::configureSocialite()`. `.env`: `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
-- **VK** — Package `socialiteproviders/vkontakte` is installed and configured (backlog item G1 completed)
+- **VK** — Package `socialiteproviders/vkontakte` is installed but NOT configured (no entry in `config/services.php` or `AppServiceProvider`)
 
 ### AI Chat API
-`POST /api/v1/chat` — Proxies chat to Google Gemini API.
+`POST /api/v1/chat` — Proxies chat to Google Gemini Pro (`geminiPro()`).
+Input: `message` (string, max 2000), `history` (array of `{role: user|bot, text}`).
 Requires `.env`: `GEMINI_API_KEY`
 
 ### Search Conventions
@@ -194,13 +198,15 @@ docker compose logs -f app                                    # Container
 
 ## Environment Notes
 
+- `APP_TIMEZONE=Europe/Moscow`
 - `APP_URL` must match actual URL (http://localhost:8080 for local dev)
 - `SESSION_SECURE_COOKIE=false` for HTTP development
 - HTTPS forced when `APP_ENV=production` or `APP_URL` starts with https
 - Session and queue both use `database` driver (`SESSION_DRIVER=database`, `QUEUE_CONNECTION=database`)
 - CSRF token expiry (419) is handled globally in `bootstrap/app.php` — redirects to login with a flash message instead of showing an error page
+- SMTP: `MAIL_FROM_ADDRESS` must match `MAIL_USERNAME` (Beget hosting requirement)
 
-## Key Model Relationships
+## Key Model Details
 
 ```
 User ←→ Company (many-to-many via company_user pivot with role)
@@ -211,6 +217,13 @@ Rfq → RfqBids (one-to-many)
 Company → Auctions (owner)
 Auction → AuctionBids (one-to-many)
 ```
+
+- `User` extends `Orchid\Platform\Models\User` (not Laravel's default `Authenticatable`)
+- `Company` route model binding uses `slug` (`getRouteKeyName() → 'slug'`), not `id`
+- `Company`, `Rfq`, `Auction` use `SoftDeletes`, `InteractsWithMedia`, `LogsActivity`
+- `Company::shouldBeSearchable()` — only verified companies are indexed
+- RFQ numbers: `К-ГГММДД-0001`, Auction numbers: `А-ГГММДД-0001`
+- Auction bid step: 0.5%–5% of current price
 
 ## Testing Patterns
 
@@ -234,7 +247,7 @@ Helper methods like `createRfq()`, `createAuction()` are defined in each test cl
 All project docs in `docs/`:
 - `00_ТЕХНИЧЕСКОЕ_ЗАДАНИЕ.md` — Original requirements
 - `01_ПЛАН_РАЗРАБОТКИ.md` — Development plan (10 sprints)
-- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities (53/75 completed)
+- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities (60/75 completed)
 - `sprints/*.md` — Sprint reports (1-9 completed)
 - `CHANGELOG_CLAUDE.md` — Log of Claude Code changes
 - `claude/start_message.md` — Context for new Claude Code sessions
