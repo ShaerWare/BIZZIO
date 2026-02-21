@@ -13,6 +13,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserKeywordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\TempUploadController;
 use App\Http\Controllers\TenderController;
 
@@ -89,6 +90,9 @@ Route::get('companies/{company}', [CompanyController::class, 'show'])->name('com
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/activities', [DashboardController::class, 'loadMoreActivities'])->name('dashboard.activities');
+
+    Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+    Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 });
 
 Route::middleware('auth')->group(function () {
