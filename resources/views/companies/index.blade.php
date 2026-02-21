@@ -22,6 +22,44 @@
             @endauth
         </div>
 
+        <!-- Ожидающие запросы на присоединение -->
+        @auth
+            @if($pendingJoinRequests && $pendingJoinRequests->count() > 0)
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center mb-3">
+                        <svg class="w-5 h-5 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="text-sm font-semibold text-amber-800">{{ __('Ожидающие запросы на присоединение') }}</h3>
+                    </div>
+                    <div class="space-y-2">
+                        @foreach($pendingJoinRequests as $joinRequest)
+                            <div class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-amber-100">
+                                <div class="flex items-center space-x-3">
+                                    <a href="{{ route('companies.show', $joinRequest->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-800">
+                                        {{ $joinRequest->company->name }}
+                                    </a>
+                                    <span class="text-xs text-gray-500">{{ $joinRequest->created_at->diffForHumans() }}</span>
+                                </div>
+                                <form method="POST" action="{{ route('join-requests.destroy', $joinRequest) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">
+                                        {{ __('Отозвать') }}
+                                    </button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ route('join-requests.index') }}" class="text-xs text-amber-700 hover:text-amber-900 font-medium">
+                            {{ __('Все запросы') }} &rarr;
+                        </a>
+                    </div>
+                </div>
+            @endif
+        @endauth
+
         <!-- Фильтры -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
