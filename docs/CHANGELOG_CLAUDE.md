@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-02-21 — #68: Удаление тестовых данных
+
+**Задача:** Безопасное удаление тестовых компаний перед запуском + защита удаления аукционов в админке.
+
+**Что сделано:**
+1. Создана artisan-команда `cleanup:test-data` — интерактивное удаление компаний с каскадным soft-delete (RFQ, аукционы, ставки, проекты) и hard-delete pivot-записей (invitations, company_user, company_project, join_requests). Поддержка `--force` для автоматического режима.
+2. Добавлена проверка статуса в `AuctionEditScreen::remove()` — удаление только `draft` и `cancelled` (как в RfqEditScreen).
+3. Написаны тесты для команды очистки (3 теста).
+
+**Изменённые файлы:**
+- `app/Console/Commands/CleanupTestDataCommand.php` — **новый**
+- `app/Orchid/Screens/AuctionEditScreen.php` — добавлена проверка статуса + import Alert
+- `tests/Feature/CleanupTestDataCommandTest.php` — **новый** (3 теста)
+
+---
+
 ## 2026-02-21 — #60: Новая главная страница (dashboard)
 
 **Задача:** Полноценный 3-колоночный dashboard с профилем, новостями, постами, закупками, заявками и приглашениями.
