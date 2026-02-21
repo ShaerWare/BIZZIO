@@ -12,6 +12,7 @@ use Orchid\Screen\Fields\DateTimer;
 use Orchid\Screen\Fields\Upload;
 use Orchid\Screen\Actions\Button;
 use Orchid\Support\Facades\Layout;
+use Orchid\Support\Facades\Alert;
 use Orchid\Support\Facades\Toast;
 use Illuminate\Http\Request;
 
@@ -175,10 +176,16 @@ class AuctionEditScreen extends Screen
      */
     public function remove(Auction $auction)
     {
+        if (! in_array($auction->status, ['draft', 'cancelled'])) {
+            Alert::error('Можно удалить только черновики и отменённые аукционы');
+
+            return back();
+        }
+
         $auction->delete();
-        
+
         Toast::info('Аукцион успешно удалён.');
-        
+
         return redirect()->route('platform.auctions.list');
     }
 }
