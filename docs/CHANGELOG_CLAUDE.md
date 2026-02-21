@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-02-21 — #60: Новая главная страница (dashboard)
+
+**Задача:** Полноценный 3-колоночный dashboard с профилем, новостями, постами, закупками, заявками и приглашениями.
+
+**Новые файлы:**
+- `database/migrations/2026_02_21_100000_create_posts_table.php` — миграция таблицы постов
+- `app/Models/Post.php` — модель поста (SoftDeletes, InteractsWithMedia, LogsActivity)
+- `app/Http/Controllers/PostController.php` — store/destroy для постов
+- `resources/views/partials/dashboard/profile-card.blade.php` — карточка профиля
+- `resources/views/partials/dashboard/join-requests-widget.blade.php` — виджет заявок на вступление
+- `resources/views/partials/dashboard/my-companies-widget.blade.php` — список компаний пользователя
+- `resources/views/partials/dashboard/my-projects-widget.blade.php` — список проектов
+- `resources/views/partials/dashboard/news-widget.blade.php` — 3 последние новости
+- `resources/views/partials/dashboard/post-form.blade.php` — форма создания поста (Alpine.js preview)
+- `resources/views/partials/dashboard/posts-feed.blade.php` — лента постов
+- `resources/views/partials/dashboard/activity-feed.blade.php` — лента активности + load more
+- `resources/views/partials/dashboard/tenders-widget.blade.php` — виджет закупок
+- `resources/views/partials/dashboard/invitations-widget.blade.php` — виджет приглашений
+- `resources/views/partials/dashboard/bids-widget.blade.php` — виджет заявок
+
+**Изменённые файлы:**
+- `app/Models/User.php` — добавлен `companies.slug` в `moderatedCompanies()` select
+- `app/Http/Controllers/DashboardController.php` — полностью переписан `index()`: 3 колонки данных
+- `resources/views/dashboard.blade.php` — 3-колоночный layout (grid-cols-5: 1+3+1)
+- `routes/web.php` — добавлены роуты POST /posts и DELETE /posts/{post}
+- `tests/Feature/DashboardTest.php` — обновлены существующие + добавлены тесты постов и view data
+
+**Тесты:** 192 passed (401 assertions) — все тесты проходят.
+
+---
+
 ## 2026-02-21 — G7 (#58): Изменение структуры меню
 
 **Задача:** Реструктуризация навигации — «Тендеры» → «Закупки», Dashboard как главная, перенос «Мои запросы» на страницу компаний.
