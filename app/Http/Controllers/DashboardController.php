@@ -68,13 +68,13 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        $myTenders = $myRfqs->map(fn ($r) => [
+        $myTenders = collect($myRfqs->map(fn ($r) => [
             'type' => 'rfq',
             'title' => $r->title,
             'number' => $r->number,
             'status' => $r->status,
             'url' => route('rfqs.show', $r),
-        ])->merge($myAuctions->map(fn ($a) => [
+        ]))->merge($myAuctions->map(fn ($a) => [
             'type' => 'auction',
             'title' => $a->title,
             'number' => $a->number,
@@ -94,13 +94,13 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        $myInvitations = $rfqInvitations->map(fn ($i) => [
+        $myInvitations = collect($rfqInvitations->map(fn ($i) => [
             'type' => 'rfq',
             'title' => $i->rfq->title ?? '',
             'number' => $i->rfq->number ?? '',
             'status' => $i->status,
             'url' => route('rfqs.show', $i->rfq_id),
-        ])->merge($auctionInvitations->map(fn ($i) => [
+        ]))->merge($auctionInvitations->map(fn ($i) => [
             'type' => 'auction',
             'title' => $i->auction->title ?? '',
             'number' => $i->auction->number ?? '',
@@ -120,13 +120,13 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        $myBids = $rfqBids->map(fn ($b) => [
+        $myBids = collect($rfqBids->map(fn ($b) => [
             'type' => 'rfq',
             'title' => $b->rfq->title ?? '',
             'number' => $b->rfq->number ?? '',
             'price' => $b->price,
             'url' => route('rfqs.show', $b->rfq_id),
-        ])->merge($auctionBids->map(fn ($b) => [
+        ]))->merge($auctionBids->map(fn ($b) => [
             'type' => 'auction',
             'title' => $b->auction->title ?? '',
             'number' => $b->auction->number ?? '',
