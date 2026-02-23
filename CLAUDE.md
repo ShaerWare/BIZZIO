@@ -51,6 +51,7 @@ php artisan auctions:check-expired   # Close expired auctions (manual or one-off
 php artisan auctions:update-statuses # Update auction statuses (scheduled every minute)
 php artisan rss:parse                # Parse RSS news sources (scheduled every 5 min)
 php artisan news:clean-old           # Clean old news articles (scheduled daily at 02:00)
+php artisan cleanup:test-data        # Interactive deletion of test companies (cascade soft-delete)
 ```
 
 ### Scheduler
@@ -77,7 +78,7 @@ php artisan tinker
 
 ### Core Modules
 - **Companies** — Profiles with verification, documents, moderator assignment, join requests
-- **Projects** — Company invitations, comments, participant roles
+- **Projects** — Company invitations, user members (roles: admin/moderator/member), join requests, comments
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **News** — RSS aggregator with keyword filtering, personalized feed
@@ -119,6 +120,9 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - `AuctionTradingStarted` → `SendAuctionTradingStartedNotification`
 - `CommentCreated` → `SendCommentNotification`
 - `CompanyCreated` → `SendCompanyCreatedNotification`
+- `ProjectUserInvited` → `SendProjectUserInvitedNotification`
+- `ProjectJoinRequestCreated` → `SendProjectJoinRequestNotification`
+- `ProjectJoinRequestReviewed` → `SendProjectJoinRequestReviewedNotification`
 
 ### Key Packages
 - `orchid/platform` — Admin panel
@@ -132,7 +136,7 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 ### OAuth Providers
 - **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
 - **Yandex** — Custom provider at `app/Socialite/YandexProvider.php`, registered in `AppServiceProvider::configureSocialite()`. `.env`: `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
-- **VK** — Package `socialiteproviders/vkontakte` is installed but NOT configured (no entry in `config/services.php` or `AppServiceProvider`)
+
 
 ### AI Chat API
 `POST /api/v1/chat` — Proxies chat to Google Gemini Pro (`geminiPro()`).
@@ -148,6 +152,13 @@ Requires `.env`: `GEMINI_API_KEY`
 - Quick search API (`GET /search/quick?q=...`) returns a flat JSON array of results (not wrapped in `{results: [...]}`)
 - Each result has: `type`, `type_label`, `id`, `title`, `subtitle`, `url`
 - Types: `company`, `project`, `rfq`, `auction`, `user`
+
+### View Conventions
+- Layouts: `layouts/app.blade.php` (authenticated), `layouts/guest.blade.php` (auth pages)
+- Dashboard widgets: `partials/dashboard/*.blade.php` (profile-card, news-widget, posts-feed, etc.)
+- Reusable cards: `components/company-card.blade.php`, `components/rfq-card.blade.php`, `components/auction-card.blade.php`
+- PDF templates: `pdf/auction-protocol.blade.php`, `pdfs/rfq-protocol.blade.php`
+- Uses Alpine.js for client-side interactivity (e.g., post form preview, auction trading UI)
 
 ### Routing Conventions
 **Important:** Fixed routes MUST be defined BEFORE dynamic `{param}` routes to avoid conflicts.
@@ -212,6 +223,8 @@ docker compose logs -f app                                    # Container
 User ←→ Company (many-to-many via company_user pivot with role)
 Company → Projects (owner)
 Project ←→ Companies (many-to-many via project_participants)
+Project ←→ Users (many-to-many via project_user pivot with role: admin/moderator/member)
+Project → ProjectJoinRequests (one-to-many, status: pending/approved/rejected)
 Company → Rfqs (owner)
 Rfq → RfqBids (one-to-many)
 Company → Auctions (owner)

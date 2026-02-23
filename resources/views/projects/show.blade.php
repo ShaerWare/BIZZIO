@@ -125,12 +125,17 @@
                             class="tab-button active border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
-                    <button onclick="showTab('participants')" 
+                    <button onclick="showTab('participants')"
                             id="tab-participants"
                             class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Участники ({{ $project->participants->count() }})
                     </button>
-                    <button onclick="showTab('comments')" 
+                    <button onclick="showTab('people')"
+                            id="tab-people"
+                            class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        Люди ({{ $project->members->count() }})
+                    </button>
+                    <button onclick="showTab('comments')"
                             id="tab-comments"
                             class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Комментарии ({{ $project->comments->count() }})
@@ -201,6 +206,11 @@
                             @endforeach
                         </div>
                     @endif
+                </div>
+
+                <!-- Вкладка: Люди -->
+                <div id="content-people" class="tab-content hidden">
+                    @include('projects.partials.members-tab')
                 </div>
 
                 <!-- Вкладка: Комментарии -->
@@ -278,6 +288,61 @@
         const activeButton = document.getElementById('tab-' + tabName);
         activeButton.classList.remove('border-transparent', 'text-gray-500');
         activeButton.classList.add('active', 'border-emerald-500', 'text-emerald-600');
+    }
+
+    // ========================
+    // ПОИСК ПОЛЬЗОВАТЕЛЕЙ ДЛЯ ПРИГЛАШЕНИЯ
+    // ========================
+
+    function projectUserSearch() {
+        const memberIds = @json($project->members->pluck('id'));
+
+        return {
+            query: '',
+            results: [],
+            showResults: false,
+            loading: false,
+            selectedUserId: '',
+            selectedUserName: '',
+
+            async search() {
+                if (this.query.length < 2) {
+                    this.results = [];
+                    this.showResults = false;
+                    return;
+                }
+
+                this.loading = true;
+                this.showResults = true;
+
+                try {
+                    const response = await fetch(`/search/quick?q=${encodeURIComponent(this.query)}`);
+                    const data = await response.json();
+
+                    this.results = data
+                        .filter(item => item.type === 'user')
+                        .filter(item => !memberIds.includes(item.id));
+                } catch (e) {
+                    this.results = [];
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            selectUser(user) {
+                this.selectedUserId = user.id;
+                this.selectedUserName = user.title + (user.subtitle ? ' (' + user.subtitle + ')' : '');
+                this.query = '';
+                this.results = [];
+                this.showResults = false;
+            },
+
+            clearSelection() {
+                this.selectedUserId = '';
+                this.selectedUserName = '';
+                this.query = '';
+            }
+        };
     }
 
     // ========================
