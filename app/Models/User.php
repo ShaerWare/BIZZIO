@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Scout\Searchable;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
@@ -50,9 +49,9 @@ class User extends Orchid
      * @var array
      */
     protected $casts = [
-        'permissions'          => 'array',
-        'email_verified_at'    => 'datetime',
-        'password'             => 'hashed',
+        'permissions' => 'array',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**
@@ -61,9 +60,9 @@ class User extends Orchid
      * @var array
      */
     protected $allowedFilters = [
-        'id'         => Where::class,
-        'name'       => Like::class,
-        'email'      => Like::class,
+        'id' => Where::class,
+        'name' => Like::class,
+        'email' => Like::class,
         'updated_at' => WhereDateStartEnd::class,
         'created_at' => WhereDateStartEnd::class,
     ];
@@ -100,8 +99,8 @@ class User extends Orchid
     {
         return $this->belongsToMany(Company::class, 'company_user')
             ->select('companies.id', 'companies.name', 'companies.slug', 'companies.inn', 'companies.is_verified') // ⚠️ ЯВНО указываем поля
-        ->withPivot(['role', 'added_by', 'added_at', 'can_manage_moderators'])
-        ->withTimestamps();
+            ->withPivot(['role', 'added_by', 'added_at', 'can_manage_moderators'])
+            ->withTimestamps();
     }
 
     /**
@@ -118,6 +117,16 @@ class User extends Orchid
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Проекты, где пользователь является участником (через pivot-таблицу)
+     */
+    public function projectMemberships(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_user')
+            ->withPivot(['company_id', 'role', 'added_by', 'added_at'])
+            ->withTimestamps();
     }
 
     /**
@@ -178,12 +187,13 @@ class User extends Orchid
             if (str_starts_with($this->avatar, 'http')) {
                 return $this->avatar;
             }
+
             // Если это локальный файл
-            return asset('storage/' . $this->avatar);
+            return asset('storage/'.$this->avatar);
         }
 
         // Дефолтный аватар (генерация по инициалам)
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
     }
 
     // ========================

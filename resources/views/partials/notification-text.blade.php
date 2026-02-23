@@ -40,6 +40,23 @@
         от {{ $notification->data['user_name'] ?? '' }}
         @break
 
+    @case('project_user_invited')
+        Вас добавили в проект: <strong>{{ $notification->data['project_title'] ?? '' }}</strong>
+        @if(isset($notification->data['invited_by_name']))
+            ({{ $notification->data['invited_by_name'] }})
+        @endif
+        @break
+
+    @case('project_join_request')
+        Запрос на присоединение к проекту <strong>{{ $notification->data['project_title'] ?? '' }}</strong>
+        от {{ $notification->data['user_name'] ?? '' }}
+        @break
+
+    @case('project_join_request_reviewed')
+        Ваш запрос на присоединение к проекту <strong>{{ $notification->data['project_title'] ?? '' }}</strong>
+        {{ ($notification->data['decision'] ?? '') === 'approved' ? 'одобрен' : 'отклонён' }}
+        @break
+
     @default
         {{ $notification->data['message'] ?? 'Новое уведомление' }}
 @endswitch

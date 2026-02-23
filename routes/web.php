@@ -1,21 +1,22 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AuctionController;
 use App\Http\Controllers\Auth\SocialiteController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\RfqController;
 use App\Http\Controllers\CompanyJoinRequestController;
 use App\Http\Controllers\CompanyModeratorController;
-use App\Http\Controllers\AuctionController;
-use App\Http\Controllers\NewsController;
-use App\Http\Controllers\UserKeywordController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectMemberController;
+use App\Http\Controllers\RfqController;
 use App\Http\Controllers\TempUploadController;
 use App\Http\Controllers\TenderController;
+use App\Http\Controllers\UserKeywordController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
+
     return view('welcome');
 });
 
@@ -59,7 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::post('companies/{company}/photos', [CompanyController::class, 'uploadPhotos'])->name('companies.photos.upload');
     Route::delete('companies/{company}/photos/{media}', [CompanyController::class, 'deletePhoto'])->name('companies.photos.delete');
 
-    // Запросы на присоединение к компании 
+    // Запросы на присоединение к компании
     Route::get('/my-join-requests', [CompanyJoinRequestController::class, 'index'])
         ->name('join-requests.index');
     Route::post('/companies/{company}/join-requests', [CompanyJoinRequestController::class, 'store'])
@@ -70,7 +72,7 @@ Route::middleware('auth')->group(function () {
         ->name('join-requests.approve');
     Route::post('/join-requests/{joinRequest}/reject', [CompanyJoinRequestController::class, 'reject'])
         ->name('join-requests.reject');
-    
+
     // Управление модераторами компании
     Route::post('/companies/{company}/moderators', [CompanyModeratorController::class, 'store'])
         ->name('companies.moderators.store');
@@ -143,6 +145,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects/{project:slug}/comments', [ProjectController::class, 'storeComment'])->name('projects.comments.store');
     Route::put('/comments/{comment}', [ProjectController::class, 'updateComment'])->name('comments.update');
     Route::delete('/comments/{comment}', [ProjectController::class, 'destroyComment'])->name('comments.destroy');
+
+    // Участники проекта (пользователи)
+    Route::post('/projects/{project:slug}/members', [ProjectMemberController::class, 'store'])->name('projects.members.store');
+    Route::put('/projects/{project:slug}/members/{user}', [ProjectMemberController::class, 'update'])->name('projects.members.update');
+    Route::delete('/projects/{project:slug}/members/{user}', [ProjectMemberController::class, 'destroy'])->name('projects.members.destroy');
+
+    // Запросы на присоединение к проекту
+    Route::post('/projects/{project:slug}/join-requests', [ProjectMemberController::class, 'storeJoinRequest'])->name('projects.join-requests.store');
+    Route::post('/project-join-requests/{joinRequest}/approve', [ProjectMemberController::class, 'approveJoinRequest'])->name('project-join-requests.approve');
+    Route::post('/project-join-requests/{joinRequest}/reject', [ProjectMemberController::class, 'rejectJoinRequest'])->name('project-join-requests.reject');
+    Route::delete('/project-join-requests/{joinRequest}', [ProjectMemberController::class, 'destroyJoinRequest'])->name('project-join-requests.destroy');
 });
 
 // Публичный просмотр проекта (после auth-группы, чтобы create не конфликтовал)
@@ -203,22 +216,22 @@ Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 Route::prefix('auctions')->name('auctions.')->group(function () {
     // Публичные маршруты
     Route::get('/', [AuctionController::class, 'index'])->name('index');
-    
+
     // ⚠️ ВАЖНО: Приватные маршруты с фиксированными путями ПЕРЕД {auction}
     Route::middleware('auth')->group(function () {
         // Личный кабинет (ДО {auction})
         Route::get('/my/list', [AuctionController::class, 'myAuctions'])->name('my');
         Route::get('/my/bids', [AuctionController::class, 'myBids'])->name('bids.my');
         Route::get('/my/invitations', [AuctionController::class, 'myInvitations'])->name('invitations.my');
-        
+
         // Создание (ДО {auction})
         Route::get('/create', [AuctionController::class, 'create'])->name('create');
         Route::post('/', [AuctionController::class, 'store'])->name('store');
     });
-    
+
     // Динамические маршруты с {auction} ПОСЛЕ всех фиксированных
     Route::get('/{auction}', [AuctionController::class, 'show'])->name('show');
-    
+
     Route::middleware('auth')->group(function () {
         Route::get('/{auction}/edit', [AuctionController::class, 'edit'])->name('edit');
         Route::put('/{auction}', [AuctionController::class, 'update'])->name('update');

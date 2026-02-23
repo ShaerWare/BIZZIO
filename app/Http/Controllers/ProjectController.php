@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
-use App\Models\Company;
-use App\Models\Comment;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
+use App\Models\Comment;
+use App\Models\Company;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,7 +18,7 @@ class ProjectController extends Controller
      */
     public function __construct()
     {
-        //$this->middleware('auth')->except(['index', 'show']);
+        // $this->middleware('auth')->except(['index', 'show']);
     }
 
     /**
@@ -56,7 +56,7 @@ class ProjectController extends Controller
     {
         // Получаем компании, где пользователь является модератором
         $user = auth()->user();
-        
+
         // ИСПРАВЛЕНО: hasRole() → inRole()
         if ($user->inRole('admin')) {
             $companies = Company::verified()->get();
@@ -82,7 +82,7 @@ class ProjectController extends Controller
     public function store(StoreProjectRequest $request)
     {
         $validated = $request->validated();
-        
+
         // Обработка загрузки аватара
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('projects/avatars', 'public');
@@ -109,6 +109,9 @@ class ProjectController extends Controller
             }
         }
 
+        // Автоматически добавляем создателя как admin-участника проекта
+        $project->addMember(auth()->user(), $project->company, 'admin', auth()->user());
+
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Проект успешно создан!');
     }
@@ -118,7 +121,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $project->load(['company', 'creator', 'participants', 'comments.user']);
+        $project->load(['company', 'creator', 'participants', 'members', 'comments.user']);
 
         return view('projects.show', compact('project'));
     }
@@ -129,13 +132,13 @@ class ProjectController extends Controller
     public function edit(Project $project)
     {
         // Проверка прав
-        if (!$project->canManage(auth()->user())) {
+        if (! $project->canManage(auth()->user())) {
             abort(403, 'У вас нет прав для редактирования этого проекта.');
         }
 
         // Получаем компании, где пользователь является модератором
         $user = auth()->user();
-        
+
         // ИСПРАВЛЕНО: hasRole() → inRole()
         if ($user->inRole('admin')) {
             $companies = Company::verified()->get();
@@ -198,7 +201,7 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        if (!$project->canManage(auth()->user())) {
+        if (! $project->canManage(auth()->user())) {
             abort(403, 'У вас нет прав для удаления этого проекта.');
         }
 
@@ -241,7 +244,7 @@ class ProjectController extends Controller
         // Если это AJAX-запрос, возвращаем JSON
         if ($request->ajax()) {
             $comment->load('user');
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Комментарий успешно добавлен.',
@@ -261,7 +264,7 @@ class ProjectController extends Controller
     public function updateComment(Request $request, Comment $comment)
     {
         // Проверка прав
-        if (!$comment->canManage(auth()->user())) {
+        if (! $comment->canManage(auth()->user())) {
             abort(403, 'У вас нет прав для редактирования этого комментария.');
         }
 
@@ -294,7 +297,7 @@ class ProjectController extends Controller
     public function destroyComment(Comment $comment)
     {
         // Проверка прав
-        if (!$comment->canManage(auth()->user())) {
+        if (! $comment->canManage(auth()->user())) {
             abort(403, 'У вас нет прав для удаления этого комментария.');
         }
 

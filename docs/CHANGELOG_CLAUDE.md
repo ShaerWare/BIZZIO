@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-02-23 — #74: Пользователи в проектах: роли, приглашения, запросы
+
+**Задача:** Добавить пользовательское участие в проектах — приглашения, запросы на присоединение, роли (admin/moderator/member), вкладка «Люди» на странице проекта.
+
+**Что сделано:**
+1. Создана таблица `project_user` — pivot для пользователей-участников проекта (с ролями, компанией, кто добавил).
+2. Создана таблица `project_join_requests` — запросы на присоединение к проекту (по аналогии с company_join_requests).
+3. Создана модель `ProjectJoinRequest` — с relations, scopes, canCancel/canReview.
+4. Обновлена модель `Project` — members(), joinRequests(), isMember(), hasPendingRequestFrom(), addMember(), removeMember(), getUserRoles().
+5. Обновлена модель `User` — projectMemberships() relation.
+6. Создан `ProjectMemberController` — invite, update role, remove, join request CRUD, approve/reject.
+7. Добавлены 7 маршрутов для участников и запросов.
+8. Созданы 3 события: ProjectUserInvited, ProjectJoinRequestCreated, ProjectJoinRequestReviewed.
+9. Созданы 3 слушателя и 3 уведомления (database + mail).
+10. Зарегистрированы события в AppServiceProvider.
+11. Добавлена вкладка «Люди» на странице проекта с формой приглашения (Alpine.js), списком участников, кнопкой запроса, управлением запросами.
+12. Обновлён notification-text.blade.php — 3 новых @case блока.
+13. Обновлён ProjectController: eager-loading members в show(), автодобавление создателя как admin в store().
+14. Написано 22 теста (все проходят).
+
+**Новые файлы (15):**
+- `database/migrations/2026_02_23_100000_create_project_user_table.php`
+- `database/migrations/2026_02_23_100001_create_project_join_requests_table.php`
+- `app/Models/ProjectJoinRequest.php`
+- `app/Http/Controllers/ProjectMemberController.php`
+- `app/Events/ProjectUserInvited.php`
+- `app/Events/ProjectJoinRequestCreated.php`
+- `app/Events/ProjectJoinRequestReviewed.php`
+- `app/Listeners/SendProjectUserInvitedNotification.php`
+- `app/Listeners/SendProjectJoinRequestNotification.php`
+- `app/Listeners/SendProjectJoinRequestReviewedNotification.php`
+- `app/Notifications/ProjectUserInvitedNotification.php`
+- `app/Notifications/ProjectJoinRequestNotification.php`
+- `app/Notifications/ProjectJoinRequestReviewedNotification.php`
+- `resources/views/projects/partials/members-tab.blade.php`
+- `tests/Feature/ProjectMemberTest.php`
+
+**Изменённые файлы (6):**
+- `app/Models/Project.php`
+- `app/Models/User.php`
+- `app/Http/Controllers/ProjectController.php`
+- `app/Providers/AppServiceProvider.php`
+- `routes/web.php`
+- `resources/views/projects/show.blade.php`
+- `resources/views/partials/notification-text.blade.php`
+
+---
+
 ## 2026-02-21 — #68: Удаление тестовых данных
 
 **Задача:** Безопасное удаление тестовых компаний перед запуском + защита удаления аукционов в админке.

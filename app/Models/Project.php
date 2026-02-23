@@ -7,14 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-use Spatie\MediaLibrary\HasMedia;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Project extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity, Searchable;
+    use HasFactory, LogsActivity, Searchable, SoftDeletes;
 
     // ❌ ВРЕМЕННО УБИРАЕМ Spatie Media Library
     // use InteractsWithMedia;
@@ -81,9 +80,27 @@ class Project extends Model
                 'customer_review',
                 'customer_rating',
                 'participant_review',
-                'participant_rating'
+                'participant_rating',
             ])
             ->withTimestamps();
+    }
+
+    /**
+     * Пользователи-участники проекта (многие-ко-многим через project_user)
+     */
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'project_user')
+            ->withPivot(['company_id', 'role', 'added_by', 'added_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Запросы на присоединение к проекту
+     */
+    public function joinRequests()
+    {
+        return $this->hasMany(ProjectJoinRequest::class);
     }
 
     /**
@@ -110,6 +127,55 @@ class Project extends Model
     public function canManage(User $user): bool
     {
         return $this->company->isModerator($user) || $user->inRole('admin');
+    }
+
+    /**
+     * Проверка, является ли пользователь участником проекта
+     */
+    public function isMember(User $user): bool
+    {
+        return $this->members()->where('users.id', $user->id)->exists();
+    }
+
+    /**
+     * Проверка, есть ли у пользователя ожидающий запрос
+     */
+    public function hasPendingRequestFrom(User $user): bool
+    {
+        return $this->joinRequests()->where('user_id', $user->id)->pending()->exists();
+    }
+
+    /**
+     * Добавление пользователя как участника проекта
+     */
+    public function addMember(User $user, Company $company, string $role = 'member', ?User $addedBy = null): void
+    {
+        $this->members()->attach($user->id, [
+            'company_id' => $company->id,
+            'role' => $role,
+            'added_by' => $addedBy?->id,
+            'added_at' => now(),
+        ]);
+    }
+
+    /**
+     * Удаление участника проекта
+     */
+    public function removeMember(User $user): void
+    {
+        $this->members()->detach($user->id);
+    }
+
+    /**
+     * Получение ролей пользователей в проекте
+     */
+    public static function getUserRoles(): array
+    {
+        return [
+            'admin' => 'Администратор',
+            'moderator' => 'Модератор',
+            'member' => 'Участник',
+        ];
     }
 
     /**
@@ -164,7 +230,7 @@ class Project extends Model
      */
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar ? asset('storage/' . $this->avatar) : null;
+        return $this->avatar ? asset('storage/'.$this->avatar) : null;
     }
 
     /**
@@ -173,11 +239,11 @@ class Project extends Model
     public function getFormattedDurationAttribute(): string
     {
         if ($this->is_ongoing) {
-            return $this->start_date->format('d.m.Y') . ' — По настоящее время';
+            return $this->start_date->format('d.m.Y').' — По настоящее время';
         }
 
         if ($this->end_date) {
-            return $this->start_date->format('d.m.Y') . ' — ' . $this->end_date->format('d.m.Y');
+            return $this->start_date->format('d.m.Y').' — '.$this->end_date->format('d.m.Y');
         }
 
         return $this->start_date->format('d.m.Y');
@@ -207,12 +273,13 @@ class Project extends Model
     public function scopeSearch($query, $search)
     {
         $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
-        return $query->where('name', $op, '%' . $search . '%');
+
+        return $query->where('name', $op, '%'.$search.'%');
     }
 
     public function getContent(): string
     {
-        return $this->name . ($this->company ? ' — ' . $this->company->name : '');
+        return $this->name.($this->company ? ' — '.$this->company->name : '');
     }
 
     public function getRouteKeyName()
@@ -229,7 +296,7 @@ class Project extends Model
             ->logOnly(['title', 'status', 'start_date', 'end_date'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'создал(а) проект',
                 'updated' => 'обновил(а) проект',
                 'deleted' => 'удалил(а) проект',
