@@ -4,6 +4,40 @@
 
 ---
 
+## 2026-02-25 — Фикс Orchid 404: Company route binding + route cache
+
+**Задача:** Исправить 404 при редактировании/удалении компаний в админке Orchid.
+
+**Причина:** `Route::bind('company', ...)` был в `routes/platform.php` — при `route:cache` binding терялся, и `{company}` резолвился через `getRouteKeyName() = 'slug'` вместо id.
+
+**Что сделано:**
+1. Перенесён `Route::bind('company', ...)` из `routes/platform.php` в `AppServiceProvider::registerRouteBindings()`.
+2. Удалён неиспользуемый import `App\Models\Company` из `routes/platform.php`.
+
+**Изменённые файлы (2):**
+- `app/Providers/AppServiceProvider.php` — добавлен `registerRouteBindings()`
+- `routes/platform.php` — удалён `Route::bind('company', ...)`
+
+---
+
+## 2026-02-25 — Wiki проекта: 19 страниц для AI-датасета
+
+**Задача:** Создать Wiki проекта для дальнейшего обучения AI-модели.
+
+**Что сделано:**
+Создано 19 wiki-страниц (2500+ строк) в папке `wiki/`:
+- Home (навигация), Архитектура проекта, Схема базы данных
+- Модели и связи, Событийная архитектура
+- Компании, Проекты, Запросы цен (RFQ), Аукционы, Тендеры
+- Новости и RSS, API, Авторизация и политики
+- Сервисы, Очереди и задачи, Поиск, Фронтенд
+- Админ-панель Orchid, Деплой и инфраструктура
+
+**Добавленные файлы (19):**
+- `wiki/Home.md` + 18 тематических страниц
+
+---
+
 ## 2026-02-25 — Фикс 500 на dashboard: getKey() on array
 
 **Задача:** Исправить 500 Server Error при открытии dashboard авторизованным пользователем.
