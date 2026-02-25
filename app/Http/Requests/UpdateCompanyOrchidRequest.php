@@ -39,7 +39,7 @@ class UpdateCompanyOrchidRequest extends FormRequest
                 'string',
                 'size:10',
                 'regex:/^\d{10}$/',
-                Rule::unique('companies', 'inn')->ignore($companyId),
+                Rule::unique('companies', 'inn')->ignore($companyId)->whereNull('deleted_at'),
             ],
             'company.legal_form'        => ['nullable', 'string', 'max:255'],
             'company.short_description' => ['nullable', 'string', 'max:500'],
