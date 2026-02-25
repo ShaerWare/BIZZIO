@@ -26,8 +26,10 @@ use App\Models\Rfq;
 use App\Policies\AuctionPolicy;
 use App\Policies\RfqPolicy;
 // Listeners
+use App\Models\Company;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -50,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureHttps();
         $this->registerPolicies();
         $this->registerEventListeners();
+        $this->registerRouteBindings();
     }
 
     /**
@@ -105,5 +108,20 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ProjectUserInvited::class, SendProjectUserInvitedNotification::class);
         Event::listen(ProjectJoinRequestCreated::class, SendProjectJoinRequestNotification::class);
         Event::listen(ProjectJoinRequestReviewed::class, SendProjectJoinRequestReviewedNotification::class);
+    }
+
+    /**
+     * Register custom route model bindings.
+     * Company uses slug for public routes but id for admin (Orchid) routes.
+     */
+    protected function registerRouteBindings(): void
+    {
+        Route::bind('company', function ($value) {
+            if (is_numeric($value)) {
+                return Company::findOrFail($value);
+            }
+
+            return Company::where('slug', $value)->firstOrFail();
+        });
     }
 }
