@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCompanyRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ class StoreCompanyRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'inn' => ['required', 'string', 'regex:/^\d{10}(\d{2})?$/', 'unique:companies,inn'],
+            'inn' => ['required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies', 'inn')->whereNull('deleted_at')],
             'legal_form' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'], // max 2MB
             'short_description' => ['nullable', 'string', 'max:500'],
