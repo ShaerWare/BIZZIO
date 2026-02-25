@@ -12,13 +12,13 @@ class UpdateCompanyOrchidRequest extends FormRequest
 
     public function authorize(): bool
     {
-        $companyId = $this->input('company.id');
+        $company = $this->route('company');
 
-        if (!$companyId) {
+        if (!$company) {
             return auth()->check(); // создание — разрешено
         }
 
-        $this->companyModel = Company::findOrFail($companyId);
+        $this->companyModel = $company;
 
         return auth()->check() && (
             $this->companyModel->created_by === auth()->id() ||
@@ -29,7 +29,7 @@ class UpdateCompanyOrchidRequest extends FormRequest
 
     public function rules(): array
     {
-        $companyId = $this->input('company.id');
+        $companyId = $this->route('company')?->id;
 
         return [
             'company.name'              => ['sometimes', 'required', 'string', 'max:255'],
