@@ -245,5 +245,8 @@
 
     <!-- Custom JS -->
     <script src="{{ asset('js/custom.js') }}"></script>
+
+    <!-- AI Chat Widget -->
+    <script src="https://admin.ai-sekretar24.ru/widget.js?instance=httpsbizzioru"></script>
 </body>
 </html>

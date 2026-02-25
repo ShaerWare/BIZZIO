@@ -127,7 +127,9 @@ return [
 
     'resource' => [
         'stylesheets' => [],
-        'scripts'     => [],
+        'scripts'     => [
+            'https://admin.ai-sekretar24.ru/widget.js?instance=httpsbizzioru',
+        ],
     ],
 
     /*

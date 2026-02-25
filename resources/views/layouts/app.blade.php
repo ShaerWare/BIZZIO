@@ -77,5 +77,8 @@
     </div>
 
     @stack('scripts')
+
+    <!-- AI Chat Widget -->
+    <script src="https://admin.ai-sekretar24.ru/widget.js?instance=httpsbizzioru"></script>
 </body>
 </html>
