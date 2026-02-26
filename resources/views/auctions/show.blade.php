@@ -237,11 +237,29 @@
                             @endif
                         @endif
 
+                        {{-- Кнопка «Подать заявку» — переключает на вкладку «Заявки» и скроллит к форме --}}
+                        @auth
+                            @if($canBid)
+                                <a href="#bid-form"
+                                   onclick="showTab('bids'); setTimeout(function(){ document.getElementById('bid-form').scrollIntoView({behavior: 'smooth'}); }, 100); return false;"
+                                   class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    @if($auction->isTrading())
+                                        Сделать ставку
+                                    @else
+                                        Подать заявку
+                                    @endif
+                                </a>
+                            @endif
+                        @endauth
+
                         <!-- Служба поддержки -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Служба поддержки</h3>
                             <p class="text-xs text-gray-600 mb-3">Возникли вопросы по процедуре?</p>
-                            <a href="mailto:support@bizzo.ru?subject=Аукцион {{ $auction->number }}" 
+                            <a href="mailto:support@bizzo.ru?subject=Аукцион {{ $auction->number }}"
                                class="block w-full text-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition">
                                 Написать в поддержку
                             </a>

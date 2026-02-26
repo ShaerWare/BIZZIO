@@ -122,7 +122,6 @@
                name="{{ $name }}"
                accept="{{ $accept }}"
                {{ $multiple ? 'multiple' : '' }}
-               {{ $required && !$hasTemp ? 'required' : '' }}
                @change="uploadFile($event)"
                class="hidden">
         <button type="button"

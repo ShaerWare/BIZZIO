@@ -434,7 +434,7 @@
                                 <form method="POST" action="{{ route('companies.moderators.store', $company) }}" class="bg-gray-50 rounded-lg p-6" x-data="userSearch()">
                                     @csrf
 
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 overflow-visible">
                                         <div class="relative">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                                 Найти пользователя <span class="text-red-500">*</span>
@@ -450,24 +450,24 @@
 
                                             <!-- Результаты поиска -->
                                             <div x-show="showResults && results.length > 0" x-cloak
-                                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
+                                                 class="absolute z-50 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
                                                 <template x-for="user in results" :key="user.id">
                                                     <button type="button"
                                                             @click="selectUser(user)"
                                                             class="w-full text-left px-3 py-2 hover:bg-emerald-50 text-sm border-b border-gray-100 last:border-0">
-                                                        <span class="font-medium text-gray-900" x-text="user.name"></span>
-                                                        <span class="text-gray-500 text-xs ml-1" x-text="user.email"></span>
+                                                        <span class="font-medium text-gray-900" x-text="user.title"></span>
+                                                        <span class="text-gray-500 text-xs ml-1" x-text="user.subtitle"></span>
                                                     </button>
                                                 </template>
                                             </div>
 
                                             <div x-show="showResults && results.length === 0 && query.length >= 2 && !loading" x-cloak
-                                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm text-gray-500">
+                                                 class="absolute z-50 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm text-gray-500">
                                                 Пользователи не найдены
                                             </div>
 
                                             <div x-show="loading" x-cloak
-                                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm text-gray-500">
+                                                 class="absolute z-50 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm text-gray-500">
                                                 Поиск...
                                             </div>
 

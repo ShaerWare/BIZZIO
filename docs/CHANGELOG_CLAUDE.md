@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-02-26 — Пакет багфиксов: #87, #88, #90, #91, #92, #93, #94
+
+**Issues:** #87, #88, #90, #91, #92, #93, #94
+
+**Что сделано:**
+- **#92 (P1):** Кнопка «Подать заявку» в RFQ теперь переключает на вкладку «Заявки» и скроллит к форме. Добавлена аналогичная кнопка в сайдбар аукциона (ранее отсутствовала).
+- **#88:** Поиск юзера в компании — исправлены имена полей (`user.name`→`user.title`, `user.email`→`user.subtitle`), z-index dropdown повышен до z-50, grid overflow-visible.
+- **#91:** Добавлена JS-валидация файла ТЗ при создании RFQ (показывает ошибку если файл не прикреплён). Кнопка переименована: «Разместить RFQ» → «Разместить». Убран `required` с hidden file input (блокировал submit молча).
+- **#93:** Обезличивание приглашённых компаний на вкладке «Приглашения» RFQ — не-организаторы видят «Участник N» вместо названий.
+- **#90:** Добавлен блок «Приглашённые компании» с AJAX-поиском на страницу редактирования черновика RFQ. Загрузка invitations в контроллере edit(). Исправлен баг `data.results` → `data` в companyInviter() на show-странице.
+- **#87:** Добавлены глобальные padding (`px-3 py-2`) для всех полей ввода через `@layer components` в app.css. Vite assets пересобраны.
+- **#94:** Фильтр новостей по ключевым словам изменён с AND на OR (`'all'` → `'any'` в NewsFilterService).
+
+**Изменённые файлы:**
+- `resources/views/rfqs/show.blade.php` — кнопка «Подать заявку» (#92), обезличивание приглашений (#93), фикс companyInviter (#90)
+- `resources/views/auctions/show.blade.php` — добавлена кнопка «Подать заявку» в сайдбар (#92)
+- `resources/views/companies/show.blade.php` — фикс полей поиска user.title/subtitle, z-50, overflow-visible (#88)
+- `resources/views/rfqs/create.blade.php` — JS-валидация ТЗ, переименование кнопки (#91)
+- `resources/views/rfqs/edit.blade.php` — секция приглашений компаний (#90)
+- `resources/views/components/file-upload.blade.php` — убран required с hidden input (#91)
+- `resources/css/app.css` — глобальные padding для input/textarea/select (#87)
+- `app/Http/Controllers/RfqController.php` — загрузка invitations в edit() (#90)
+- `app/Services/NewsFilterService.php` — OR вместо AND (#94)
+- `public/build/` — пересобранные assets
+
+---
+
 ## 2026-02-25 — Фикс Orchid 404: Company route binding + route cache
 
 **Задача:** Исправить 404 при редактировании/удалении компаний в админке Orchid.

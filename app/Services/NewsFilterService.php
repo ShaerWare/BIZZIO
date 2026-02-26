@@ -26,8 +26,8 @@ class NewsFilterService
             return $query;
         }
 
-        // Логика AND: все ключевые слова должны присутствовать
-        return $query->searchByKeywords($keywords, 'all');
+        // #94: Логика OR: хотя бы одно ключевое слово должно присутствовать
+        return $query->searchByKeywords($keywords, 'any');
     }
 
     /**
