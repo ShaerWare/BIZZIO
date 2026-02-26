@@ -253,11 +253,11 @@
                             @endif
                         @endcan
 
-                        {{-- T3: Кнопка «Подать заявку» с прокруткой к форме --}}
+                        {{-- T3: Кнопка «Подать заявку» — переключает на вкладку «Заявки» и скроллит к форме --}}
                         @auth
                             @if($canBid && $rfq->isActive() && !$rfq->isExpired())
                                 <a href="#bid-form"
-                                   onclick="document.getElementById('bid-form').scrollIntoView({behavior: 'smooth'}); return false;"
+                                   onclick="showTab('bids'); setTimeout(function(){ document.getElementById('bid-form').scrollIntoView({behavior: 'smooth'}); }, 100); return false;"
                                    class="block w-full text-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition mb-4">
                                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -611,34 +611,53 @@
                     @endif
                 </div>
 
-                <!-- Вкладка: Приглашения -->
+                <!-- Вкладка: Приглашения (#93: обезличивание для не-организаторов) -->
                 @if($rfq->type === 'closed' || $rfq->invitations->count() > 0 || (auth()->check() && $rfq->canManage(auth()->user())))
+                    @php
+                        $isRfqManager = auth()->check() && $rfq->canManage(auth()->user());
+                    @endphp
                     <div id="content-invitations" class="tab-content hidden">
                         @if($rfq->invitations->count() > 0)
                             <div class="space-y-4">
-                                @foreach($rfq->invitations as $invitation)
+                                @foreach($rfq->invitations as $index => $invitation)
                                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                         <div class="flex items-center">
-                                            @if($invitation->company->logo)
-                                                <img src="{{ asset('storage/' . $invitation->company->logo) }}" 
-                                                     alt="{{ $invitation->company->name }}" 
-                                                     class="w-12 h-12 rounded-full mr-3 object-cover">
+                                            @if($isRfqManager)
+                                                @if($invitation->company->logo)
+                                                    <img src="{{ asset('storage/' . $invitation->company->logo) }}"
+                                                         alt="{{ $invitation->company->name }}"
+                                                         class="w-12 h-12 rounded-full mr-3 object-cover">
+                                                @else
+                                                    <div class="w-12 h-12 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
+                                                        <span class="text-sm text-gray-500 font-semibold">
+                                                            {{ strtoupper(substr($invitation->company->name, 0, 2)) }}
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                                <div>
+                                                    <a href="{{ route('companies.show', $invitation->company) }}"
+                                                       class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
+                                                        {{ $invitation->company->name }}
+                                                    </a>
+                                                    <p class="text-xs text-gray-500">
+                                                        Приглашён: {{ $invitation->created_at->format('d.m.Y H:i') }}
+                                                    </p>
+                                                </div>
                                             @else
                                                 <div class="w-12 h-12 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
                                                     <span class="text-sm text-gray-500 font-semibold">
-                                                        {{ strtoupper(substr($invitation->company->name, 0, 2)) }}
+                                                        {{ $index + 1 }}
                                                     </span>
                                                 </div>
+                                                <div>
+                                                    <span class="text-sm font-medium text-gray-700">
+                                                        Участник {{ $index + 1 }}
+                                                    </span>
+                                                    <p class="text-xs text-gray-500">
+                                                        Приглашён: {{ $invitation->created_at->format('d.m.Y H:i') }}
+                                                    </p>
+                                                </div>
                                             @endif
-                                            <div>
-                                                <a href="{{ route('companies.show', $invitation->company) }}" 
-                                                   class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
-                                                    {{ $invitation->company->name }}
-                                                </a>
-                                                <p class="text-xs text-gray-500">
-                                                    Приглашён: {{ $invitation->created_at->format('d.m.Y H:i') }}
-                                                </p>
-                                            </div>
                                         </div>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             @if($invitation->status === 'pending') bg-yellow-100 text-yellow-800
@@ -735,7 +754,7 @@
                 try {
                     const res = await fetch(`{{ route('search.quick') }}?q=${encodeURIComponent(this.query)}`);
                     const data = await res.json();
-                    this.results = (data.results || []).filter(r => r.type === 'company');
+                    this.results = (Array.isArray(data) ? data : []).filter(r => r.type === 'company');
                     this.showResults = true;
                 } catch (e) {
                     this.results = [];

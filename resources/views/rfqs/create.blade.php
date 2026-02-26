@@ -15,7 +15,7 @@
         <!-- Форма -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
-                <form method="POST" action="{{ route('rfqs.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('rfqs.store') }}" enctype="multipart/form-data" id="rfq-create-form">
                     @csrf
 
                     <!-- Компания-организатор -->
@@ -362,9 +362,9 @@
                            class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 transition">
                             Отмена
                         </a>
-                        <button type="submit" 
+                        <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                            Разместить RFQ
+                            Разместить
                         </button>
                     </div>
                 </form>
@@ -376,6 +376,34 @@
 
 @push('scripts')
 <script>
+    // #91: JS-валидация файла ТЗ при submit формы
+    document.getElementById('rfq-create-form').addEventListener('submit', function(e) {
+        const tempInput = this.querySelector('input[name="technical_specification_temp"]');
+        const fileInput = this.querySelector('input[name="technical_specification"]');
+        const hasTempFile = tempInput && tempInput.value;
+        const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+        if (!hasTempFile && !hasNewFile) {
+            e.preventDefault();
+            // Показать ошибку рядом с полем ТЗ
+            let errorEl = document.getElementById('ts-error');
+            if (!errorEl) {
+                errorEl = document.createElement('p');
+                errorEl.id = 'ts-error';
+                errorEl.className = 'mt-1 text-sm text-red-600';
+                errorEl.textContent = 'Загрузите техническое задание (PDF)';
+                const container = fileInput ? fileInput.closest('.space-y-2').parentElement : null;
+                if (container) {
+                    container.appendChild(errorEl);
+                }
+            }
+            // Прокрутить к полю ТЗ
+            const tsLabel = document.querySelector('label[for="technical_specification"], .space-y-2');
+            if (tsLabel) tsLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+    });
+
     // T8: Alpine.js компонент поиска компаний для приглашений
     function companySearch() {
         return {

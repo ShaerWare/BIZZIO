@@ -239,6 +239,8 @@ class RfqController extends Controller
     {
         $this->authorize('update', $rfq);
 
+        $rfq->load('invitations.company');
+
         return view('rfqs.edit', compact('rfq'));
     }
 

@@ -102,11 +102,11 @@
 
                     <!-- Кнопки -->
                     <div class="flex justify-between items-center">
-                        <a href="{{ route('rfqs.show', $rfq) }}" 
+                        <a href="{{ route('rfqs.show', $rfq) }}"
                            class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 transition">
                             Отмена
                         </a>
-                        <button type="submit" 
+                        <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             Сохранить изменения
                         </button>
@@ -115,6 +115,143 @@
             </div>
         </div>
 
+        {{-- #90: Управление приглашениями компаний (AJAX, вне основной формы) --}}
+        @if($rfq->status === 'draft')
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                <div class="p-6" x-data="editCompanyInviter()">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Приглашённые компании</h2>
+
+                    {{-- Поиск компаний --}}
+                    <div class="relative mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Пригласить компанию</label>
+                        <input type="text"
+                               x-model="query"
+                               @input.debounce.300ms="search()"
+                               @click.away="showResults = false"
+                               @focus="if (results.length) showResults = true"
+                               placeholder="Поиск по названию или ИНН..."
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+
+                        <div x-show="showResults && results.length > 0" x-cloak
+                             class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            <template x-for="company in results" :key="company.id">
+                                <button type="button"
+                                        @click="invite(company)"
+                                        class="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-100 last:border-0">
+                                    <p class="text-sm font-medium text-gray-900" x-text="company.title"></p>
+                                    <p class="text-xs text-gray-500" x-text="company.subtitle"></p>
+                                </button>
+                            </template>
+                        </div>
+
+                        <div x-show="searching" x-cloak class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg p-3 text-center text-xs text-gray-500">
+                            Поиск...
+                        </div>
+                    </div>
+
+                    <p x-show="message" x-cloak x-text="message" class="text-sm mb-3"
+                       :class="messageType === 'success' ? 'text-green-600' : 'text-red-600'"></p>
+
+                    {{-- Список приглашённых --}}
+                    @if($rfq->invitations->count() > 0)
+                        <div class="space-y-2">
+                            <p class="text-sm text-gray-500 font-medium">Приглашённые ({{ $rfq->invitations->count() }}):</p>
+                            @foreach($rfq->invitations as $inv)
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
+                                            <span class="text-xs text-gray-500 font-semibold">
+                                                {{ strtoupper(substr($inv->company->name, 0, 2)) }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-medium text-gray-900">{{ $inv->company->name }}</span>
+                                            <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium
+                                                {{ $inv->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : ($inv->status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') }}">
+                                                {{ $inv->status === 'pending' ? 'Ожидает' : ($inv->status === 'accepted' ? 'Принято' : 'Отклонено') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500">Приглашений нет. Используйте поиск выше для приглашения компаний.</p>
+                    @endif
+                </div>
+            </div>
+        @endif
+
     </div>
 </div>
+
+@push('scripts')
+<script>
+    function editCompanyInviter() {
+        const rfqCompanyId = {{ $rfq->company_id }};
+        const existingInvitationIds = @json($rfq->invitations->pluck('company_id'));
+
+        return {
+            query: '',
+            results: [],
+            showResults: false,
+            searching: false,
+            message: '',
+            messageType: 'success',
+
+            async search() {
+                if (this.query.length < 2) {
+                    this.results = [];
+                    this.showResults = false;
+                    return;
+                }
+                this.searching = true;
+                this.message = '';
+                try {
+                    const res = await fetch(`{{ route('search.quick') }}?q=${encodeURIComponent(this.query)}`);
+                    const data = await res.json();
+                    this.results = data
+                        .filter(r => r.type === 'company')
+                        .filter(r => r.id !== rfqCompanyId)
+                        .filter(r => !existingInvitationIds.includes(r.id));
+                    this.showResults = true;
+                } catch (e) {
+                    this.results = [];
+                } finally {
+                    this.searching = false;
+                }
+            },
+
+            async invite(company) {
+                this.showResults = false;
+                this.query = '';
+                this.message = '';
+                try {
+                    const res = await fetch(`{{ route('rfqs.invitations.store', $rfq) }}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ company_id: company.id }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.message = `${company.title} — приглашение отправлено`;
+                        this.messageType = 'success';
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        this.message = data.error || 'Ошибка при отправке';
+                        this.messageType = 'error';
+                    }
+                } catch (e) {
+                    this.message = 'Ошибка сети';
+                    this.messageType = 'error';
+                }
+            }
+        };
+    }
+</script>
+@endpush
 @endsection
