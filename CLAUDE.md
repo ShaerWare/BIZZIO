@@ -136,6 +136,7 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 ### OAuth Providers
 - **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
 - **Yandex** — Custom provider at `app/Socialite/YandexProvider.php`, registered in `AppServiceProvider::configureSocialite()`. `.env`: `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
+- **VK** — Via `socialiteproviders/vkontakte`. `.env`: `VK_CLIENT_ID`, `VK_CLIENT_SECRET`, `VK_REDIRECT_URI`
 
 
 ### AI Chat API
@@ -232,7 +233,7 @@ Auction → AuctionBids (one-to-many)
 ```
 
 - `User` extends `Orchid\Platform\Models\User` (not Laravel's default `Authenticatable`)
-- `Company` route model binding uses `slug` (`getRouteKeyName() → 'slug'`), not `id`
+- `Company` route model binding accepts both numeric IDs (for Orchid admin) and slugs (for public routes) — see `AppServiceProvider::registerRouteBindings()`
 - `Company`, `Rfq`, `Auction` use `SoftDeletes`, `InteractsWithMedia`, `LogsActivity`
 - `Company::shouldBeSearchable()` — only verified companies are indexed
 - RFQ numbers: `К-ГГММДД-0001`, Auction numbers: `А-ГГММДД-0001`
