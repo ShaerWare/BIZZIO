@@ -84,6 +84,7 @@ php artisan tinker
 - **News** — RSS aggregator with keyword filtering, personalized feed
 - **Search** — Search via model `scopeSearch()` with `ilike`/`like` queries (Scout uses `collection` driver; search is not index-based)
 - **Tenders** — Unified view (`/tenders`) combining RFQs and Auctions with shared filters
+- **Subscriptions** — Polymorphic subscriptions (User/Company). Dashboard feed filters by subscriptions + friends-of-friends (2nd level). Public user profiles (`/users/{id}`)
 
 ### Status Lifecycles
 
@@ -123,6 +124,7 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - `ProjectUserInvited` → `SendProjectUserInvitedNotification`
 - `ProjectJoinRequestCreated` → `SendProjectJoinRequestNotification`
 - `ProjectJoinRequestReviewed` → `SendProjectJoinRequestReviewedNotification`
+- `UserSubscribed` → `SendUserSubscribedNotification`
 
 ### Key Packages
 - `orchid/platform` — Admin panel
@@ -230,6 +232,8 @@ Company → Rfqs (owner)
 Rfq → RfqBids (one-to-many)
 Company → Auctions (owner)
 Auction → AuctionBids (one-to-many)
+User → Subscriptions (subscriber, one-to-many)
+User/Company ← Subscriptions (subscribable, polymorphic MorphMany)
 ```
 
 - `User` extends `Orchid\Platform\Models\User` (not Laravel's default `Authenticatable`)

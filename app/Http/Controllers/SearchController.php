@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Auction;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\Rfq;
-use App\Models\Auction;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -114,7 +114,7 @@ class SearchController extends Controller
                 'id' => $user->id,
                 'title' => $user->name,
                 'subtitle' => $user->email,
-                'url' => '#',
+                'url' => route('users.show', $user),
             ];
         }
 
@@ -130,32 +130,32 @@ class SearchController extends Controller
 
         switch ($type) {
             case 'users':
-                $results = User::search($query)->take(50)->get()->map(fn($item) => $this->formatUser($item));
+                $results = User::search($query)->take(50)->get()->map(fn ($item) => $this->formatUser($item));
                 break;
 
             case 'companies':
-                $results = Company::search($query)->take(50)->get()->map(fn($item) => $this->formatCompany($item));
+                $results = Company::search($query)->take(50)->get()->map(fn ($item) => $this->formatCompany($item));
                 break;
 
             case 'projects':
-                $results = Project::search($query)->take(50)->get()->map(fn($item) => $this->formatProject($item));
+                $results = Project::search($query)->take(50)->get()->map(fn ($item) => $this->formatProject($item));
                 break;
 
             case 'rfqs':
-                $results = Rfq::search($query)->take(50)->get()->map(fn($item) => $this->formatRfq($item));
+                $results = Rfq::search($query)->take(50)->get()->map(fn ($item) => $this->formatRfq($item));
                 break;
 
             case 'auctions':
-                $results = Auction::search($query)->take(50)->get()->map(fn($item) => $this->formatAuction($item));
+                $results = Auction::search($query)->take(50)->get()->map(fn ($item) => $this->formatAuction($item));
                 break;
 
             default: // 'all'
                 $results = collect()
-                    ->merge(User::search($query)->take(10)->get()->map(fn($item) => $this->formatUser($item)))
-                    ->merge(Company::search($query)->take(10)->get()->map(fn($item) => $this->formatCompany($item)))
-                    ->merge(Project::search($query)->take(10)->get()->map(fn($item) => $this->formatProject($item)))
-                    ->merge(Rfq::search($query)->take(10)->get()->map(fn($item) => $this->formatRfq($item)))
-                    ->merge(Auction::search($query)->take(10)->get()->map(fn($item) => $this->formatAuction($item)));
+                    ->merge(User::search($query)->take(10)->get()->map(fn ($item) => $this->formatUser($item)))
+                    ->merge(Company::search($query)->take(10)->get()->map(fn ($item) => $this->formatCompany($item)))
+                    ->merge(Project::search($query)->take(10)->get()->map(fn ($item) => $this->formatProject($item)))
+                    ->merge(Rfq::search($query)->take(10)->get()->map(fn ($item) => $this->formatRfq($item)))
+                    ->merge(Auction::search($query)->take(10)->get()->map(fn ($item) => $this->formatAuction($item)));
                 break;
         }
 
@@ -207,7 +207,7 @@ class SearchController extends Controller
             'title' => $user->name,
             'subtitle' => $user->position,
             'description' => $user->bio,
-            'url' => route('profile.edit'), // TODO: Публичный профиль пользователя
+            'url' => route('users.show', $user),
             'avatar' => $user->avatar,
         ];
     }

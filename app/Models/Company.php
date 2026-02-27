@@ -7,22 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
+use Orchid\Filters\Filterable;
+use Orchid\Screen\AsSource;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Spatie\Image\Enums\Fit;
-use Orchid\Filters\Filterable;
-use Orchid\Screen\AsSource;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
 
 class Company extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, Searchable;
     use AsSource, Filterable, LogsActivity;
+    use HasFactory, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -51,13 +52,13 @@ class Company extends Model implements HasMedia
         static::creating(function ($company) {
             if (empty($company->slug)) {
                 $company->slug = Str::slug($company->name);
-                
+
                 // Проверка уникальности slug
                 $originalSlug = $company->slug;
                 $counter = 1;
-                
+
                 while (static::where('slug', $company->slug)->exists()) {
-                    $company->slug = $originalSlug . '-' . $counter;
+                    $company->slug = $originalSlug.'-'.$counter;
                     $counter++;
                 }
             }
@@ -67,12 +68,12 @@ class Company extends Model implements HasMedia
             // Если название изменилось, обновляем slug
             if ($company->isDirty('name') && empty($company->slug)) {
                 $company->slug = Str::slug($company->name);
-                
+
                 $originalSlug = $company->slug;
                 $counter = 1;
-                
+
                 while (static::where('slug', $company->slug)->where('id', '!=', $company->id)->exists()) {
-                    $company->slug = $originalSlug . '-' . $counter;
+                    $company->slug = $originalSlug.'-'.$counter;
                     $counter++;
                 }
             }
@@ -86,7 +87,7 @@ class Company extends Model implements HasMedia
     {
         return 'slug';
     }
-    
+
     /**
      * Отрасль
      */
@@ -156,6 +157,14 @@ class Company extends Model implements HasMedia
     }
 
     /**
+     * Подписчики компании
+     */
+    public function subscribers(): MorphMany
+    {
+        return $this->morphMany(Subscription::class, 'subscribable');
+    }
+
+    /**
      * Проверка: является ли пользователь модератором компании
      */
     public function isModerator(User $user): bool
@@ -180,6 +189,7 @@ class Company extends Model implements HasMedia
 
         // Модераторы с правом управления
         $moderator = $this->moderators()->where('user_id', $user->id)->first();
+
         return $moderator && $moderator->pivot->can_manage_moderators;
     }
 
@@ -197,7 +207,7 @@ class Company extends Model implements HasMedia
     /**
      * Назначить модератора компании
      */
-    public function assignModerator(User $user, string $role = null, User $addedBy = null, bool $canManageModerators = false): void
+    public function assignModerator(User $user, ?string $role = null, ?User $addedBy = null, bool $canManageModerators = false): void
     {
         // Проверяем, что пользователь ещё не модератор
         if ($this->isModerator($user)) {
@@ -278,7 +288,7 @@ class Company extends Model implements HasMedia
         return $query->where(function ($q) use ($search) {
             $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
             $q->where('name', $op, "%{$search}%")
-              ->orWhere('inn', $op, "%{$search}%");
+                ->orWhere('inn', $op, "%{$search}%");
         });
     }
 
@@ -287,8 +297,8 @@ class Company extends Model implements HasMedia
      */
     public function getLogoUrlAttribute(): string
     {
-        return $this->logo 
-            ? asset('storage/' . $this->logo)
+        return $this->logo
+            ? asset('storage/'.$this->logo)
             : asset('images/default-company-logo.png');
     }
 
@@ -301,7 +311,7 @@ class Company extends Model implements HasMedia
             ->logOnly(['name', 'inn', 'industry_id', 'is_verified'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'создал(а) компанию',
                 'updated' => 'обновил(а) компанию',
                 'deleted' => 'удалил(а) компанию',

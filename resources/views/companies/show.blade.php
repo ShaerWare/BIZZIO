@@ -84,6 +84,10 @@
                     <!-- Кнопки действий -->
                     <div class="flex space-x-2 ml-4">
                         @auth
+                            @unless($company->isModerator(auth()->user()))
+                                @include('components.subscribe-button', ['target' => $company])
+                            @endunless
+
                             @if($company->canManageModerators(auth()->user()))
                                 <!-- Кнопка редактирования (для модераторов) -->
                                 <a href="{{ route('companies.edit', $company) }}" 
