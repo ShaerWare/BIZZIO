@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-02-27 — Капча и валидация на регистрацию — Issue #99
+
+**Issue:** #99
+
+**Что сделано:**
+- Добавлена Google reCAPTCHA v2 (checkbox) на форму регистрации — без внешних пакетов, интеграция через Google API напрямую
+- Серверная валидация reCAPTCHA: HTTP-запрос к `siteverify`, пропуск проверки если `RECAPTCHA_SECRET_KEY` не задан (dev-окружение)
+- Усилена валидация полей регистрации: `name` min:2, `email:rfc,dns` (проверка MX-записи), `password` min:8 + буквы + цифры
+- Добавлена кнопка OAuth «Войти через VK» на формы `/login` и `/register`
+- Добавлена конфигурация VK OAuth в `config/services.php` и `.env.example`
+- 7 тестов: регистрация с капчей, без капчи (ошибка), невалидная капча (ошибка), пропуск капчи без секрета, короткое имя (ошибка), слабый пароль (ошибка)
+
+**Изменённые файлы:**
+- `config/services.php` — добавлены секции `vkontakte` и `recaptcha`
+- `.env.example` — добавлены переменные `VK_*` и `RECAPTCHA_*`
+- `app/Http/Controllers/Auth/RegisteredUserController.php` — reCAPTCHA валидация + усиленные правила полей
+- `resources/views/layouts/guest.blade.php` — подключён скрипт reCAPTCHA API
+- `resources/views/auth/register.blade.php` — виджет reCAPTCHA + кнопка VK
+- `resources/views/auth/login.blade.php` — кнопка VK
+- `tests/Feature/Auth/RegistrationTest.php` — 7 тестов (было 2)
+
+---
+
 ## 2026-02-27 — Модуль подписок (Друзья) — Issue #89
 
 **Issue:** #89
