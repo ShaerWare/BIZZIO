@@ -57,6 +57,10 @@
         {{ ($notification->data['decision'] ?? '') === 'approved' ? 'одобрен' : 'отклонён' }}
         @break
 
+    @case('user_subscribed')
+        <strong>{{ $notification->data['subscriber_name'] ?? '' }}</strong> подписался на вас
+        @break
+
     @default
         {{ $notification->data['message'] ?? 'Новое уведомление' }}
 @endswitch

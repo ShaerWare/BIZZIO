@@ -11,6 +11,7 @@ use App\Events\ProjectJoinRequestReviewed;
 use App\Events\ProjectUserInvited;
 use App\Events\TenderClosed;
 use App\Events\TenderInvitationSent;
+use App\Events\UserSubscribed;
 use App\Listeners\SendAuctionTradingStartedNotification;
 use App\Listeners\SendCommentNotification;
 use App\Listeners\SendCompanyCreatedNotification;
@@ -20,13 +21,14 @@ use App\Listeners\SendProjectJoinRequestReviewedNotification;
 use App\Listeners\SendProjectUserInvitedNotification;
 use App\Listeners\SendTenderClosedNotification;
 use App\Listeners\SendTenderInvitationNotification;
+use App\Listeners\SendUserSubscribedNotification;
 // Events
 use App\Models\Auction;
+use App\Models\Company;
 use App\Models\Rfq;
 use App\Policies\AuctionPolicy;
-use App\Policies\RfqPolicy;
 // Listeners
-use App\Models\Company;
+use App\Policies\RfqPolicy;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -108,6 +110,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ProjectUserInvited::class, SendProjectUserInvitedNotification::class);
         Event::listen(ProjectJoinRequestCreated::class, SendProjectJoinRequestNotification::class);
         Event::listen(ProjectJoinRequestReviewed::class, SendProjectJoinRequestReviewedNotification::class);
+        Event::listen(UserSubscribed::class, SendUserSubscribedNotification::class);
     }
 
     /**

@@ -4,6 +4,63 @@
 
 ---
 
+## 2026-02-27 — Модуль подписок (Друзья) — Issue #89
+
+**Issue:** #89
+
+**Что сделано:**
+- Создана полиморфная таблица `subscriptions` (subscriber_id, subscribable_type, subscribable_id) — подписка на User и Company одной записью
+- Создана модель `Subscription` с `subscriber()` и `subscribable()` связями
+- Расширена модель `User`: `subscriptions()`, `subscribers()`, `isSubscribedTo()` методы
+- Расширена модель `Company`: `subscribers()` связь
+- Создан `SubscriptionController` — подписка/отписка на пользователей и компании, страница «Мои подписки»
+- Создан `UserProfileController` — публичная страница профиля пользователя (`/users/{id}`)
+- Создан Blade-компонент `subscribe-button` — кнопка подписки/отписки с POST/DELETE формами
+- Создано событие `UserSubscribed` + `SendUserSubscribedNotification` listener + `UserSubscribedNotification` (database only)
+- Фильтрация ленты на dashboard: посты от подписок + друзья друзей (2-й уровень), активности от прямых подписок
+- Пустая лента показывает рекомендации верифицированных компаний
+- Кнопка «Подписаться» добавлена на страницу компании (для не-модераторов)
+- URL пользователей в поиске исправлен: `#` → `route('users.show', $user)`
+- Добавлен case `user_subscribed` в уведомления (иконка + текст)
+- 15 тестов (подписка/отписка, self-subscribe guard, идемпотентность, фильтрация ленты, FoF, рекомендации, профиль)
+
+**Новые файлы:**
+- `database/migrations/2026_02_27_100000_create_subscriptions_table.php`
+- `app/Models/Subscription.php`
+- `app/Http/Controllers/SubscriptionController.php`
+- `app/Http/Controllers/UserProfileController.php`
+- `app/Events/UserSubscribed.php`
+- `app/Listeners/SendUserSubscribedNotification.php`
+- `app/Notifications/UserSubscribedNotification.php`
+- `resources/views/users/show.blade.php`
+- `resources/views/subscriptions/index.blade.php`
+- `resources/views/components/subscribe-button.blade.php`
+- `tests/Feature/SubscriptionTest.php`
+
+**Изменённые файлы:**
+- `app/Models/User.php` — добавлены subscriptions(), subscribers(), isSubscribedTo()
+- `app/Models/Company.php` — добавлена subscribers() связь
+- `app/Http/Controllers/DashboardController.php` — фильтрация ленты по подпискам + рекомендации
+- `app/Http/Controllers/SearchController.php` — URL пользователей в поиске
+- `app/Providers/AppServiceProvider.php` — регистрация UserSubscribed event
+- `routes/web.php` — маршруты подписок и профиля пользователя
+- `resources/views/companies/show.blade.php` — кнопка подписки
+- `resources/views/partials/dashboard/posts-feed.blade.php` — ссылки на профили, рекомендации
+- `resources/views/partials/notification-text.blade.php` — case user_subscribed
+- `resources/views/notifications/index.blade.php` — иконка user_subscribed
+
+---
+
+## 2026-02-26 — Обновление CLAUDE.md (PR #100)
+
+**Что сделано:**
+- Добавлен отсутствовавший OAuth-провайдер VK (`socialiteproviders/vkontakte`) в секцию OAuth Providers
+- Исправлено описание Company route model binding: принимает и числовые ID (для Orchid admin) и slug (для публичных маршрутов)
+
+**Изменённые файлы:** `CLAUDE.md`
+
+---
+
 ## 2026-02-26 — Пакет багфиксов: #87, #88, #90, #91, #92, #93, #94
 
 **Issues:** #87, #88, #90, #91, #92, #93, #94

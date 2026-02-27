@@ -13,9 +13,12 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectMemberController;
 use App\Http\Controllers\RfqController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TempUploadController;
 use App\Http\Controllers\TenderController;
 use App\Http\Controllers\UserKeywordController;
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -265,10 +268,26 @@ Route::middleware('auth')->group(function () {
 });
 
 // ========================================================================
-// SEARCH ROUTES
+// USER PROFILE ROUTES
 // ========================================================================
 
-use App\Http\Controllers\SearchController;
+Route::get('/users/{user}', [UserProfileController::class, 'show'])->name('users.show');
+
+// ========================================================================
+// SUBSCRIPTION ROUTES
+// ========================================================================
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/subscriptions/users/{user}', [SubscriptionController::class, 'subscribeUser'])->name('subscriptions.users.store');
+    Route::delete('/subscriptions/users/{user}', [SubscriptionController::class, 'unsubscribeUser'])->name('subscriptions.users.destroy');
+    Route::post('/subscriptions/companies/{company}', [SubscriptionController::class, 'subscribeCompany'])->name('subscriptions.companies.store');
+    Route::delete('/subscriptions/companies/{company}', [SubscriptionController::class, 'unsubscribeCompany'])->name('subscriptions.companies.destroy');
+});
+
+// ========================================================================
+// SEARCH ROUTES
+// ========================================================================
 
 Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 Route::get('/search/quick', [SearchController::class, 'quick'])->name('search.quick');

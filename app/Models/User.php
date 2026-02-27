@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Laravel\Scout\Searchable;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
@@ -145,6 +147,22 @@ class User extends Orchid
         return $this->hasMany(CompanyJoinRequest::class)->where('status', 'pending');
     }
 
+    /**
+     * Подписки пользователя (на кого подписан)
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class, 'subscriber_id');
+    }
+
+    /**
+     * Подписчики пользователя (кто подписан на меня)
+     */
+    public function subscribers(): MorphMany
+    {
+        return $this->morphMany(Subscription::class, 'subscribable');
+    }
+
     // ========================
     // МЕТОДЫ
     // ========================
@@ -163,6 +181,17 @@ class User extends Orchid
     public function isModeratorOf(Company $company): bool
     {
         return $this->moderatedCompanies()->where('companies.id', $company->id)->exists();
+    }
+
+    /**
+     * Проверка: подписан ли пользователь на цель
+     */
+    public function isSubscribedTo(Model $target): bool
+    {
+        return $this->subscriptions()
+            ->where('subscribable_type', $target->getMorphClass())
+            ->where('subscribable_id', $target->getKey())
+            ->exists();
     }
 
     /**
