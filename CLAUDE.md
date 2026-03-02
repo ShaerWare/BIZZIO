@@ -78,10 +78,11 @@ php artisan tinker
 
 ### Core Modules
 - **Companies** — Profiles with verification, documents, moderator assignment, join requests
-- **Projects** — Company invitations, user members (roles: admin/moderator/member), join requests, comments
+- **Projects** — Company invitations, user members (roles: admin/moderator/member), join requests, comments. Routes use `{project:slug}` (not ID)
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
-- **News** — RSS aggregator with keyword filtering, personalized feed
+- **News** — RSS aggregator with keyword filtering, personalized feed. `RSSSource` managed via Orchid admin
+- **Posts** — Social-media-style posts on dashboard feed (create/delete)
 - **Search** — Search via model `scopeSearch()` with `ilike`/`like` queries (Scout uses `collection` driver; search is not index-based)
 - **Tenders** — Unified view (`/tenders`) combining RFQs and Auctions with shared filters
 - **Subscriptions** — Polymorphic subscriptions (User/Company). Dashboard feed filters by subscriptions + friends-of-friends (2nd level). Public user profiles (`/users/{id}`)
@@ -108,6 +109,7 @@ app/
 ├── Listeners/      # Send*Notification handlers
 ├── Jobs/           # CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, NotifyAdminOnRSSErrorJob
 ├── Policies/       # RfqPolicy, AuctionPolicy (registered via Gate::policy in AppServiceProvider)
+├── Traits/         # HandlesTempUploads (shared file upload logic)
 ├── Socialite/      # YandexProvider (custom Yandex OAuth implementation)
 ├── Orchid/         # Admin panel screens and layouts
 └── Http/Controllers/Api/  # API endpoints (v1/chat - Gemini AI proxy)
@@ -139,6 +141,10 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
 - **Yandex** — Custom provider at `app/Socialite/YandexProvider.php`, registered in `AppServiceProvider::configureSocialite()`. `.env`: `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_REDIRECT_URI`
 - **VK** — Via `socialiteproviders/vkontakte`. `.env`: `VK_CLIENT_ID`, `VK_CLIENT_SECRET`, `VK_REDIRECT_URI`
+
+### Registration
+- reCAPTCHA v2 on registration form. `.env`: `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`. Validation skipped if `RECAPTCHA_SECRET_KEY` is empty (local dev)
+- Password rules: min 8 chars, letters + numbers required
 
 
 ### AI Chat API
@@ -228,12 +234,18 @@ Company → Projects (owner)
 Project ←→ Companies (many-to-many via project_participants)
 Project ←→ Users (many-to-many via project_user pivot with role: admin/moderator/member)
 Project → ProjectJoinRequests (one-to-many, status: pending/approved/rejected)
+Company → CompanyJoinRequests (one-to-many, status: pending/approved/rejected)
 Company → Rfqs (owner)
 Rfq → RfqBids (one-to-many)
+Rfq → RfqInvitations (one-to-many)
 Company → Auctions (owner)
 Auction → AuctionBids (one-to-many)
+Auction → AuctionInvitations (one-to-many)
+User → Posts (one-to-many, dashboard feed)
 User → Subscriptions (subscriber, one-to-many)
 User/Company ← Subscriptions (subscribable, polymorphic MorphMany)
+Project/Rfq/Auction → Comments (polymorphic MorphMany)
+RSSSource → News (one-to-many)
 ```
 
 - `User` extends `Orchid\Platform\Models\User` (not Laravel's default `Authenticatable`)
@@ -265,10 +277,12 @@ Helper methods like `createRfq()`, `createAuction()` are defined in each test cl
 All project docs in `docs/`:
 - `00_ТЕХНИЧЕСКОЕ_ЗАДАНИЕ.md` — Original requirements
 - `01_ПЛАН_РАЗРАБОТКИ.md` — Development plan (10 sprints)
-- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities (60/75 completed)
+- `04_БЭКЛОГ_ФИКСОВ.md` — Bug backlog with priorities
 - `sprints/*.md` — Sprint reports (1-9 completed)
 - `CHANGELOG_CLAUDE.md` — Log of Claude Code changes
 - `claude/start_message.md` — Context for new Claude Code sessions
+
+Wiki docs in `wiki/` — detailed module documentation (architecture, models, services, deploy, frontend, etc.)
 
 ## Claude Code Instructions
 - После каждого успешного выполнения задачи записывай краткий отчет (что сделано, какие файлы изменены) в конец файла `docs/CHANGELOG_CLAUDE.md`.

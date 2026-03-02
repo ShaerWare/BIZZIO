@@ -44,10 +44,11 @@
         @endif
 
         <!-- Компания-заказчик -->
+        @if($project->company)
         <div class="flex items-center mb-3">
             @if($project->company->logo)
-                <img src="{{ $project->company->logo_url }}" 
-                     alt="{{ $project->company->name }}" 
+                <img src="{{ $project->company->logo_url }}"
+                     alt="{{ $project->company->name }}"
                      class="w-8 h-8 rounded-full mr-2 object-cover">
             @else
                 <div class="w-8 h-8 rounded-full mr-2 bg-gray-200 flex items-center justify-center">
@@ -61,6 +62,7 @@
                 <p class="text-sm font-medium text-gray-900">{{ $project->company->name }}</p>
             </div>
         </div>
+        @endif
 
         <!-- Сроки -->
         <div class="flex items-center text-sm text-gray-500 mb-4">

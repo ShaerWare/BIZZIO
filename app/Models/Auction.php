@@ -70,7 +70,7 @@ class Auction extends Model implements HasMedia
      */
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class)->withTrashed();
     }
 
     /**

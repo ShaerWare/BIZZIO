@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-03-02 — Исправление 500 ошибок на страницах с удалёнными компаниями
+
+**Проблема:** Страницы `/projects`, `/tenders`, `/rfqs`, `/auctions`, `/my-bids-all`, `/my-invitations-all`, `/my-tenders` возвращали 500 ошибку на production.
+
+**Причина:** При soft-delete компании (`Company`) все связанные модели (Project, Rfq, Auction, *Bid, *Invitation) теряли связь `company()` — Eloquent возвращал `null`. Blade-шаблоны обращались к `$model->company->logo` и падали с ошибкой `Attempt to read property "logo" on null`.
+
+**Что сделано:**
+- Добавлено `->withTrashed()` к связи `company()` в 7 моделях: Project, Rfq, Auction, RfqBid, AuctionBid, RfqInvitation, AuctionInvitation
+- Добавлены защитные `@if($model->company)` проверки в 3 Blade-шаблонах карточек: project-card, rfq-card, auction-card
+- Обновлён CLAUDE.md (добавлены разделы: Posts, Registration, HandlesTempUploads, расширена диаграмма моделей)
+
+**Изменённые файлы:**
+- `app/Models/Project.php` — `->withTrashed()` в `company()`
+- `app/Models/Rfq.php` — `->withTrashed()` в `company()`
+- `app/Models/Auction.php` — `->withTrashed()` в `company()`
+- `app/Models/RfqBid.php` — `->withTrashed()` в `company()`
+- `app/Models/AuctionBid.php` — `->withTrashed()` в `company()`
+- `app/Models/RfqInvitation.php` — `->withTrashed()` в `company()`
+- `app/Models/AuctionInvitation.php` — `->withTrashed()` в `company()`
+- `resources/views/projects/partials/project-card.blade.php` — null-check
+- `resources/views/components/rfq-card.blade.php` — null-check
+- `resources/views/components/auction-card.blade.php` — null-check
+- `CLAUDE.md` — расширена документация
+
+**Тесты:** Все 237 тестов проходят (521 assertion).
+
+---
+
 ## 2026-02-27 — Капча и валидация на регистрацию — Issue #99
 
 **Issue:** #99

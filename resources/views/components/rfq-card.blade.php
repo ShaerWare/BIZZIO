@@ -54,10 +54,11 @@
         </div>
 
         <!-- Организатор -->
+        @if($rfq->company)
         <div class="flex items-center mb-3">
             @if($rfq->company->logo)
-                <img src="{{ asset('storage/' . $rfq->company->logo) }}" 
-                     alt="{{ $rfq->company->name }}" 
+                <img src="{{ asset('storage/' . $rfq->company->logo) }}"
+                     alt="{{ $rfq->company->name }}"
                      class="w-10 h-10 rounded-full mr-3 object-cover">
             @else
                 <div class="w-10 h-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
@@ -73,6 +74,7 @@
                 </a>
             </div>
         </div>
+        @endif
 
         <!-- Описание -->
         @if($rfq->description)

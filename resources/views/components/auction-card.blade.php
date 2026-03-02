@@ -50,14 +50,16 @@
         </h3>
 
         <!-- Организатор -->
+        @if($auction->company)
         <div class="mb-3">
             <p class="text-sm text-gray-600">
-                <span class="font-medium">Организатор:</span> 
+                <span class="font-medium">Организатор:</span>
                 <a href="{{ route('companies.show', $auction->company) }}" class="text-emerald-600 hover:text-emerald-800">
                     {{ $auction->company->name }}
                 </a>
             </p>
         </div>
+        @endif
 
         <!-- Информация -->
         <div class="space-y-2 text-sm text-gray-600 mb-4">
