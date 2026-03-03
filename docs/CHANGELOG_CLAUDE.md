@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-03-03 — Исправление 500 на странице каталога компаний
+
+**Проблема:** Страница `/companies` (каталог компаний) возвращала 500 ошибку.
+
+**Причина:** Предыдущий фикс (2026-03-02) не затронул `company-card.blade.php` и `CompanyJoinRequest`. В карточке компании `$company->creator->name` падало при отсутствии создателя (deleted user). Также `$joinRequest->company->name` падало при soft-deleted компании в pending-запросах.
+
+**Что сделано:**
+- `company-card.blade.php` — заменено `$company->creator->name` на `$company->creator?->name ?? 'Неизвестный'`
+- `companies/index.blade.php` — добавлена `@if($joinRequest->company)` проверка в блоке pending join requests
+- `CompanyJoinRequest` — добавлено `->withTrashed()` к связи `company()`
+
+**Изменённые файлы:**
+- `resources/views/components/company-card.blade.php`
+- `resources/views/companies/index.blade.php`
+- `app/Models/CompanyJoinRequest.php`
+
+---
+
 ## 2026-03-02 — Исправление 500 ошибок на страницах с удалёнными компаниями
 
 **Проблема:** Страницы `/projects`, `/tenders`, `/rfqs`, `/auctions`, `/my-bids-all`, `/my-invitations-all`, `/my-tenders` возвращали 500 ошибку на production.

@@ -34,6 +34,7 @@
                     </div>
                     <div class="space-y-2">
                         @foreach($pendingJoinRequests as $joinRequest)
+                            @if($joinRequest->company)
                             <div class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-amber-100">
                                 <div class="flex items-center space-x-3">
                                     <a href="{{ route('companies.show', $joinRequest->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-800">
@@ -49,6 +50,7 @@
                                     </button>
                                 </form>
                             </div>
+                            @endif
                         @endforeach
                     </div>
                     <div class="mt-3">
