@@ -24,7 +24,7 @@ class UpdateCompanyRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'inn' => ['sometimes', 'required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies')->ignore($companyId)],
+            'inn' => ['sometimes', 'required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies', 'inn')->ignore($companyId)->whereNull('deleted_at')],
             'legal_form' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'short_description' => ['nullable', 'string', 'max:500'],
