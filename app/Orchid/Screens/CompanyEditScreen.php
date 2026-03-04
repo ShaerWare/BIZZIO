@@ -81,8 +81,7 @@ class CompanyEditScreen extends Screen
                     ->title('Название компании')
                     ->placeholder('ООО "Рога и Копыта"')
                     ->required()
-                    ->help('Полное название компании')
-                    ->value(old('company.inn', $this->company->inn ?? null)),
+                    ->help('Полное название компании'),
 
                 Input::make('company.inn')
                     ->title('ИНН')

@@ -46,12 +46,10 @@ class UpdateCompanyOrchidRequest extends FormRequest
             'company.full_description'  => ['nullable', 'string'],
             'company.industry_id'       => ['nullable', 'exists:industries,id'],
 
-            // Логотип — валидируем ТОЛЬКО если пришёл файл
-            'company.logo'              => ['sometimes', 'nullable', 'array'],
-            'company.logo.*'            => ['sometimes', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
-
-            'company.documents'         => ['sometimes', 'nullable', 'array'],
-            'company.documents.*'       => ['sometimes', 'file', 'mimes:pdf', 'max:10240'],
+            // Orchid Upload отправляет ID вложений (integer) для существующих файлов
+            // и UploadedFile для новых. Валидация файлов на клиенте (acceptedFiles).
+            'company.logo'              => ['sometimes', 'nullable'],
+            'company.documents'         => ['sometimes', 'nullable'],
 
             'company.is_verified'       => ['nullable', 'boolean'],
 
