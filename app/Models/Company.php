@@ -81,11 +81,12 @@ class Company extends Model implements HasMedia
     }
 
     /**
-     * Route Model Binding по slug
+     * Route key для генерации URL — slug с фоллбэком на id.
+     * Резолвинг маршрута по slug/id обрабатывается в AppServiceProvider::registerRouteBindings().
      */
-    public function getRouteKeyName(): string
+    public function getRouteKey(): string|int
     {
-        return 'slug';
+        return $this->slug ?: $this->id;
     }
 
     /**
