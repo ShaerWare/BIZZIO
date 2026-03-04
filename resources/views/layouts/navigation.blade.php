@@ -114,7 +114,7 @@
                         <input
                             type="text"
                             x-model="query"
-                            @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = d.results || []; loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
+                            @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = Array.isArray(d) ? d : (d.results || []); loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
                             @focus="if(results.length > 0) open = true"
                             @keydown.escape="open = false"
                             placeholder="Поиск..."
