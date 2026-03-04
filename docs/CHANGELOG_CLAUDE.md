@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-04 — Исправление поиска в навигации + деплой
+
+**Проблема:** Быстрый поиск в шапке сайта (dropdown) не показывал результаты.
+
+**Причина:** API `GET /search/quick` возвращает плоский JSON-массив `[...]`, а JavaScript в навигации обращался к `d.results`, ожидая объект `{results: [...]}`. Результат: `d.results = undefined`, поиск всегда пустой.
+
+**Что сделано:**
+- `navigation.blade.php` — исправлен парсинг ответа: `Array.isArray(d) ? d : (d.results || [])`
+- Выполнен полный деплой на продакшен (git pull + composer install + migrate + cache rebuild + queue:restart + permissions fix)
+
+**Изменённые файлы:**
+- `resources/views/layouts/navigation.blade.php`
+
+---
+
 ## 2026-03-03 — Исправление 500 на странице каталога компаний
 
 **Проблема:** Страница `/companies` (каталог компаний) возвращала 500 ошибку.

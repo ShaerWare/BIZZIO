@@ -29,6 +29,8 @@ php artisan queue:listen  # Process queue jobs with auto-reload on code changes 
 composer run test                        # Run all tests (clears config first)
 php artisan test --filter=TestName       # Run specific test
 php artisan test --filter=TestClass::testMethod  # Run single test method
+# In Docker:
+docker compose exec app php artisan test
 ```
 **Note:** Tests use SQLite in-memory (`phpunit.xml`), not PostgreSQL. PostgreSQL-specific features (e.g. `jsonb`, full-text search) are not tested.
 Test env: `QUEUE_CONNECTION=sync` (jobs run synchronously unless `Queue::fake()` used), `SESSION_DRIVER=array`, `CACHE_STORE=array`, `BCRYPT_ROUNDS=4`.
@@ -135,7 +137,7 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - `barryvdh/laravel-dompdf` — PDF protocol generation
 - `google-gemini-php/client` — Gemini AI chat proxy
 - `willvincent/feeds` — RSS feed parsing
-- `laravel/socialite` — OAuth (Google, Yandex)
+- `laravel/socialite` + `socialiteproviders/vkontakte` — OAuth (Google, Yandex, VK)
 
 ### OAuth Providers
 - **Google** — Standard Socialite provider. `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
@@ -218,6 +220,7 @@ docker compose logs -f app                                    # Container
 
 ## Environment Notes
 
+- `APP_LOCALE=ru`, `APP_FAKER_LOCALE=ru_RU` — UI and test data in Russian
 - `APP_TIMEZONE=Europe/Moscow`
 - `APP_URL` must match actual URL (http://localhost:8080 for local dev)
 - `SESSION_SECURE_COOKIE=false` for HTTP development
