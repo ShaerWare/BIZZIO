@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\Auction;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class AuctionTradingStartedNotification extends Notification
+class AuctionTradingStartedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

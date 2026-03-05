@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\CompanyJoinRequest;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class JoinRequestNotification extends Notification
+class JoinRequestNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

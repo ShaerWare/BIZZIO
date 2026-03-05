@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class TenderClosedNotification extends Notification
+class TenderClosedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-03-05 — Фикс 500 при создании компании + русификация валидации
+
+**Проблема 1:** При создании компании возникала ошибка 500. Причина — все Notification-классы отправляли email синхронно (не реализовывали `ShouldQueue`). При сбое SMTP компания создавалась в БД, но пользователь получал 500.
+
+**Проблема 2:** Сообщения валидации при регистрации отображались на английском (напр. "The password field must contain at least one number"), хотя `APP_LOCALE=ru`. Отсутствовали файлы русской локализации.
+
+**Что сделано:**
+- Добавлен `implements ShouldQueue` во все 11 notification-классов — теперь email отправляется через очередь
+- Создана русская локализация: `lang/ru/validation.php`, `lang/ru/auth.php`, `lang/ru/passwords.php`, `lang/ru/pagination.php`
+- Добавлены русские имена атрибутов (пароль, email, ИНН и др.) для понятных сообщений об ошибках
+
+**Изменённые файлы:**
+- `app/Notifications/CompanyCreatedNotification.php`
+- `app/Notifications/AuctionTradingStartedNotification.php`
+- `app/Notifications/NewCommentNotification.php`
+- `app/Notifications/ProjectInvitationNotification.php`
+- `app/Notifications/JoinRequestNotification.php`
+- `app/Notifications/TenderClosedNotification.php`
+- `app/Notifications/TenderInvitationNotification.php`
+- `app/Notifications/ProjectJoinRequestReviewedNotification.php`
+- `app/Notifications/ProjectJoinRequestNotification.php`
+- `app/Notifications/ProjectUserInvitedNotification.php`
+- `app/Notifications/UserSubscribedNotification.php`
+- `lang/ru/validation.php` (новый)
+- `lang/ru/auth.php` (новый)
+- `lang/ru/passwords.php` (новый)
+- `lang/ru/pagination.php` (новый)
+
+---
+
 ## 2026-03-04 — Исправление поиска в навигации + деплой
 
 **Проблема:** Быстрый поиск в шапке сайта (dropdown) не показывал результаты.
