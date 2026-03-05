@@ -31,14 +31,21 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->numbers()],
-            'g-recaptcha-response' => ['required', 'string'],
-        ]);
+        ];
 
-        $this->verifyRecaptcha($request->input('g-recaptcha-response'));
+        if (config('services.recaptcha.site_key')) {
+            $rules['g-recaptcha-response'] = ['required', 'string'];
+        }
+
+        $request->validate($rules);
+
+        if ($request->has('g-recaptcha-response')) {
+            $this->verifyRecaptcha($request->input('g-recaptcha-response'));
+        }
 
         $user = User::create([
             'name' => $request->name,
