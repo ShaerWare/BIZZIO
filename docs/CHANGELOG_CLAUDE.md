@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-03-05 — Фикс регистрации: reCAPTCHA блокировала форму
+
+**Проблема:** Регистрация новых пользователей невозможна. Валидация требовала поле `g-recaptcha-response` как `required`, но виджет reCAPTCHA не отображался (ключи `RECAPTCHA_SITE_KEY` / `RECAPTCHA_SECRET_KEY` пустые на сервере). Форма всегда падала с ошибкой валидации.
+
+**Что сделано:** Поле `g-recaptcha-response` теперь обязательно только при настроенной reCAPTCHA (`config('services.recaptcha.site_key')` не пустой). Без ключей регистрация проходит без капчи.
+
+**Изменённые файлы:** `app/Http/Controllers/Auth/RegisteredUserController.php`
+
+---
+
 ## 2026-03-05 — Фикс /projects 500 (start_date null)
 
 **Проблема:** Страница `/projects` возвращала 500. Причина — `getFormattedDurationAttribute()` вызывал `->format()` на `null` значении `start_date`.
