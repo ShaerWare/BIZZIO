@@ -238,6 +238,10 @@ class Project extends Model
      */
     public function getFormattedDurationAttribute(): string
     {
+        if (! $this->start_date) {
+            return 'Сроки не указаны';
+        }
+
         if ($this->is_ongoing) {
             return $this->start_date->format('d.m.Y').' — По настоящее время';
         }
