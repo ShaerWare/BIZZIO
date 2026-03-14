@@ -29,12 +29,20 @@ class UpdateRfqRequest extends FormRequest
             'end_date' => ['sometimes', 'required', 'date', 'after:' . $this->route('rfq')->start_date],
             'technical_specification' => 'nullable|file|mimes:pdf|max:10240',
             'technical_specification_temp' => 'nullable|string',
+            'is_results_hidden' => 'nullable|boolean',
         ];
     }
 
     /**
      * Кастомные сообщения об ошибках
      */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_results_hidden' => $this->boolean('is_results_hidden'),
+        ]);
+    }
+
     public function messages(): array
     {
         return [

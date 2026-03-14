@@ -8,11 +8,12 @@
                         <a href="{{ $inv['url'] }}" class="text-gray-700 hover:text-emerald-600 block truncate">
                             {{ $inv['title'] ?: $inv['number'] }}
                         </a>
-                        <div class="flex items-center space-x-2 mt-0.5">
+                        <div class="flex items-center flex-wrap gap-1 mt-0.5">
                             <span class="text-xs px-1.5 py-0.5 rounded {{ $inv['type'] === 'rfq' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $inv['type'] === 'rfq' ? 'ЗЦ' : 'Аукцион' }}
                             </span>
-                            <span class="text-xs text-gray-500">{{ $inv['status'] }}</span>
+                            <span class="text-xs px-1.5 py-0.5 rounded {{ $inv['inv_color'] }}">{{ $inv['inv_label'] }}</span>
+                            <span class="text-xs px-1.5 py-0.5 rounded {{ $inv['tender_color'] }}">{{ $inv['tender_label'] }}</span>
                         </div>
                     </li>
                 @endforeach

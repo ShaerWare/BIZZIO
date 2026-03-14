@@ -44,6 +44,7 @@ class StoreAuctionRequest extends FormRequest
             'invited_companies' => ['nullable', 'array'],
             'invited_companies.*' => ['exists:companies,id'],
             'notification_agreement' => ['required', 'accepted'],
+            'is_results_hidden' => ['nullable', 'boolean'],
         ];
     }
 

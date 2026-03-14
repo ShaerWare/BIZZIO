@@ -12,7 +12,7 @@
                             <span class="text-xs px-1.5 py-0.5 rounded {{ $bid['type'] === 'rfq' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $bid['type'] === 'rfq' ? 'ЗЦ' : 'Аукцион' }}
                             </span>
-                            <span class="text-xs text-gray-500">{{ number_format($bid['price'], 0, ',', ' ') }} ₽</span>
+                            <span class="text-xs text-gray-500">{{ number_format($bid['price'], 0, ',', ' ') }} {{ $bid['currency_symbol'] }}</span>
                         </div>
                     </li>
                 @endforeach

@@ -104,6 +104,7 @@ class RfqController extends Controller
                 'weight_deadline' => $request->weight_deadline,
                 'weight_advance' => $request->weight_advance,
                 'status' => $request->status ?? 'draft', // ✅ ИСПОЛЬЗУЕМ СТАТУС ИЗ ФОРМЫ
+                'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);
 
             // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
@@ -229,7 +230,16 @@ class RfqController extends Controller
             }
         }
 
-        return view('rfqs.show', compact('rfq', 'canBid', 'alreadyBid', 'availableCompanies'));
+        // #115: Определяем, может ли пользователь видеть результаты
+        $canSeeResults = true;
+        if ($rfq->is_results_hidden && $rfq->status === 'closed') {
+            $isManager = auth()->check() && $rfq->canManage(auth()->user());
+            $isParticipant = auth()->check() && $rfq->bids->pluck('company_id')
+                ->intersect($userCompanies->pluck('id'))->isNotEmpty();
+            $canSeeResults = $isManager || $isParticipant;
+        }
+
+        return view('rfqs.show', compact('rfq', 'canBid', 'alreadyBid', 'availableCompanies', 'canSeeResults'));
     }
 
     /**

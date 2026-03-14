@@ -29,14 +29,23 @@ class UpdateAuctionRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'end_date' => ['required', 'date', 'after:start_date'],
             'trading_start' => ['required', 'date', 'after:end_date'],
+            'currency' => ['required', 'string', Rule::in(array_keys(\App\Models\Auction::CURRENCIES))],
             'starting_price' => ['required', 'numeric', 'min:1'],
             'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'is_results_hidden' => ['nullable', 'boolean'],
         ];
     }
 
     /**
      * Get custom validation messages.
      */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_results_hidden' => $this->boolean('is_results_hidden'),
+        ]);
+    }
+
     public function messages(): array
     {
         return [

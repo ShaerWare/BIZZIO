@@ -27,14 +27,14 @@
         <!-- Заголовок с кнопками -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
-                <div class="flex justify-between items-start">
-                    <div class="flex items-start space-x-4 flex-1">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                    <div class="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
                         @if($company->logo)
                             <img src="{{ Storage::url($company->logo) }}" 
                                  alt="{{ $company->name }}"
-                                 class="w-24 h-24 rounded-lg object-cover shadow-md">
+                                 class="w-16 h-16 sm:w-24 sm:h-24 rounded-lg object-cover shadow-md flex-shrink-0">
                         @else
-                            <div class="w-24 h-24 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                            <div class="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
                                 <span class="text-4xl font-bold text-white">
                                     {{ substr($company->name, 0, 1) }}
                                 </span>
@@ -42,8 +42,8 @@
                         @endif
 
                         <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-2">
-                                <h1 class="text-3xl font-bold text-gray-900">{{ $company->name }}</h1>
+                            <div class="flex items-center flex-wrap gap-2 mb-2">
+                                <h1 class="text-xl sm:text-3xl font-bold text-gray-900 break-words">{{ $company->name }}</h1>
                                 @if($company->is_verified)
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -82,7 +82,7 @@
                     </div>
 
                     <!-- Кнопки действий -->
-                    <div class="flex space-x-2 ml-4">
+                    <div class="flex flex-wrap gap-2">
                         @auth
                             @unless($company->isModerator(auth()->user()))
                                 @include('components.subscribe-button', ['target' => $company])
@@ -372,9 +372,9 @@
                                     <div class="space-y-4">
                                         @foreach($pendingRequests as $joinRequest)
                                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                <div class="flex items-start justify-between">
-                                                    <div class="flex items-start flex-1">
-                                                        <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4">
+                                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                                    <div class="flex items-start flex-1 min-w-0">
+                                                        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
                                                             <span class="text-lg font-semibold text-emerald-600">
                                                                 {{ strtoupper(substr($joinRequest->user->name, 0, 2)) }}
                                                             </span>
@@ -407,7 +407,7 @@
                                                     </div>
 
                                                     <!-- Кнопки действий -->
-                                                    <div class="flex space-x-2 ml-4">
+                                                    <div class="flex gap-2 sm:ml-4">
                                                         <button onclick="showApproveModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->name) }}, {{ Js::from($joinRequest->desired_role) }})"
                                                                 class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                                             Одобрить

@@ -85,6 +85,7 @@ class AuctionController extends Controller
                 'starting_price' => $request->starting_price,
                 'step_percent' => 2.5, // A4: Фиксированный диапазон 0.5-5%, среднее значение для совместимости
                 'status' => $request->status ?? 'draft',
+                'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);
             
             // F3: Загрузка технического задания с поддержкой temp-файлов
@@ -172,14 +173,24 @@ class AuctionController extends Controller
         
         $currentPrice = $auction->getCurrentPrice();
         $stepRange = $auction->getStepRange();
-        
+
+        // #115: Определяем, может ли пользователь видеть результаты
+        $canSeeResults = true;
+        if ($auction->is_results_hidden && in_array($auction->status, ['closed', 'cancelled'])) {
+            $isManager = auth()->check() && $auction->canManage(auth()->user());
+            $isParticipant = auth()->check() && $auction->bids->pluck('company_id')
+                ->intersect($userCompanies->pluck('id'))->isNotEmpty();
+            $canSeeResults = $isManager || $isParticipant;
+        }
+
         return view('auctions.show', compact(
             'auction',
             'canBid',
             'userCompanies',
             'existingBid',
             'currentPrice',
-            'stepRange'
+            'stepRange',
+            'canSeeResults'
         ));
     }
 

@@ -330,6 +330,21 @@
                         @enderror
                     </div>
 
+                    <!-- Скрытие результатов после завершения -->
+                    <div class="mb-6">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox"
+                                   name="is_results_hidden"
+                                   value="1"
+                                   {{ old('is_results_hidden') ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <span class="ml-2 text-sm text-gray-700">
+                                Скрыть результаты после завершения
+                                <span class="text-gray-500">(видны только организатору и участникам)</span>
+                            </span>
+                        </label>
+                    </div>
+
                     <!-- Предупреждение при выборе "Опубликовать сразу" -->
                     <div id="status-warning" class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 hidden">
                         <div class="flex">

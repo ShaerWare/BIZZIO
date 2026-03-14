@@ -12,7 +12,7 @@
                             <span class="text-xs px-1.5 py-0.5 rounded {{ $tender['type'] === 'rfq' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $tender['type'] === 'rfq' ? 'ЗЦ' : 'Аукцион' }}
                             </span>
-                            <span class="text-xs text-gray-500">{{ $tender['status'] }}</span>
+                            <span class="text-xs px-1.5 py-0.5 rounded {{ $tender['status_color'] }}">{{ $tender['status_label'] }}</span>
                         </div>
                     </li>
                 @endforeach

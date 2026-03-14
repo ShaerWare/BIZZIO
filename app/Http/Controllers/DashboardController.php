@@ -116,19 +116,49 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        $myTenders = collect($myRfqs->map(fn ($r) => [
-            'type' => 'rfq',
-            'title' => $r->title,
-            'number' => $r->number,
-            'status' => $r->status,
-            'url' => route('rfqs.show', $r),
-        ]))->merge($myAuctions->map(fn ($a) => [
-            'type' => 'auction',
-            'title' => $a->title,
-            'number' => $a->number,
-            'status' => $a->status,
-            'url' => route('auctions.show', $a),
-        ]))->sortByDesc('number')->take(3)->values();
+        $statusInfo = function (string $status, $startDate, $endDate, string $type) {
+            if ($status === 'active') {
+                if ($startDate && $startDate->isFuture()) {
+                    return ['Скоро', 'bg-yellow-100 text-yellow-800'];
+                } elseif ($endDate && $endDate->isPast()) {
+                    return [$type === 'rfq' ? 'Подведение итогов' : 'Завершён приём', 'bg-orange-100 text-orange-800'];
+                }
+
+                return ['Приём заявок', 'bg-green-100 text-green-800'];
+            }
+
+            return match ($status) {
+                'trading' => ['Торги', 'bg-emerald-100 text-emerald-800'],
+                'closed' => ['Завершён', 'bg-gray-100 text-gray-800'],
+                'cancelled' => ['Отменён', 'bg-red-100 text-red-800'],
+                'draft' => ['Черновик', 'bg-yellow-100 text-yellow-800'],
+                default => [$status, 'bg-gray-100 text-gray-800'],
+            };
+        };
+
+        $myTenders = collect($myRfqs->map(function ($r) use ($statusInfo) {
+            [$label, $color] = $statusInfo($r->status, $r->start_date, $r->end_date, 'rfq');
+
+            return [
+                'type' => 'rfq',
+                'title' => $r->title,
+                'number' => $r->number,
+                'status_label' => $label,
+                'status_color' => $color,
+                'url' => route('rfqs.show', $r),
+            ];
+        }))->merge($myAuctions->map(function ($a) use ($statusInfo) {
+            [$label, $color] = $statusInfo($a->status, $a->start_date, $a->end_date, 'auction');
+
+            return [
+                'type' => 'auction',
+                'title' => $a->title,
+                'number' => $a->number,
+                'status_label' => $label,
+                'status_color' => $color,
+                'url' => route('auctions.show', $a),
+            ];
+        }))->sortByDesc('number')->take(3)->values();
 
         $rfqInvitations = RfqInvitation::whereIn('company_id', $companyIds)
             ->with('rfq')
@@ -142,19 +172,41 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        $myInvitations = collect($rfqInvitations->map(fn ($i) => [
-            'type' => 'rfq',
-            'title' => $i->rfq->title ?? '',
-            'number' => $i->rfq->number ?? '',
-            'status' => $i->status,
-            'url' => route('rfqs.show', $i->rfq_id),
-        ]))->merge($auctionInvitations->map(fn ($i) => [
-            'type' => 'auction',
-            'title' => $i->auction->title ?? '',
-            'number' => $i->auction->number ?? '',
-            'status' => $i->status,
-            'url' => route('auctions.show', $i->auction_id),
-        ]))->take(3)->values();
+        $invitationStatusLabels = [
+            'pending' => ['Ожидает', 'bg-yellow-100 text-yellow-800'],
+            'accepted' => ['Принято', 'bg-green-100 text-green-800'],
+            'declined' => ['Отклонено', 'bg-red-100 text-red-800'],
+        ];
+
+        $myInvitations = collect($rfqInvitations->map(function ($i) use ($statusInfo, $invitationStatusLabels) {
+            [$tenderLabel, $tenderColor] = $statusInfo($i->rfq->status ?? 'draft', $i->rfq->start_date ?? null, $i->rfq->end_date ?? null, 'rfq');
+            [$invLabel, $invColor] = $invitationStatusLabels[$i->status] ?? ['—', 'bg-gray-100 text-gray-800'];
+
+            return [
+                'type' => 'rfq',
+                'title' => $i->rfq->title ?? '',
+                'number' => $i->rfq->number ?? '',
+                'inv_label' => $invLabel,
+                'inv_color' => $invColor,
+                'tender_label' => $tenderLabel,
+                'tender_color' => $tenderColor,
+                'url' => route('rfqs.show', $i->rfq_id),
+            ];
+        }))->merge($auctionInvitations->map(function ($i) use ($statusInfo, $invitationStatusLabels) {
+            [$tenderLabel, $tenderColor] = $statusInfo($i->auction->status ?? 'draft', $i->auction->start_date ?? null, $i->auction->end_date ?? null, 'auction');
+            [$invLabel, $invColor] = $invitationStatusLabels[$i->status] ?? ['—', 'bg-gray-100 text-gray-800'];
+
+            return [
+                'type' => 'auction',
+                'title' => $i->auction->title ?? '',
+                'number' => $i->auction->number ?? '',
+                'inv_label' => $invLabel,
+                'inv_color' => $invColor,
+                'tender_label' => $tenderLabel,
+                'tender_color' => $tenderColor,
+                'url' => route('auctions.show', $i->auction_id),
+            ];
+        }))->take(3)->values();
 
         $rfqBids = RfqBid::whereIn('company_id', $companyIds)
             ->with('rfq')
@@ -173,12 +225,14 @@ class DashboardController extends Controller
             'title' => $b->rfq->title ?? '',
             'number' => $b->rfq->number ?? '',
             'price' => $b->price,
+            'currency_symbol' => $b->rfq->currency_symbol ?? '₽',
             'url' => route('rfqs.show', $b->rfq_id),
         ]))->merge($auctionBids->map(fn ($b) => [
             'type' => 'auction',
             'title' => $b->auction->title ?? '',
             'number' => $b->auction->number ?? '',
             'price' => $b->price,
+            'currency_symbol' => $b->auction->currency_symbol ?? '₽',
             'url' => route('auctions.show', $b->auction_id),
         ]))->take(3)->values();
 
