@@ -37,10 +37,12 @@ class Auction extends Model implements HasMedia
         'step_percent',
         'last_bid_at',
         'status',
+        'is_results_hidden',
         'winner_bid_id',
     ];
 
     protected $casts = [
+        'is_results_hidden' => 'boolean',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'trading_start' => 'datetime',

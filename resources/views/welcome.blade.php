@@ -72,8 +72,8 @@
                 <!-- User Navigation -->
                 <ul class="navbar-nav navbar-user">
                     @guest
-                        <li><a href="{{ route('login') }}" class="nav-link">Login</a></li> <!-- ИСПРАВЛЕНО: убран data-bs-toggle -->
-                        <li><a href="{{ route('register') }}" class="nav-link">Register</a></li>
+                        <li><a href="#login-form" class="nav-link" onclick="document.getElementById('login-form').scrollIntoView({behavior:'smooth'});return false;">Войти</a></li>
+                        <li><a href="{{ route('register') }}" class="nav-link">Регистрация</a></li>
                     @else
                         <li>
                             <a href="{{ route('dashboard') }}" class="nav-link">
@@ -83,7 +83,7 @@
                         <li>
                             <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                                 @csrf
-                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Logout</button>
+                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Выход</button>
                             </form>
                         </li>
                     @endguest
@@ -158,7 +158,7 @@
         </div>
 
         <!-- Right Part: Login Form -->
-        <div class="login-block">
+        <div class="login-block" id="login-form">
             <div class="login-header">
                 <img src="{{ asset('images/apple-touch-icon.png') }}" alt="Icon">
                 <p>Присоединяйтесь к бизнес-сообществу</p>
@@ -202,7 +202,7 @@
                 <button type="submit" class="btn-login">Войти</button>
 
                 <div class="register-link">
-                    <a href="{{ route('register') }}">Create an account</a>
+                    <a href="{{ route('register') }}">Создать аккаунт</a>
                 </div>
             </form>
 

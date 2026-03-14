@@ -35,6 +35,7 @@ class Rfq extends Model implements HasMedia
         'weight_deadline',
         'weight_advance',
         'status',
+        'is_results_hidden',
         'winner_bid_id',
     ];
 
@@ -44,6 +45,7 @@ class Rfq extends Model implements HasMedia
         'weight_price' => 'decimal:2',
         'weight_deadline' => 'decimal:2',
         'weight_advance' => 'decimal:2',
+        'is_results_hidden' => 'boolean',
     ];
 
     public const CURRENCIES = [

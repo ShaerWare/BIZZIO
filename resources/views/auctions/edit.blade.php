@@ -79,10 +79,31 @@
                         <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $auction->trading_start->format('d.m.Y H:i') }}</p>
                     </div>
 
+                    <!-- Валюта -->
+                    <div class="mb-6">
+                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
+                            Валюта <span class="text-red-500">*</span>
+                        </label>
+                        <select name="currency"
+                                id="currency"
+                                required
+                                onchange="updateCurrencyLabel()"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('currency') border-red-500 @enderror">
+                            @foreach(\App\Models\Auction::CURRENCIES as $code => $symbol)
+                                <option value="{{ $code }}" {{ old('currency', $auction->currency) === $code ? 'selected' : '' }}>
+                                    {{ $code }} ({{ $symbol }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('currency')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Начальная максимальная цена -->
                     <div class="mb-6">
                         <label for="starting_price" class="block text-sm font-medium text-gray-700 mb-2">
-                            Начальная максимальная цена ({{ $auction->currency_symbol }}) <span class="text-red-500">*</span>
+                            Начальная максимальная цена (<span id="currency-symbol">{{ $auction->currency_symbol }}</span>) <span class="text-red-500">*</span>
                         </label>
                         <input type="number"
                                name="starting_price"
@@ -134,6 +155,21 @@
                         @enderror
                     </div>
 
+                    <!-- Скрытие результатов после завершения -->
+                    <div class="mb-6">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox"
+                                   name="is_results_hidden"
+                                   value="1"
+                                   {{ old('is_results_hidden', $auction->is_results_hidden) ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <span class="ml-2 text-sm text-gray-700">
+                                Скрыть результаты после завершения
+                                <span class="text-gray-500">(видны только организатору и участникам)</span>
+                            </span>
+                        </label>
+                    </div>
+
                     <!-- Кнопки -->
                     <div class="flex justify-between items-center">
                         <a href="{{ route('auctions.show', $auction) }}" 
@@ -172,6 +208,14 @@
             });
         }
     });
+
+    // Обновление символа валюты в label цены
+    const currencySymbols = {!! json_encode(\App\Models\Auction::CURRENCIES) !!};
+    function updateCurrencyLabel() {
+        const sel = document.getElementById('currency');
+        const span = document.getElementById('currency-symbol');
+        if (sel && span) span.textContent = currencySymbols[sel.value] || '₽';
+    }
 </script>
 @endpush
 @endsection

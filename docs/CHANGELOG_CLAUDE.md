@@ -4,6 +4,41 @@
 
 ---
 
+## 2026-03-14 — Пакет исправлений по обратной связи заказчика (Issues #105–#115)
+
+### Issue #112 — Валюта в виджете ставок на дашборде
+Заменён хардкод `₽` на `currency_symbol` из модели. Файлы: `DashboardController.php`, `bids-widget.blade.php`.
+
+### Issue #111 — Статусы тендеров в виджете «Мои тендеры»
+Добавлены человекочитаемые метки статусов с цветовыми индикаторами (Приём заявок, Торги, Завершён и т.д.). Файлы: `DashboardController.php`, `tenders-widget.blade.php`.
+
+### Issue #110 — Статусы приглашений в виджете
+Добавлены цветные бейджи: тип тендера, статус приглашения, статус тендера. Файлы: `DashboardController.php`, `invitations-widget.blade.php`.
+
+### Issue #109 — Скрытие вкладки ставок в аукционе до завершения
+Вкладка «Ставки» показывается только при `closed`/`cancelled`. Файл: `auctions/show.blade.php`.
+
+### Issue #108 — Адаптивность страницы компании
+Шапка компании сделана респонсивной (flex-col/row, адаптивные размеры лого и кнопок). Файл: `companies/show.blade.php`.
+
+### Issue #107 — Перевод welcome-страницы + якорь на форму логина
+Кнопка «Войти» в шапке скроллит к форме. Английский текст переведён на русский. Файл: `welcome.blade.php`.
+
+### Issue #106 — Редактирование валюты аукциона
+Добавлен select валюты + динамическое обновление символа в label цены. Файлы: `auctions/edit.blade.php`, `UpdateAuctionRequest.php`.
+
+### Issue #105 — Адаптивность карточек заявок на вступление
+Сделана респонсивная раскладка для карточек join request. Файл: `companies/show.blade.php`.
+
+### Issue #115 — Скрытие результатов завершённых тендеров
+- Новая миграция: `is_results_hidden` (boolean) для таблиц `auctions` и `rfqs`
+- Поле добавлено в модели, формы создания/редактирования (чекбокс), валидацию запросов
+- Логика скрытия в контроллерах: если флаг включён и тендер завершён — результаты (заявки, протокол) видны только организатору и участникам
+- Бейдж «Результаты скрыты» на странице тендера
+- Файлы: миграция, `Auction.php`, `Rfq.php`, `AuctionController.php`, `RfqController.php`, `Store/UpdateAuction/RfqRequest.php`, все create/edit blade-файлы для аукционов и RFQ, оба show blade-файла
+
+---
+
 ## 2026-03-05 — Фикс регистрации: reCAPTCHA блокировала форму
 
 **Проблема:** Регистрация новых пользователей невозможна. Валидация требовала поле `g-recaptcha-response` как `required`, но виджет reCAPTCHA не отображался (ключи `RECAPTCHA_SITE_KEY` / `RECAPTCHA_SECRET_KEY` пустые на сервере). Форма всегда падала с ошибкой валидации.
@@ -1102,3 +1137,15 @@ SESSION_SECURE_COOKIE=true
 - `resources/views/layouts/navigation.blade.php` — объединённое меню (desktop + mobile)
 - `resources/views/components/rfq-card.blade.php` — бейдж «Запрос котировок»
 - `resources/views/components/auction-card.blade.php` — бейдж «Аукцион»
+
+---
+
+### 2026-03-14 — Фикс 502 ошибки на продакшене
+
+**Проблема:** Сайт bizzio.ru возвращал 502. Caddy-контейнер не мог зарезолвить хост `app` (`dial tcp: lookup app on 127.0.0.11:53: no such host`).
+
+**Причина:** Caddy оказался только в сети `docker_default`, а app-контейнер — в `bizzio_app-network`. Контейнеры были в разных Docker-сетях и не видели друг друга. Вероятно, Caddy был пересоздан без учёта `docker-compose.override.yml`.
+
+**Решение:** Пересоздан Caddy-контейнер: `docker compose up -d --force-recreate caddy`. Теперь он корректно подключён к обеим сетям (`bizzio_app-network` + `docker_default`), как прописано в override.
+
+**Изменённые файлы:** нет (операция на сервере)

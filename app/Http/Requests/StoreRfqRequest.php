@@ -38,6 +38,7 @@ class StoreRfqRequest extends FormRequest
             'technical_specification_temp' => 'nullable|string',
             'invited_companies' => 'nullable|array',
             'invited_companies.*' => 'exists:companies,id',
+            'is_results_hidden' => 'nullable|boolean',
         ];
     }
 
