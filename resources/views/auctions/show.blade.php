@@ -434,7 +434,7 @@
                             class="tab-button active border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Описание
                     </button>
-                    @if(($auction->status === 'closed' || $auction->status === 'cancelled') && $canSeeResults)
+                    @if($auction->status === 'closed' && $canSeeResults)
                     <button onclick="showTab('bids')"
                             id="tab-bids"
                             class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
@@ -464,8 +464,8 @@
                     @endif
                 </div>
 
-                <!-- Вкладка: Ставки (видна только при closed/cancelled и если результаты не скрыты) -->
-                @if(!$canSeeResults && in_array($auction->status, ['closed', 'cancelled']))
+                <!-- Вкладка: Ставки (видна только при closed и если результаты не скрыты) -->
+                @if(!$canSeeResults && $auction->status === 'closed')
                     <div class="tab-content hidden" id="content-bids-hidden">
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                             <svg class="w-10 h-10 text-yellow-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -477,7 +477,7 @@
                         </div>
                     </div>
                 @endif
-                <div id="content-bids" class="tab-content hidden" @if(!$canSeeResults || !in_array($auction->status, ['closed', 'cancelled'])) style="display:none!important" @endif>
+                <div id="content-bids" class="tab-content hidden" @if(!$canSeeResults || $auction->status !== 'closed') style="display:none!important" @endif>
 
                     <!-- Форма подачи заявки/ставки -->
                     @auth

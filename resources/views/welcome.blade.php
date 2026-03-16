@@ -173,7 +173,7 @@
                         <span class="icon">
                             <i class="uil-user"></i>
                         </span>
-                        <input type="text" name="email" class="form-control" required placeholder="Email or username">
+                        <input type="text" name="email" class="form-control" required placeholder="Email">
                     </div>
                 </div>
 
@@ -182,15 +182,15 @@
                         <span class="icon">
                             <i class="uil-lock-alt"></i>
                         </span>
-                        <input type="password" name="password" class="form-control" required placeholder="Password">
+                        <input type="password" name="password" class="form-control" required placeholder="Пароль">
                     </div>
                 </div>
 
                 <div class="form-options">
                     <label>
-                        <input type="checkbox" name="remember"> Remember
+                        <input type="checkbox" name="remember"> Запомнить
                     </label>
-                    <a href="{{ route('password.request') }}">Lost Password?</a>
+                    <a href="{{ route('password.request') }}">Забыли пароль?</a>
                 </div>
 
                 @if ($errors->any())
