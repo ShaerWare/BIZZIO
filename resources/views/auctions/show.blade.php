@@ -424,7 +424,8 @@
             </div>
         @endif
 
-        <!-- Форма подачи заявки/ставки (вынесена из табов, чтобы была доступна при active/trading) -->
+        <!-- Форма подачи заявки (только для active, при trading используется компактная панель выше) -->
+        @if(!$auction->isTrading())
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6" id="bid-section">
             <div class="p-6">
                 @auth
@@ -638,6 +639,7 @@
                 @endauth
             </div>
         </div>
+        @endif
 
         <!-- Вкладки -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -908,9 +910,28 @@
                         document.querySelectorAll('.current-price').forEach(el => {
                             el.textContent = data.current_price_formatted;
                         });
-                        
-                        // TODO: Обновление таблицы ставок
-                        // TODO: Обновление таймера
+
+                        // Обновление min/max и кнопок процентов в форме ставки
+                        if (data.current_price) {
+                            const cp = parseFloat(data.current_price);
+                            const minPrice = cp * 0.95;  // -5%
+                            const maxPrice = cp * 0.995; // -0.5%
+                            const priceInput = document.getElementById('main-price');
+                            if (priceInput) {
+                                priceInput.min = minPrice.toFixed(2);
+                                priceInput.max = maxPrice.toFixed(2);
+                            }
+                            const percentages = [0.5, 1, 2, 3, 4, 5];
+                            document.querySelectorAll('.main-bid-btn').forEach((btn, i) => {
+                                if (i < percentages.length) {
+                                    const newPrice = (cp * (1 - percentages[i] / 100)).toFixed(2);
+                                    btn.setAttribute('onclick', 'setMainBidPrice(' + newPrice + ')');
+                                }
+                            });
+                        }
+                    } else if (data.status === 'closed' || data.status === 'cancelled') {
+                        clearInterval(pollingInterval);
+                        location.reload();
                     }
                 })
                 .catch(error => console.error('Error:', error));

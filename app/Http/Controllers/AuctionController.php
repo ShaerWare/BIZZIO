@@ -164,8 +164,12 @@ class AuctionController extends Controller
                     $canBid = true;
                 }
                 
-                // 4. Если уже есть заявка (для статуса 'active'), блокируем
-                if ($existingBid && !$auction->isTrading()) {
+                // 4. Для active: блокируем повторную заявку; для trading: разрешаем только участникам с заявкой
+                if ($auction->isTrading()) {
+                    if (!$existingBid) {
+                        $canBid = false;
+                    }
+                } elseif ($existingBid) {
                     $canBid = false;
                 }
             }
