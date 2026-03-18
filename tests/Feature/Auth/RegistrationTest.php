@@ -28,7 +28,16 @@ class RegistrationTest extends TestCase
     {
         $response = $this->get('/register');
 
+        $response->assertRedirect('/?mode=register');
+    }
+
+    public function test_registration_form_displayed_on_welcome_page(): void
+    {
+        $response = $this->get('/?mode=register');
+
         $response->assertStatus(200);
+        $response->assertSee('Зарегистрироваться');
+        $response->assertSee('Уже есть аккаунт?');
     }
 
     public function test_new_users_can_register(): void
@@ -50,6 +59,7 @@ class RegistrationTest extends TestCase
 
     public function test_registration_fails_without_captcha(): void
     {
+        config(['services.recaptcha.site_key' => 'test-site-key']);
         config(['services.recaptcha.secret_key' => 'test-secret']);
 
         $response = $this->post('/register', [
@@ -59,12 +69,14 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password1A',
         ]);
 
+        $response->assertRedirect('/?mode=register');
         $response->assertSessionHasErrors('g-recaptcha-response');
         $this->assertGuest();
     }
 
     public function test_registration_fails_with_invalid_captcha(): void
     {
+        config(['services.recaptcha.site_key' => 'test-site-key']);
         config(['services.recaptcha.secret_key' => 'test-secret']);
         $this->fakeRecaptchaFailure();
 
@@ -76,6 +88,7 @@ class RegistrationTest extends TestCase
             'g-recaptcha-response' => 'invalid-token',
         ]);
 
+        $response->assertRedirect('/?mode=register');
         $response->assertSessionHasErrors('g-recaptcha-response');
         $this->assertGuest();
     }
@@ -108,6 +121,7 @@ class RegistrationTest extends TestCase
             'g-recaptcha-response' => 'any-token',
         ]);
 
+        $response->assertRedirect('/?mode=register');
         $response->assertSessionHasErrors('name');
         $this->assertGuest();
     }
@@ -124,6 +138,7 @@ class RegistrationTest extends TestCase
             'g-recaptcha-response' => 'any-token',
         ]);
 
+        $response->assertRedirect('/?mode=register');
         $response->assertSessionHasErrors('password');
         $this->assertGuest();
     }

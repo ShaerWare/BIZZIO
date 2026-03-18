@@ -1187,3 +1187,15 @@ SESSION_SECURE_COOKIE=true
 **Решение:** Пересоздан Caddy-контейнер: `docker compose up -d --force-recreate caddy`. Теперь он корректно подключён к обеим сетям (`bizzio_app-network` + `docker_default`), как прописано в override.
 
 **Изменённые файлы:** нет (операция на сервере)
+
+---
+
+## 2026-03-18: Регистрация на главной странице
+
+**Что сделано:** Форма регистрации теперь отображается на главной странице (bizzio.ru/?mode=register) вместо отдельной страницы /register. При нажатии «Создать аккаунт» показывается форма с полями: имя, email, пароль, подтверждение пароля. Ссылка «Уже есть аккаунт? Войти» возвращает на форму входа. Ошибки валидации корректно редиректят обратно на форму регистрации. Также исправлен баг в тесте reCAPTCHA (не устанавливался config site_key).
+
+**Изменённые файлы:**
+- `resources/views/welcome.blade.php` — добавлена форма регистрации с переключением по `?mode=register`
+- `routes/auth.php` — GET `/register` теперь редиректит на `/?mode=register`
+- `app/Http/Controllers/Auth/RegisteredUserController.php` — ошибки валидации редиректят на `/?mode=register`
+- `tests/Feature/Auth/RegistrationTest.php` — обновлены тесты, добавлен тест формы на welcome page
