@@ -22,6 +22,8 @@ composer run dev          # Start all: Laravel + Queue (queue:listen) + Logs (pa
 php artisan serve         # Start Laravel server only
 php artisan queue:work    # Process queue jobs (production)
 php artisan queue:listen  # Process queue jobs with auto-reload on code changes (dev)
+npm run dev               # Vite dev server with HMR (included in `composer run dev`)
+npm run build             # Production frontend build
 ```
 
 ### Testing
@@ -199,6 +201,7 @@ Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom
 - **app** container (`my_project_app`): PHP 8.2-FPM + Nginx + Supervisor, timezone Europe/Moscow, resource limits: 1 CPU / 0.9G RAM. Port 80 not exposed by default (use nginx-proxy in production)
 - **db** container (`my_project_db`): PostgreSQL 14 Alpine, host port 5435, timezone Europe/Moscow
 - Production: `docker-compose.override.yml.prod` with nginx-proxy + Let's Encrypt
+- Upload limits: 100M (`docker/uploads.ini`), client_max_body_size 100M (`docker/nginx.conf`)
 
 ## Production Deployment
 
@@ -286,6 +289,8 @@ All project docs in `docs/`:
 - `claude/start_message.md` — Context for new Claude Code sessions
 
 Wiki docs in `wiki/` — detailed module documentation (architecture, models, services, deploy, frontend, etc.)
+
+**Note:** No CI/CD pipelines configured. Deployment is manual via SSH.
 
 ## Claude Code Instructions
 - После каждого успешного выполнения задачи записывай краткий отчет (что сделано, какие файлы изменены) в конец файла `docs/CHANGELOG_CLAUDE.md`.

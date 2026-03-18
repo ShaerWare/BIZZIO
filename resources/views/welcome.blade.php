@@ -18,6 +18,10 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 
+    @if (request('mode') === 'register' && config('services.recaptcha.site_key'))
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    @endif
+
     <!-- Favicon – современный минимальный набор 2025–2026 -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16x16.png') }}">
@@ -73,7 +77,7 @@
                 <ul class="navbar-nav navbar-user">
                     @guest
                         <li><a href="#login-form" class="nav-link" onclick="document.getElementById('login-form').scrollIntoView({behavior:'smooth'});return false;">Войти</a></li>
-                        <li><a href="{{ route('register') }}" class="nav-link">Регистрация</a></li>
+                        <li><a href="{{ url('/?mode=register') }}" class="nav-link">Регистрация</a></li>
                     @else
                         <li>
                             <a href="{{ route('dashboard') }}" class="nav-link">
@@ -157,23 +161,86 @@
             </div>
         </div>
 
-        <!-- Right Part: Login Form -->
+        <!-- Right Part: Auth Form -->
+        @php $isRegister = request('mode') === 'register'; @endphp
         <div class="login-block" id="login-form">
             <div class="login-header">
                 <img src="{{ asset('images/apple-touch-icon.png') }}" alt="Icon">
-                <p>Присоединяйтесь к бизнес-сообществу</p>
+                <p>{{ $isRegister ? 'Создайте аккаунт' : 'Присоединяйтесь к бизнес-сообществу' }}</p>
             </div>
 
-            <!-- Login Form -->
-            <form action="{{ route('login') }}" method="POST">
+            @if ($isRegister)
+            <!-- Register Form -->
+            <form action="{{ url('/register') }}" method="POST">
                 @csrf
-                
+
                 <div class="form-group">
                     <div class="input-wrapper">
                         <span class="icon">
                             <i class="uil-user"></i>
                         </span>
-                        <input type="text" name="email" class="form-control" required placeholder="Email">
+                        <input type="text" name="name" class="form-control" required placeholder="Имя" value="{{ old('name') }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <span class="icon">
+                            <i class="uil-envelope"></i>
+                        </span>
+                        <input type="email" name="email" class="form-control" required placeholder="Email" value="{{ old('email') }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <span class="icon">
+                            <i class="uil-lock-alt"></i>
+                        </span>
+                        <input type="password" name="password" class="form-control" required placeholder="Пароль (мин. 8 символов)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <span class="icon">
+                            <i class="uil-lock"></i>
+                        </span>
+                        <input type="password" name="password_confirmation" class="form-control" required placeholder="Подтверждение пароля">
+                    </div>
+                </div>
+
+                @if (config('services.recaptcha.site_key'))
+                <div class="form-group" style="display: flex; justify-content: center; margin-bottom: 15px;">
+                    <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                </div>
+                @endif
+
+                @if ($errors->any())
+                    <div style="background: #ffe6e6; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #d32f2f; font-size: 0.9rem;">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <button type="submit" class="btn-login">Зарегистрироваться</button>
+
+                <div class="register-link">
+                    <a href="{{ url('/') }}">Уже есть аккаунт? Войти</a>
+                </div>
+            </form>
+            @else
+            <!-- Login Form -->
+            <form action="{{ route('login') }}" method="POST">
+                @csrf
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <span class="icon">
+                            <i class="uil-user"></i>
+                        </span>
+                        <input type="text" name="email" class="form-control" required placeholder="Email" value="{{ old('email') }}">
                     </div>
                 </div>
 
@@ -202,13 +269,14 @@
                 <button type="submit" class="btn-login">Войти</button>
 
                 <div class="register-link">
-                    <a href="{{ route('register') }}">Создать аккаунт</a>
+                    <a href="{{ url('/?mode=register') }}">Создать аккаунт</a>
                 </div>
             </form>
+            @endif
 
             <!-- OAuth Buttons -->
             <div class="oauth-divider">
-                <span>или войти через</span>
+                <span>или {{ $isRegister ? 'зарегистрироваться' : 'войти' }} через</span>
             </div>
 
             <div class="oauth-buttons">

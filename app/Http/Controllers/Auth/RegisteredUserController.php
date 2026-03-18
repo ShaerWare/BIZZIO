@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -41,10 +42,22 @@ class RegisteredUserController extends Controller
             $rules['g-recaptcha-response'] = ['required', 'string'];
         }
 
-        $request->validate($rules);
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return redirect('/?mode=register')
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         if ($request->has('g-recaptcha-response')) {
-            $this->verifyRecaptcha($request->input('g-recaptcha-response'));
+            try {
+                $this->verifyRecaptcha($request->input('g-recaptcha-response'));
+            } catch (ValidationException $e) {
+                return redirect('/?mode=register')
+                    ->withErrors($e->errors())
+                    ->withInput();
+            }
         }
 
         $user = User::create([
