@@ -129,8 +129,8 @@
                         @enderror
                     </div>
 
-                    <!-- Приглашение компаний (для закрытой процедуры) -->
-                    <div id="invitations-block" class="mb-6 hidden" x-data="companySearch()">
+                    <!-- Приглашение компаний -->
+                    <div id="invitations-block" class="mb-6" x-data="companySearch()">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Пригласить компании
                         </label>
@@ -231,7 +231,7 @@
                                 Окончание приёма заявок <span class="text-red-500">*</span>
                             </label>
                             <x-datetime-input name="end_date"
-                                              :value="old('end_date', now()->addWeek()->format('Y-m-d\TH:i'))"
+                                              :value="old('end_date', now()->addDay()->format('Y-m-d\TH:i'))"
                                               :required="true"
                                               :error="$errors->has('end_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
@@ -247,7 +247,7 @@
                             Дата и время начала торгов <span class="text-red-500">*</span>
                         </label>
                         <x-datetime-input name="trading_start"
-                                          :value="old('trading_start', now()->addWeek()->addDay()->format('Y-m-d\TH:i'))"
+                                          :value="old('trading_start', now()->addDay()->addMinutes(5)->format('Y-m-d\TH:i'))"
                                           :required="true"
                                           :error="$errors->has('trading_start')" />
                         <p class="mt-1 text-sm text-gray-500">Время указывается по UTC +3 (Москва)</p>
@@ -475,15 +475,14 @@
         };
     }
 
-    // Показ/скрытие блока приглашений
+    // Обновление типа процедуры в компоненте приглашений
     function toggleInvitations() {
         const type = document.querySelector('input[name="type"]:checked').value;
         const invitationsBlock = document.getElementById('invitations-block');
-        
-        if (type === 'closed') {
-            invitationsBlock.classList.remove('hidden');
-        } else {
-            invitationsBlock.classList.add('hidden');
+
+        // Обновляем Alpine-переменную procedureType для подсказки
+        if (invitationsBlock && invitationsBlock.__x) {
+            invitationsBlock.__x.$data.procedureType = type;
         }
     }
 
@@ -507,7 +506,7 @@
         if (sel && span) span.textContent = currencySymbols[sel.value] || '₽';
     }
 
-    // A12: Авто-заполнение «Начало торгов» = «Окончание приёма» + 1 мин
+    // A12: Авто-заполнение «Начало торгов» = «Окончание приёма» + 5 мин
     let tradingStartEdited = false;
 
     function syncTradingStart() {
@@ -515,7 +514,7 @@
         if (!endDateVal || tradingStartEdited) return;
 
         const dt = new Date(endDateVal);
-        dt.setMinutes(dt.getMinutes() + 1);
+        dt.setMinutes(dt.getMinutes() + 5);
         const pad = n => String(n).padStart(2, '0');
         const newVal = dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
 
