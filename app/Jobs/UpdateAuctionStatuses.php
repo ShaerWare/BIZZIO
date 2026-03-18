@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Auction;
+use App\Jobs\CloseAuctionJob;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -67,19 +68,8 @@ class UpdateAuctionStatuses implements ShouldQueue
     Log::info('Найдено завершённых торгов: ' . $expiredTrading->count());
     
     foreach ($expiredTrading as $auction) {
-        $winnerBid = $auction->tradingBids()
-            ->orderBy('price', 'asc')
-            ->first();
-        
-        if ($winnerBid) {
-            $winnerBid->update(['status' => 'winner']);
-            $auction->update([
-                'status' => 'closed',
-                'winner_company_id' => $winnerBid->company_id,
-            ]);
-            
-            Log::info("✅ Аукцион {$auction->number} завершён. Победитель: компания ID {$winnerBid->company_id}");
-        }
+        CloseAuctionJob::dispatch($auction->id);
+        Log::info("📋 Аукцион {$auction->number} — запланировано закрытие через CloseAuctionJob");
     }
     
     // 3. Торги без ставок 24 часа

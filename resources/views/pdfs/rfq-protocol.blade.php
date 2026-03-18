@@ -75,7 +75,7 @@
 <body>
     <!-- Фиксированный футер с нумерацией -->
     <div class="footer">
-        <span>Bizzio.ru — B2B платформа для строительной индустрии</span> |
+        <span>Bizzio.ru — соединяя бизнес</span> |
         <a href="{{ route('rfqs.show', $rfq) }}">{{ route('rfqs.show', $rfq) }}</a>
         <br>
         Стр. <span class="page-number"></span>

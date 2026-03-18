@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Auction;
-use App\Models\AuctionBid;
+use App\Jobs\CloseAuctionJob;
 use Carbon\Carbon;
 
 class UpdateAuctionStatuses extends Command
@@ -59,19 +59,8 @@ class UpdateAuctionStatuses extends Command
         $this->line("\n🏁 Найдено завершённых торгов: {$expiredTrading->count()}");
         
         foreach ($expiredTrading as $auction) {
-            $winnerBid = $auction->tradingBids()
-                ->orderBy('price', 'asc')
-                ->first();
-            
-            if ($winnerBid) {
-                $winnerBid->update(['status' => 'winner']);
-                $auction->update([
-                    'status' => 'closed',
-                    'winner_company_id' => $winnerBid->company_id,
-                ]);
-                
-                $this->info("  ✅ {$auction->number} завершён");
-            }
+            CloseAuctionJob::dispatch($auction->id);
+            $this->info("  📋 {$auction->number} — запланировано закрытие");
         }
         
         // 3. Торги без ставок → Отменён
