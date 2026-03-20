@@ -108,12 +108,12 @@ class DashboardController extends Controller
         // === Правая колонка ===
         $myRfqs = Rfq::whereIn('company_id', $companyIds)
             ->latest()
-            ->take(3)
+            ->take(10)
             ->get();
 
         $myAuctions = Auction::whereIn('company_id', $companyIds)
             ->latest()
-            ->take(3)
+            ->take(10)
             ->get();
 
         $statusInfo = function (string $status, $startDate, $endDate, string $type) {
@@ -146,6 +146,7 @@ class DashboardController extends Controller
                 'status_label' => $label,
                 'status_color' => $color,
                 'url' => route('rfqs.show', $r),
+                'created_at' => $r->created_at,
             ];
         }))->merge($myAuctions->map(function ($a) use ($statusInfo) {
             [$label, $color] = $statusInfo($a->status, $a->start_date, $a->end_date, 'auction');
@@ -157,19 +158,20 @@ class DashboardController extends Controller
                 'status_label' => $label,
                 'status_color' => $color,
                 'url' => route('auctions.show', $a),
+                'created_at' => $a->created_at,
             ];
-        }))->sortByDesc('number')->take(3)->values();
+        }))->sortByDesc('created_at')->take(5)->values();
 
         $rfqInvitations = RfqInvitation::whereIn('company_id', $companyIds)
             ->with('rfq')
             ->latest()
-            ->take(3)
+            ->take(10)
             ->get();
 
         $auctionInvitations = AuctionInvitation::whereIn('company_id', $companyIds)
             ->with('auction')
             ->latest()
-            ->take(3)
+            ->take(10)
             ->get();
 
         $invitationStatusLabels = [
@@ -191,6 +193,7 @@ class DashboardController extends Controller
                 'tender_label' => $tenderLabel,
                 'tender_color' => $tenderColor,
                 'url' => route('rfqs.show', $i->rfq_id),
+                'created_at' => $i->created_at,
             ];
         }))->merge($auctionInvitations->map(function ($i) use ($statusInfo, $invitationStatusLabels) {
             [$tenderLabel, $tenderColor] = $statusInfo($i->auction->status ?? 'draft', $i->auction->start_date ?? null, $i->auction->end_date ?? null, 'auction');
@@ -205,19 +208,21 @@ class DashboardController extends Controller
                 'tender_label' => $tenderLabel,
                 'tender_color' => $tenderColor,
                 'url' => route('auctions.show', $i->auction_id),
+                'created_at' => $i->created_at,
             ];
-        }))->take(3)->values();
+        }))->sortByDesc('created_at')->take(5)->values();
 
         $rfqBids = RfqBid::whereIn('company_id', $companyIds)
             ->with('rfq')
             ->latest()
-            ->take(3)
+            ->take(10)
             ->get();
 
         $auctionBids = AuctionBid::whereIn('company_id', $companyIds)
+            ->where('type', 'initial')
             ->with('auction')
             ->latest()
-            ->take(3)
+            ->take(10)
             ->get();
 
         $myBids = collect($rfqBids->map(fn ($b) => [
@@ -227,6 +232,7 @@ class DashboardController extends Controller
             'price' => $b->price,
             'currency_symbol' => $b->rfq->currency_symbol ?? '₽',
             'url' => route('rfqs.show', $b->rfq_id),
+            'created_at' => $b->created_at,
         ]))->merge($auctionBids->map(fn ($b) => [
             'type' => 'auction',
             'title' => $b->auction->title ?? '',
@@ -234,7 +240,8 @@ class DashboardController extends Controller
             'price' => $b->price,
             'currency_symbol' => $b->auction->currency_symbol ?? '₽',
             'url' => route('auctions.show', $b->auction_id),
-        ]))->take(3)->values();
+            'created_at' => $b->created_at,
+        ]))->sortByDesc('created_at')->take(5)->values();
 
         return view('dashboard', compact(
             'userCompanies',

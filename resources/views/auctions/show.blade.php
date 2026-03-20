@@ -323,15 +323,15 @@
                                 @if($canBid)
                                     <form method="POST" action="{{ route('auctions.bids.store', $auction) }}" class="space-y-4">
                                         @csrf
-                                        @if($userCompanies->count() > 1)
+                                        @if($bidCompanies->count() > 1)
                                             <select name="company_id" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-blue-500 text-sm">
                                                 <option value="">Выберите компанию...</option>
-                                                @foreach($userCompanies as $company)
+                                                @foreach($bidCompanies as $company)
                                                     <option value="{{ $company->id }}">{{ $company->name }}</option>
                                                 @endforeach
                                             </select>
                                         @else
-                                            <input type="hidden" name="company_id" value="{{ $userCompanies->first()->id }}">
+                                            <input type="hidden" name="company_id" value="{{ $bidCompanies->first()->id }}">
                                         @endif
 
                                         <div>

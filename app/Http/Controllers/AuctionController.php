@@ -143,32 +143,37 @@ class AuctionController extends Controller
                 ->whereIn('company_id', $userCompanies->pluck('id'))
                 ->first();
         }
-        
+
         // Вычисляем $canBid на основе всех условий
         $canBid = false;
-        
+
         if (auth()->check() && $userCompanies->isNotEmpty()) {
             // 1. Проверка статуса аукциона
             $isAcceptingOrTrading = $auction->isAcceptingApplications() || $auction->isTrading();
-            
+
             if ($isAcceptingOrTrading) {
                 // 2. Для закрытых аукционов проверяем приглашение
                 if ($auction->type === 'closed') {
                     $isInvited = $auction->invitations()
                         ->whereIn('company_id', $userCompanies->pluck('id'))
                         ->exists();
-                    
+
                     $canBid = $isInvited;
                 } else {
                     // 3. Для открытых аукционов — можно всем модераторам
                     $canBid = true;
                 }
-                
-                // 4. Для active: блокируем повторную заявку; для trading: разрешаем только участникам с заявкой
+
+                // 4. Для active: блокируем повторную заявку; для trading: разрешаем только подавшему заявку
                 if ($auction->isTrading()) {
-                    if (!$existingBid) {
-                        $canBid = false;
-                    }
+                    // #119: Только пользователь, подавший заявку (initial bid), может делать ставки
+                    $initialBid = $auction->bids()
+                        ->where('type', 'initial')
+                        ->where('user_id', auth()->id())
+                        ->whereIn('company_id', $userCompanies->pluck('id'))
+                        ->first();
+                    $canBid = (bool) $initialBid;
+                    $existingBid = $initialBid;
                 } elseif ($existingBid) {
                     $canBid = false;
                 }
@@ -187,10 +192,17 @@ class AuctionController extends Controller
             $canSeeResults = $isManager || $isParticipant;
         }
 
+        // #119: При торгах показываем только компанию, от которой подана заявка текущим пользователем
+        $bidCompanies = $userCompanies;
+        if ($auction->isTrading() && $canBid && $existingBid) {
+            $bidCompanies = $userCompanies->where('id', $existingBid->company_id)->values();
+        }
+
         return view('auctions.show', compact(
             'auction',
             'canBid',
             'userCompanies',
+            'bidCompanies',
             'existingBid',
             'currentPrice',
             'stepRange',
@@ -267,6 +279,19 @@ public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
         if ($existingBid && !$auction->isTrading()) {
             DB::rollBack();
             return back()->with('error', 'Вы уже подали заявку на участие в этом аукционе.');
+        }
+
+        // #119: В режиме торгов — ставку может делать только пользователь, подавший заявку
+        if ($auction->isTrading()) {
+            $initialBid = $auction->bids()
+                ->where('type', 'initial')
+                ->where('company_id', $companyId)
+                ->first();
+
+            if (!$initialBid || $initialBid->user_id !== auth()->id()) {
+                DB::rollBack();
+                return back()->with('error', 'Ставку может делать только сотрудник, подавший заявку на участие.');
+            }
         }
         
         // Определяем тип заявки

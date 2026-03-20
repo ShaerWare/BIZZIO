@@ -12,6 +12,7 @@
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 11pt;
             line-height: 1.4;
+            padding-bottom: 60px;
         }
         .header {
             text-align: center;

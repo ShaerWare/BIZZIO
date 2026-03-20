@@ -216,7 +216,7 @@
                                 Начало приёма заявок <span class="text-red-500">*</span>
                             </label>
                             <x-datetime-input name="start_date"
-                                              :value="old('start_date', now()->format('Y-m-d\TH:i'))"
+                                              :value="old('start_date', now()->addMinutes(10)->format('Y-m-d\TH:i'))"
                                               :required="true"
                                               :error="$errors->has('start_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
@@ -231,7 +231,7 @@
                                 Окончание приёма заявок <span class="text-red-500">*</span>
                             </label>
                             <x-datetime-input name="end_date"
-                                              :value="old('end_date', now()->addDay()->format('Y-m-d\TH:i'))"
+                                              :value="old('end_date', now()->addDay()->addMinutes(10)->format('Y-m-d\TH:i'))"
                                               :required="true"
                                               :error="$errors->has('end_date')" />
                             <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
@@ -247,7 +247,7 @@
                             Дата и время начала торгов <span class="text-red-500">*</span>
                         </label>
                         <x-datetime-input name="trading_start"
-                                          :value="old('trading_start', now()->addDay()->addMinutes(5)->format('Y-m-d\TH:i'))"
+                                          :value="old('trading_start', now()->addDay()->addMinutes(15)->format('Y-m-d\TH:i'))"
                                           :required="true"
                                           :error="$errors->has('trading_start')" />
                         <p class="mt-1 text-sm text-gray-500">Время указывается по UTC +3 (Москва)</p>
