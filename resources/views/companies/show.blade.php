@@ -30,7 +30,7 @@
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                     <div class="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
                         @if($company->logo)
-                            <img src="{{ Storage::url($company->logo) }}" 
+                            <img src="{{ $company->logo_url }}"
                                  alt="{{ $company->name }}"
                                  class="w-16 h-16 sm:w-24 sm:h-24 rounded-lg object-cover shadow-md flex-shrink-0">
                         @else

@@ -157,7 +157,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Текущий логотип
                             </label>
-                            <img src="{{ Storage::url($company->logo) }}" 
+                            <img src="{{ $company->logo_url }}"
                                  alt="{{ $company->name }}"
                                  class="w-24 h-24 rounded-lg object-cover">
                         </div>

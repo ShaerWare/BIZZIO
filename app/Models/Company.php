@@ -298,9 +298,18 @@ class Company extends Model implements HasMedia
      */
     public function getLogoUrlAttribute(): string
     {
-        return $this->logo
-            ? asset('storage/'.$this->logo)
-            : asset('images/default-company-logo.png');
+        $logo = $this->logo;
+
+        if (! $logo || ! is_string($logo) || str_starts_with($logo, '[')) {
+            return asset('images/default-company-logo.svg');
+        }
+
+        $logo = ltrim($logo, '/');
+        if (str_starts_with($logo, 'storage/')) {
+            return asset($logo);
+        }
+
+        return asset('storage/'.$logo);
     }
 
     /**

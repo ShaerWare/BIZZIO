@@ -218,7 +218,12 @@ class User extends Orchid
             }
 
             // Если это локальный файл
-            return asset('storage/'.$this->avatar);
+            $avatar = ltrim($this->avatar, '/');
+            if (str_starts_with($avatar, 'storage/')) {
+                return asset($avatar);
+            }
+
+            return asset('storage/'.$avatar);
         }
 
         // Дефолтный аватар (генерация по инициалам)

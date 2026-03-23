@@ -230,7 +230,18 @@ class Project extends Model
      */
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar ? asset('storage/'.$this->avatar) : null;
+        $avatar = $this->avatar;
+
+        if (! $avatar || ! is_string($avatar) || str_starts_with($avatar, '[')) {
+            return null;
+        }
+
+        $avatar = ltrim($avatar, '/');
+        if (str_starts_with($avatar, 'storage/')) {
+            return asset($avatar);
+        }
+
+        return asset('storage/'.$avatar);
     }
 
     /**

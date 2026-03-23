@@ -5,7 +5,7 @@
         <!-- Логотип и верификация -->
         <div class="flex items-start justify-between mb-4">
             @if($company->logo)
-                <img src="{{ Storage::url($company->logo) }}" 
+                <img src="{{ $company->logo_url }}"
                      alt="{{ $company->name }}"
                      class="w-16 h-16 rounded-lg object-cover">
             @else

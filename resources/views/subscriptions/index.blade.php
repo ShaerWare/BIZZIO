@@ -63,7 +63,7 @@
                                     <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                                         <a href="{{ route('companies.show', $subscription->subscribable) }}" class="flex items-center space-x-3 flex-1 min-w-0">
                                             @if($subscription->subscribable->logo)
-                                                <img src="{{ Storage::url($subscription->subscribable->logo) }}" alt="{{ $subscription->subscribable->name }}"
+                                                <img src="{{ $subscription->subscribable->logo_url }}" alt="{{ $subscription->subscribable->name }}"
                                                      class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
                                             @else
                                                 <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">

@@ -153,6 +153,9 @@ class CompanyEditScreen extends Screen
 
         $data = $validated['company'] ?? [];
 
+        // Исключаем поля, которые обрабатываются отдельно (Media Library, связи)
+        unset($data['logo'], $data['documents'], $data['moderators']);
+
         // Очистка ИНН от всего лишнего (пробелы, подчёркивания, буквы)
         if (isset($data['inn'])) {
             $data['inn'] = preg_replace('/\D/', '', $data['inn']);
