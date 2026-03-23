@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-23 — Устранение 404 ошибок ресурсов и оптимизация nginx
+
+**Проблема:** Медленная загрузка страниц из-за массы 404 ошибок в консоли браузера. Каждый 404 проходил через PHP/Laravel.
+
+**Корневые причины:**
+1. Orchid CompanyEditScreen записывал массив upload-данных в колонку `logo` → URL вида `/storage/["undefined","undefined","26"]`
+2. Некоторые проекты имели `/storage/...` в поле `avatar` → двойной `/storage//storage/...`
+3. Blade-шаблоны использовали `Storage::url()` вместо accessor `logo_url`
+4. Nginx отдавал все 404 через PHP (медленно)
+5. Отсутствовал `default-company-logo.svg`
+
+**Исправления:**
+- `app/Models/Company.php` — `getLogoUrlAttribute()`: валидация данных, обработка `/storage/` префикса
+- `app/Models/Project.php` — `getAvatarUrlAttribute()`: аналогичная защита
+- `app/Models/User.php` — `getAvatarUrlAttribute()`: обработка `/storage/` префикса
+- `app/Orchid/Screens/CompanyEditScreen.php` — исключены `logo`/`documents`/`moderators` из `update()`
+- 6 blade-шаблонов — заменены `Storage::url($company->logo)` на `$company->logo_url`
+- `docker/nginx.conf` — статика отдаётся nginx напрямую (кэш 30 дней), gzip сжатие
+- `public/images/default-company-logo.svg` — SVG-плейсхолдер
+- Почищены мусорные данные в production БД (компании 4, 13; проект 3)
+
+---
+
 ## 2026-03-20 — Доработки по канбану (первоочередные задачи)
 
 ### Issue #40 — Дефолтные интервалы времени аукциона
