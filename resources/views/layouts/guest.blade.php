@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <!-- Tailwind CSS через CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vite: Tailwind CSS + Alpine.js (предкомпилированные) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Favicon – современный минимальный набор 2025–2026 -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
@@ -51,6 +51,6 @@
     </div>
 
     <!-- AI Chat Widget -->
-    <script src="https://admin.ai-sekretar24.ru/widget.js?instance=httpsbizzioru"></script>
+    <script async src="https://admin.ai-sekretar24.ru/widget.js?instance=httpsbizzioru"></script>
 </body>
 </html>
