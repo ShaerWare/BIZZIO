@@ -10,26 +10,26 @@
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
                 {{-- Левая колонка --}}
-                <div class="lg:col-span-1 space-y-4">
+                <div class="lg:col-span-1 space-y-4 order-1 lg:order-1">
                     @include('partials.dashboard.profile-card')
                     @include('partials.dashboard.join-requests-widget')
                     @include('partials.dashboard.my-companies-widget')
                     @include('partials.dashboard.my-projects-widget')
                 </div>
 
+                {{-- Правая колонка (на мобильном — перед Лентой) --}}
+                <div class="lg:col-span-1 space-y-4 order-2 lg:order-3">
+                    @include('partials.dashboard.tenders-widget')
+                    @include('partials.dashboard.invitations-widget')
+                    @include('partials.dashboard.bids-widget')
+                </div>
+
                 {{-- Центральная колонка --}}
-                <div class="lg:col-span-3 space-y-6">
+                <div class="lg:col-span-3 space-y-6 order-3 lg:order-2">
                     @include('partials.dashboard.news-widget')
                     @include('partials.dashboard.post-form')
                     @include('partials.dashboard.posts-feed')
                     @include('partials.dashboard.activity-feed')
-                </div>
-
-                {{-- Правая колонка --}}
-                <div class="lg:col-span-1 space-y-4">
-                    @include('partials.dashboard.tenders-widget')
-                    @include('partials.dashboard.invitations-widget')
-                    @include('partials.dashboard.bids-widget')
                 </div>
 
             </div>

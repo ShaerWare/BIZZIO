@@ -44,6 +44,7 @@ class TenderController extends Controller
                 ->orderBy('created_at', 'desc');
 
             $this->applyDraftFilter($auctionQuery);
+            $this->applyClosedAuctionFilter($auctionQuery);
             $this->applyFilters($auctionQuery, $request);
 
             $auctions = $auctionQuery->get()->map(fn($a) => [
@@ -181,6 +182,25 @@ class TenderController extends Controller
             });
         } else {
             $query->where('status', '!=', 'draft');
+        }
+    }
+
+    /**
+     * #38: Закрытые аукционы видны только организатору и приглашённым
+     */
+    private function applyClosedAuctionFilter($query): void
+    {
+        if (auth()->check()) {
+            $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
+            $query->where(function ($q) use ($userCompanies) {
+                $q->where('type', '!=', 'closed')
+                  ->orWhereIn('company_id', $userCompanies)
+                  ->orWhereHas('invitations', function ($inv) use ($userCompanies) {
+                      $inv->whereIn('company_id', $userCompanies);
+                  });
+            });
+        } else {
+            $query->where('type', '!=', 'closed');
         }
     }
 

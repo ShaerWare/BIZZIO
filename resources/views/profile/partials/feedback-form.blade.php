@@ -1,4 +1,4 @@
-<section>
+<section id="feedback">
     <header>
         <h2 class="text-lg font-medium text-gray-900">
             Обратная связь

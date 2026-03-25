@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-25 — Пакет доработок по замечаниям заказчика (10 issues)
+
+**Контекст:** Заказчик (@MSverlov) 23 марта прокомментировал 10+ issues с замечаниями к реализованному функционалу. Все задачи из столбца "Правки после тестов" канбана.
+
+### Исправления:
+
+1. **#110 — Статус приглашения в аукцион** — при подаче initial bid статус приглашения обновляется на `accepted`.
+   - `app/Http/Controllers/AuctionController.php` — добавлено обновление `AuctionInvitation.status` в `storeBid()`
+
+2. **#107 — Лишние ссылки Login/Register на welcome** — убраны ссылки "Войти" и "Регистрация" из правого верхнего угла.
+   - `resources/views/welcome.blade.php` — удалена секция `@guest` в navbar-user
+
+3. **#111 — Dashboard виджеты: лимит 3 записи** — в каждом блоке оставлено 3 записи (было 5).
+   - `app/Http/Controllers/DashboardController.php` — `take(5)` → `take(3)` для myTenders, myInvitations, myBids
+
+4. **#60 — Dashboard мобильная: порядок блоков** — на мобильном блоки закупок теперь перед Лентой.
+   - `resources/views/dashboard.blade.php` — добавлены Tailwind `order-*` классы для мобильной перестановки
+
+5. **#73 — Комментарии проектов только для участников** — неавторизованные пользователи больше не могут комментировать.
+   - `app/Http/Controllers/ProjectController.php` — добавлена проверка `isMember` / `isCompanyParticipant` в `storeComment()` и `show()`
+   - `resources/views/projects/show.blade.php` — форма скрыта для не-участников
+
+6. **#59 — Колокольчик уведомлений на мобильном** — добавлена иконка колокольчика рядом с гамбургером + пункт "Уведомления" в мобильном меню.
+   - `resources/views/layouts/navigation.blade.php` — мобильный bell icon + responsive-nav-link
+
+7. **#71 + #72 — Управление участниками компании** — во вкладке "Люди" добавлен inline-поиск пользователей, dropdown смены роли и кнопка удаления (по аналогии с проектами).
+   - `resources/views/companies/show.blade.php` — переписана вкладка "Люди" с формой поиска и inline-управлением
+
+8. **#69 — "Обратная связь" в меню аккаунта** — добавлен пункт в desktop dropdown и mobile menu.
+   - `resources/views/layouts/navigation.blade.php` — новый `<x-dropdown-link>` и `<x-responsive-nav-link>`
+   - `resources/views/profile/partials/feedback-form.blade.php` — добавлен якорь `#feedback`
+
+9. **#38 — Закрытые аукционы только для приглашённых** — закрытые аукционы скрыты из общего каталога для неприглашённых. Имена обезличены.
+   - `app/Http/Controllers/AuctionController.php` — фильтр `type=closed` в `index()`
+   - `app/Http/Controllers/TenderController.php` — новый метод `applyClosedAuctionFilter()`
+   - `resources/views/auctions/show.blade.php` — обезличивание имён участников и приглашённых для не-организаторов
+
+---
+
 ## 2026-03-23 — Оптимизация производительности: Tailwind CDN → Vite build
 
 **Проблема:** Страницы «Закупки» и «Новости» грузились очень медленно.

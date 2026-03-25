@@ -323,34 +323,138 @@
 
                 <!-- Вкладка: Люди -->
                 <div id="content-people" class="tab-content hidden">
+                    @php
+                        $canManagePeople = auth()->check() && $company->canManageModerators(auth()->user());
+                        $roleLabels = ['owner' => 'Владелец', 'admin' => 'Админ', 'moderator' => 'Модератор', 'member' => 'Участник'];
+                        $roleBadgeColors = [
+                            'owner' => 'bg-green-100 text-green-800',
+                            'admin' => 'bg-red-100 text-red-800',
+                            'moderator' => 'bg-blue-100 text-blue-800',
+                            'member' => 'bg-gray-100 text-gray-800',
+                        ];
+                        $editableRoles = ['admin' => 'Админ', 'moderator' => 'Модератор', 'member' => 'Участник'];
+                    @endphp
+
+                    {{-- #71: Форма добавления участника (по аналогии с проектами) --}}
+                    @if($canManagePeople)
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg" x-data="companyUserSearch()">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Добавить участника</h4>
+                            <form method="POST" action="{{ route('companies.moderators.store', $company) }}">
+                                @csrf
+                                <input type="hidden" name="user_id" x-model="selectedUserId">
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="flex-1 relative">
+                                        <template x-if="!selectedUserId">
+                                            <div>
+                                                <input type="text"
+                                                       x-model="query"
+                                                       @input.debounce.300ms="search()"
+                                                       @focus="if(query.length >= 2) showResults = true"
+                                                       @click.away="showResults = false"
+                                                       placeholder="Поиск пользователя по имени или email..."
+                                                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">
+                                                <div x-show="showResults" x-cloak
+                                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                                    <template x-if="loading">
+                                                        <div class="p-3 text-center text-gray-500 text-sm">Поиск...</div>
+                                                    </template>
+                                                    <template x-if="!loading && results.length === 0 && query.length >= 2">
+                                                        <div class="p-3 text-center text-gray-500 text-sm">Пользователи не найдены</div>
+                                                    </template>
+                                                    <template x-for="user in results" :key="user.id">
+                                                        <button type="button" @click="selectUser(user)"
+                                                                class="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                                                            <div class="text-sm font-medium text-gray-900" x-text="user.title"></div>
+                                                            <div class="text-xs text-gray-500" x-text="user.subtitle"></div>
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="selectedUserId">
+                                            <div class="flex items-center gap-2 p-2 bg-white border border-gray-300 rounded-md">
+                                                <span class="text-sm text-gray-900 flex-1" x-text="selectedUserName"></span>
+                                                <button type="button" @click="clearSelection()" class="text-gray-400 hover:text-red-500">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <div>
+                                        <select name="role" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">
+                                            @foreach($editableRoles as $value => $label)
+                                                <option value="{{ $value }}" {{ $value === 'member' ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <button type="submit" :disabled="!selectedUserId"
+                                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                            Добавить
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
+
+                    {{-- Список участников с inline-управлением (#71 + #72) --}}
                     @if($company->moderators->count() > 0)
                         <div class="space-y-3">
                             @foreach($company->moderators as $moderator)
-                                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                                    <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4">
-                                        <span class="text-base font-semibold text-emerald-600">
-                                            {{ strtoupper(substr($moderator->name, 0, 2)) }}
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                            <span class="text-sm font-semibold text-emerald-700">
+                                                {{ strtoupper(mb_substr($moderator->name, 0, 1)) }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ $moderator->name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $moderator->email }}</div>
+                                        </div>
+                                        @php $role = $moderator->pivot->role ?? 'member'; @endphp
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $roleBadgeColors[$role] ?? 'bg-gray-100 text-gray-800' }}">
+                                            {{ $roleLabels[$role] ?? $role }}
                                         </span>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-sm font-semibold text-gray-900">{{ $moderator->name }}</p>
-                                        <p class="text-xs text-gray-500">{{ $moderator->email }}</p>
-                                        @if($moderator->pivot->role)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 mt-1">
-                                                {{ $moderator->pivot->role }}
+                                        @if($company->created_by === $moderator->id)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                Создатель
                                             </span>
                                         @endif
                                     </div>
-                                    @if($company->created_by === $moderator->id)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                            Создатель
-                                        </span>
+
+                                    {{-- #72: Inline управление ролями (для менеджеров, кроме создателя) --}}
+                                    @if($canManagePeople && $moderator->id !== $company->created_by)
+                                        <div class="flex items-center gap-2">
+                                            <form method="POST" action="{{ route('companies.moderators.update', [$company, $moderator]) }}" class="inline">
+                                                @csrf
+                                                @method('PUT')
+                                                <select name="role" onchange="this.form.submit()" class="text-xs rounded border-gray-300 py-1">
+                                                    @foreach($editableRoles as $value => $label)
+                                                        <option value="{{ $value }}" {{ $role === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </form>
+                                            <form method="POST" action="{{ route('companies.moderators.destroy', [$company, $moderator]) }}"
+                                                  onsubmit="return confirm('Удалить пользователя {{ $moderator->name }} из компании?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-400 hover:text-red-600" title="Удалить из компании">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach
                         </div>
                     @else
-                        <p class="text-gray-500 text-center py-8">Модераторы не назначены</p>
+                        <p class="text-gray-500 text-center py-8">Участники не назначены</p>
                     @endif
 
                     {{-- C6: Запросы на присоединение (перенесены из «Управление» во «Люди») --}}
@@ -848,6 +952,58 @@ function closeEditModal() {
 // C5: Alpine.js компонент поиска пользователей
 function userSearch() {
     const companyId = {{ $company->id }};
+    const moderatorIds = @json($company->moderators->pluck('id'));
+
+    return {
+        query: '',
+        results: [],
+        showResults: false,
+        loading: false,
+        selectedUserId: '',
+        selectedUserName: '',
+
+        async search() {
+            if (this.query.length < 2) {
+                this.results = [];
+                this.showResults = false;
+                return;
+            }
+
+            this.loading = true;
+            this.showResults = true;
+
+            try {
+                const response = await fetch(`/search/quick?q=${encodeURIComponent(this.query)}`);
+                const data = await response.json();
+
+                this.results = data
+                    .filter(item => item.type === 'user')
+                    .filter(item => !moderatorIds.includes(item.id));
+            } catch (e) {
+                this.results = [];
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        selectUser(user) {
+            this.selectedUserId = user.id;
+            this.selectedUserName = user.title + (user.subtitle ? ' (' + user.subtitle + ')' : '');
+            this.query = '';
+            this.results = [];
+            this.showResults = false;
+        },
+
+        clearSelection() {
+            this.selectedUserId = '';
+            this.selectedUserName = '';
+            this.query = '';
+        }
+    };
+}
+
+// #71: Alpine.js компонент поиска пользователей (для вкладки Люди)
+function companyUserSearch() {
     const moderatorIds = @json($company->moderators->pluck('id'));
 
     return {

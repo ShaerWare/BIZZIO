@@ -42,6 +42,9 @@ Test env: `QUEUE_CONNECTION=sync` (jobs run synchronously unless `Queue::fake()`
 ./vendor/bin/pint --test     # Check code style (Laravel Pint)
 ./vendor/bin/pint            # Fix code style
 ```
+- All PHP files use `declare(strict_types=1);`
+- Full type hints on properties, parameters, and return types
+- PSR-12 + Laravel conventions
 
 ### Database & Cache
 ```bash
@@ -211,6 +214,7 @@ Supervisor (configured in `docker/supervisord.conf`) auto-starts: php-fpm, nginx
 # Deploy
 git pull origin main
 docker compose exec app composer install --no-dev --optimize-autoloader
+docker compose exec app npm run build                    # Rebuild frontend assets (Vite)
 docker compose exec app php artisan migrate --force
 docker compose exec app php artisan config:cache && docker compose exec app php artisan route:cache && docker compose exec app php artisan view:cache
 docker compose exec app php artisan queue:restart

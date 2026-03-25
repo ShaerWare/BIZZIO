@@ -123,7 +123,17 @@ class ProjectController extends Controller
     {
         $project->load(['company', 'creator', 'participants', 'members', 'comments.user']);
 
-        return view('projects.show', compact('project'));
+        // #73: Определяем, может ли пользователь комментировать (участник проекта или сотрудник компании-участника)
+        $canComment = false;
+        if (auth()->check()) {
+            $user = auth()->user();
+            $canComment = $project->isMember($user)
+                || $project->participants()
+                    ->whereIn('companies.id', $user->companies()->pluck('companies.id'))
+                    ->exists();
+        }
+
+        return view('projects.show', compact('project', 'canComment'));
     }
 
     /**
@@ -226,6 +236,17 @@ class ProjectController extends Controller
      */
     public function storeComment(Request $request, Project $project)
     {
+        // #73: Комментировать могут только участники проекта (member или сотрудник компании-участника)
+        $user = auth()->user();
+        $isMember = $project->isMember($user);
+        $isCompanyParticipant = $project->participants()
+            ->whereIn('companies.id', $user->companies()->pluck('companies.id'))
+            ->exists();
+
+        if (!$isMember && !$isCompanyParticipant) {
+            abort(403, 'Комментировать могут только участники проекта.');
+        }
+
         $request->validate([
             'body' => 'required|string|max:5000',
             'parent_id' => 'nullable|exists:project_comments,id',

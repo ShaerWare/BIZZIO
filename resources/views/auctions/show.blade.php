@@ -756,8 +756,13 @@
                                             @else
                                                 {{-- Для статуса active (приём заявок) или closed (завершён) --}}
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    @if($auction->status === 'closed')
-                                                        {{-- После закрытия показываем названия компаний --}}
+                                                    @if($auction->status === 'closed' && $auction->type !== 'closed')
+                                                        {{-- После закрытия открытого аукциона показываем названия компаний --}}
+                                                        <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
+                                                            {{ $bid->company->name }}
+                                                        </a>
+                                                    @elseif($auction->status === 'closed' && $auction->type === 'closed' && $auction->canManage(auth()->user()))
+                                                        {{-- #38: В закрытом аукционе после завершения — имена видны только организатору --}}
                                                         <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                             {{ $bid->company->name }}
                                                         </a>
@@ -802,22 +807,31 @@
                                 @foreach($auction->invitations as $invitation)
                                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                         <div class="flex items-center">
-                                            @if($invitation->company->logo)
-                                                <img src="{{ asset('storage/' . $invitation->company->logo) }}" 
-                                                     alt="{{ $invitation->company->name }}" 
+                                            @php
+                                                $isManager = auth()->check() && $auction->canManage(auth()->user());
+                                                $isOwnCompany = auth()->check() && auth()->user()->moderatedCompanies()->pluck('companies.id')->contains($invitation->company_id);
+                                                $showName = $isManager || $isOwnCompany;
+                                            @endphp
+                                            @if($showName && $invitation->company->logo)
+                                                <img src="{{ asset('storage/' . $invitation->company->logo) }}"
+                                                     alt="{{ $invitation->company->name }}"
                                                      class="w-12 h-12 rounded-full mr-3 object-cover">
                                             @else
                                                 <div class="w-12 h-12 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
                                                     <span class="text-sm text-gray-500 font-semibold">
-                                                        {{ strtoupper(substr($invitation->company->name, 0, 2)) }}
+                                                        {{ $showName ? strtoupper(substr($invitation->company->name, 0, 2)) : $loop->iteration }}
                                                     </span>
                                                 </div>
                                             @endif
                                             <div>
-                                                <a href="{{ route('companies.show', $invitation->company) }}" 
-                                                   class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
-                                                    {{ $invitation->company->name }}
-                                                </a>
+                                                @if($showName)
+                                                    <a href="{{ route('companies.show', $invitation->company) }}"
+                                                       class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
+                                                        {{ $invitation->company->name }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-sm font-medium text-gray-900">Участник {{ $loop->iteration }}</span>
+                                                @endif
                                                 <p class="text-xs text-gray-500">
                                                     Приглашён: {{ $invitation->created_at->format('d.m.Y H:i') }}
                                                 </p>
