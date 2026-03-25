@@ -160,7 +160,7 @@ class DashboardController extends Controller
                 'url' => route('auctions.show', $a),
                 'created_at' => $a->created_at,
             ];
-        }))->sortByDesc('created_at')->take(5)->values();
+        }))->sortByDesc('created_at')->take(3)->values();
 
         $rfqInvitations = RfqInvitation::whereIn('company_id', $companyIds)
             ->with('rfq')
@@ -210,7 +210,7 @@ class DashboardController extends Controller
                 'url' => route('auctions.show', $i->auction_id),
                 'created_at' => $i->created_at,
             ];
-        }))->sortByDesc('created_at')->take(5)->values();
+        }))->sortByDesc('created_at')->take(3)->values();
 
         $rfqBids = RfqBid::whereIn('company_id', $companyIds)
             ->with('rfq')
@@ -241,7 +241,7 @@ class DashboardController extends Controller
             'currency_symbol' => $b->auction->currency_symbol ?? '₽',
             'url' => route('auctions.show', $b->auction_id),
             'created_at' => $b->created_at,
-        ]))->sortByDesc('created_at')->take(5)->values();
+        ]))->sortByDesc('created_at')->take(3)->values();
 
         return view('dashboard', compact(
             'userCompanies',

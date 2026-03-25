@@ -23,16 +23,26 @@ class AuctionController extends Controller
     {
         $query = Auction::with(['company.industry', 'creator', 'bids']);
 
-        // Скрываем черновики от посторонних (C3)
-        // Черновики видны только модераторам компании-организатора
+        // Скрываем черновики от посторонних (C3) и закрытые аукционы от неприглашённых (#38)
         if (auth()->check()) {
             $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
             $query->where(function ($q) use ($userCompanies) {
-                $q->where('status', '!=', 'draft')
-                  ->orWhereIn('company_id', $userCompanies);
+                $q->where(function ($inner) use ($userCompanies) {
+                    // Черновики — только свои
+                    $inner->where('status', '!=', 'draft')
+                          ->orWhereIn('company_id', $userCompanies);
+                })->where(function ($inner) use ($userCompanies) {
+                    // #38: Закрытые аукционы — только организатор или приглашённые
+                    $inner->where('type', '!=', 'closed')
+                          ->orWhereIn('company_id', $userCompanies)
+                          ->orWhereHas('invitations', function ($inv) use ($userCompanies) {
+                              $inv->whereIn('company_id', $userCompanies);
+                          });
+                });
             });
         } else {
-            $query->where('status', '!=', 'draft');
+            $query->where('status', '!=', 'draft')
+                  ->where('type', '!=', 'closed');
         }
 
         if ($request->filled('search')) {
@@ -332,6 +342,14 @@ public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
             'status' => 'pending',
         ]);
         
+        // #110: При подаче заявки (initial bid) обновляем статус приглашения на accepted
+        if ($isInitialBid) {
+            $auction->invitations()
+                ->where('company_id', $companyId)
+                ->where('status', 'pending')
+                ->update(['status' => 'accepted']);
+        }
+
         // Обновление времени последней ставки (для торгов)
         if (!$isInitialBid) {
             $auction->update(['last_bid_at' => Carbon::now()]);

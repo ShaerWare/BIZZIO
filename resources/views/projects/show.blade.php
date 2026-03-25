@@ -215,7 +215,7 @@
 
                 <!-- Вкладка: Комментарии -->
                 <div id="content-comments" class="tab-content hidden">
-                    @auth
+                    @if($canComment ?? false)
                         <!-- Форма добавления комментария -->
                         <form method="POST" 
                               action="{{ route('projects.comments.store', $project->slug) }}" 
@@ -240,16 +240,20 @@
                                 </button>
                             </div>
                         </form>
-                    @else
+                    @elseif(!auth()->check())
                         <div class="bg-gray-50 rounded-lg p-4 mb-6 text-center">
                             <p class="text-gray-600">
-                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a> 
-                                или 
-                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>, 
+                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a>
+                                или
+                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>,
                                 чтобы оставить комментарий
                             </p>
                         </div>
-                    @endauth
+                    @else
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-center">
+                            <p class="text-gray-500 text-sm">Комментировать могут только участники проекта.</p>
+                        </div>
+                    @endif
 
                     <!-- Список комментариев -->
                     <div id="comments-list" class="space-y-4">

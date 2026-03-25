@@ -75,10 +75,7 @@
 
                 <!-- User Navigation -->
                 <ul class="navbar-nav navbar-user">
-                    @guest
-                        <li><a href="#login-form" class="nav-link" onclick="document.getElementById('login-form').scrollIntoView({behavior:'smooth'});return false;">Войти</a></li>
-                        <li><a href="{{ url('/?mode=register') }}" class="nav-link">Регистрация</a></li>
-                    @else
+                    @auth
                         <li>
                             <a href="{{ route('dashboard') }}" class="nav-link">
                                 {{ Auth::user()->name }}
@@ -90,7 +87,7 @@
                                 <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Выход</button>
                             </form>
                         </li>
-                    @endguest
+                    @endauth
                 </ul>
             </nav>
         </header>
