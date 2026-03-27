@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Orchid\Screens;
 
 use App\Models\Rfq;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
@@ -12,8 +16,6 @@ class RfqListScreen extends Screen
 {
     /**
      * Query data.
-     *
-     * @return array
      */
     public function query(): iterable
     {
@@ -27,8 +29,6 @@ class RfqListScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -37,8 +37,6 @@ class RfqListScreen extends Screen
 
     /**
      * Display header description.
-     *
-     * @return string|null
      */
     public function description(): ?string
     {
@@ -47,8 +45,6 @@ class RfqListScreen extends Screen
 
     /**
      * Button commands.
-     *
-     * @return \Orchid\Screen\Action[]
      */
     public function commandBar(): iterable
     {
@@ -61,8 +57,6 @@ class RfqListScreen extends Screen
 
     /**
      * Views.
-     *
-     * @return \Orchid\Screen\Layout[]|string[]
      */
     public function layout(): iterable
     {
@@ -96,6 +90,7 @@ class RfqListScreen extends Screen
                             'open' => '<span class="badge bg-info">Открытая</span>',
                             'closed' => '<span class="badge bg-warning">Закрытая</span>',
                         ];
+
                         return $badges[$rfq->type] ?? '';
                     }),
 
@@ -108,6 +103,7 @@ class RfqListScreen extends Screen
                             'closed' => '<span class="badge bg-dark">Завершён</span>',
                             'cancelled' => '<span class="badge bg-danger">Отменён</span>',
                         ];
+
                         return $badges[$rfq->status] ?? '';
                     }),
 
@@ -130,13 +126,30 @@ class RfqListScreen extends Screen
 
                 TD::make('actions', 'Действия')
                     ->align(TD::ALIGN_CENTER)
-                    ->width('100px')
+                    ->width('150px')
                     ->render(function (Rfq $rfq) {
-                        return Link::make('Редактировать')
+                        return Link::make('Ред.')
                             ->icon('pencil')
-                            ->route('platform.rfqs.edit', $rfq);
+                            ->route('platform.rfqs.edit', $rfq)
+                            ->class('btn btn-sm btn-link') .
+                        Button::make('Удалить')
+                            ->icon('trash')
+                            ->confirm('Вы уверены, что хотите удалить RFQ «' . $rfq->number . '»?')
+                            ->method('remove', ['rfq' => $rfq->id])
+                            ->class('btn btn-sm btn-link text-danger');
                     }),
             ]),
         ];
+    }
+
+    /**
+     * Удаление RFQ (soft delete).
+     */
+    public function remove(Request $request): void
+    {
+        $rfq = Rfq::findOrFail($request->get('rfq'));
+        $rfq->delete();
+
+        \Orchid\Support\Facades\Toast::info('Запрос цен «' . $rfq->number . '» удалён.');
     }
 }

@@ -299,7 +299,7 @@ class Project extends Model
 
     public function getRouteKeyName()
     {
-        return 'id'; // по умолчанию и так id, но на случай переопределения
+        return 'slug';
     }
 
     /**

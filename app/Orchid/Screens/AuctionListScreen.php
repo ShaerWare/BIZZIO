@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Orchid\Screens;
 
 use App\Models\Auction;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
-use Orchid\Screen\Actions\Link;
 use Orchid\Support\Facades\Layout;
 
 class AuctionListScreen extends Screen
@@ -86,7 +90,7 @@ class AuctionListScreen extends Screen
                             'closed' => '<span class="badge bg-secondary">Завершён</span>',
                             'cancelled' => '<span class="badge bg-danger">Отменён</span>',
                         ];
-                        
+
                         return $badges[$auction->status] ?? $auction->status;
                     }),
 
@@ -100,7 +104,33 @@ class AuctionListScreen extends Screen
                 TD::make('created_at', 'Создан')
                     ->sort()
                     ->render(fn (Auction $auction) => $auction->created_at->format('d.m.Y')),
+
+                TD::make('actions', 'Действия')
+                    ->align(TD::ALIGN_CENTER)
+                    ->width('150px')
+                    ->render(function (Auction $auction) {
+                        return Link::make('Ред.')
+                            ->icon('pencil')
+                            ->route('platform.auctions.edit', $auction)
+                            ->class('btn btn-sm btn-link') .
+                        Button::make('Удалить')
+                            ->icon('trash')
+                            ->confirm('Вы уверены, что хотите удалить аукцион «' . $auction->number . '»?')
+                            ->method('remove', ['auction' => $auction->id])
+                            ->class('btn btn-sm btn-link text-danger');
+                    }),
             ]),
         ];
+    }
+
+    /**
+     * Удаление аукциона (soft delete).
+     */
+    public function remove(Request $request): void
+    {
+        $auction = Auction::findOrFail($request->get('auction'));
+        $auction->delete();
+
+        \Orchid\Support\Facades\Toast::info('Аукцион «' . $auction->number . '» удалён.');
     }
 }

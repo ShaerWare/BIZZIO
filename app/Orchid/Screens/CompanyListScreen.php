@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Orchid\Screens;
 
 use App\Models\Company;
+use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
@@ -13,12 +16,20 @@ class CompanyListScreen extends Screen
     /**
      * Fetch data to be displayed on the screen.
      */
-    public function query(): iterable
+    public function query(Request $request): iterable
     {
+        $query = Company::with(['industry', 'creator']);
+
+        if ($request->get('verification') === 'pending') {
+            $query->where('is_verified', false);
+        }
+
         return [
-            'companies' => Company::with(['industry', 'creator'])
-                ->orderBy('id', 'desc')  // ✅ ИСПРАВЛЕНО
+            'companies' => $query
+                ->orderBy('is_verified', 'asc')  // Неверифицированные сверху
+                ->orderBy('id', 'desc')
                 ->paginate(20),
+            'unverified_count' => Company::where('is_verified', false)->count(),
         ];
     }
 
@@ -35,7 +46,13 @@ class CompanyListScreen extends Screen
      */
     public function description(): ?string
     {
-        return 'Список всех компаний в системе';
+        $count = Company::where('is_verified', false)->count();
+
+        if ($count > 0) {
+            return "⚠ Ожидают верификации: {$count}";
+        }
+
+        return 'Все компании верифицированы';
     }
 
     /**
@@ -43,7 +60,18 @@ class CompanyListScreen extends Screen
      */
     public function commandBar(): iterable
     {
+        $unverifiedCount = Company::where('is_verified', false)->count();
+
         return [
+            Link::make("Ожидают верификации ({$unverifiedCount})")
+                ->icon('shield')
+                ->route('platform.companies.list', ['verification' => 'pending'])
+                ->canSee($unverifiedCount > 0),
+
+            Link::make('Все компании')
+                ->icon('list')
+                ->route('platform.companies.list'),
+
             Link::make('Создать компанию')
                 ->icon('plus')
                 ->route('platform.companies.create'),
@@ -63,32 +91,32 @@ class CompanyListScreen extends Screen
 
                 TD::make('name', 'Название')
                     ->sort()
-                    ->render(fn(Company $company) => Link::make($company->name)
+                    ->render(fn (Company $company) => Link::make($company->name)
                         ->route('platform.companies.edit', $company->id)),
 
                 TD::make('inn', 'ИНН')
                     ->sort(),
 
                 TD::make('industry', 'Отрасль')
-                    ->render(fn(Company $company) => $company->industry?->name ?? '—'),
+                    ->render(fn (Company $company) => $company->industry?->name ?? '—'),
 
                 TD::make('is_verified', 'Верификация')
                     ->sort()
-                    ->render(fn(Company $company) => $company->is_verified
+                    ->render(fn (Company $company) => $company->is_verified
                         ? '<span class="badge bg-success">Верифицирована</span>'
-                        : '<span class="badge bg-warning">Не верифицирована</span>'),
+                        : '<span class="badge bg-danger text-white">⚠ Ожидает верификации</span>'),
 
                 TD::make('creator', 'Создатель')
-                    ->render(fn(Company $company) => $company->creator->name),
+                    ->render(fn (Company $company) => $company->creator?->name ?? '—'),
 
                 TD::make('created_at', 'Создана')
                     ->sort()
-                    ->render(fn(Company $company) => $company->created_at->format('d.m.Y H:i')),
+                    ->render(fn (Company $company) => $company->created_at->format('d.m.Y H:i')),
 
                 TD::make('actions', 'Действия')
                     ->align(TD::ALIGN_CENTER)
                     ->width('100px')
-                    ->render(fn(Company $company) => Link::make('Редактировать')
+                    ->render(fn (Company $company) => Link::make('Редактировать')
                         ->icon('pencil')
                         ->route('platform.companies.edit', $company->id)),
             ]),

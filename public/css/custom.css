@@ -552,7 +552,7 @@ html {
 .hero-content {
     position: relative;
     z-index: 10;
-    max-width: 1200px; /* Увеличили для лучшего вида на больших экранах */
+    max-width: 1100px; /* Чуть уже — чтобы не вылезать на 14" экранах */
     width: 95%;
     margin: 0 auto; /* Центрирование */
     padding: 0 20px;
@@ -567,7 +567,7 @@ html {
     width: 100%; /* Заполняем ширину hero-content */
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    min-height: 600px;
+    min-height: min(600px, 75vh); /* Не превышаем 75% viewport на маленьких экранах */
     flex-direction: row; /* По умолчанию: бок о бок на десктопе */
 }
 
@@ -575,10 +575,62 @@ html {
 .features-block,
 .login-block {
     flex: 1; /* Равномерное распределение */
-    padding: 50px 40px;
+    padding: 40px 35px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+/* Уменьшаем паддинги на экранах ≤900px высоты (14" ноутбуки) */
+@media (max-height: 800px) and (min-width: 992px) {
+    .unified-block {
+        min-height: auto;
+    }
+    .features-block,
+    .login-block {
+        padding: 30px 30px;
+    }
+    .features-block h1 {
+        font-size: 1.8rem;
+        margin-bottom: 25px;
+    }
+    .feature-box {
+        margin-bottom: 20px;
+    }
+    .feature-icon {
+        width: 55px;
+        height: 55px;
+    }
+    .feature-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+    .login-header {
+        margin-bottom: 20px;
+    }
+    .login-header img {
+        width: 45px;
+        height: 45px;
+        margin-bottom: 10px;
+    }
+    .login-header p {
+        font-size: 1.1rem;
+    }
+    .form-group {
+        margin-bottom: 14px;
+    }
+    .form-control {
+        padding: 12px 12px 12px 45px;
+    }
+    .btn-login {
+        padding: 12px;
+    }
+    .oauth-divider {
+        margin: 15px 0 12px;
+    }
+    .register-link {
+        margin-top: 15px;
+    }
 }
 
 /* Мобильная адаптация: столбец вместо строки */
