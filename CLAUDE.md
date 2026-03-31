@@ -93,6 +93,7 @@ php artisan tinker
 - **Search** — Search via model `scopeSearch()` with `ilike`/`like` queries (Scout uses `collection` driver; search is not index-based)
 - **Tenders** — Unified view (`/tenders`) combining RFQs and Auctions with shared filters
 - **Subscriptions** — Polymorphic subscriptions (User/Company). Dashboard feed filters by subscriptions + friends-of-friends (2nd level). Public user profiles (`/users/{id}`)
+- **Friends** — Friendship requests (send/accept/remove), friends list, friends-of-friends recommendations. `Friendship` model (sender_id, receiver_id, status: pending/accepted). Routes: `/friends`, `/friends/{user}/request`, `/friends/{user}/accept`, `DELETE /friends/{user}`
 
 ### Status Lifecycles
 
@@ -256,6 +257,7 @@ User → Subscriptions (subscriber, one-to-many)
 User/Company ← Subscriptions (subscribable, polymorphic MorphMany)
 Project/Rfq/Auction → Comments (polymorphic MorphMany)
 RSSSource → News (one-to-many)
+User ←→ User (many-to-many via friendships: sender_id/receiver_id, status: pending/accepted)
 ```
 
 - `User` extends `Orchid\Platform\Models\User` (not Laravel's default `Authenticatable`)

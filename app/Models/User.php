@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -200,6 +201,139 @@ class User extends Orchid
     public function keywords()
     {
         return $this->hasMany(UserKeyword::class);
+    }
+
+    // ========================
+    // ДРУЖБА (FRIENDSHIP)
+    // ========================
+
+    /**
+     * Заявки в друзья, отправленные пользователем
+     */
+    public function sentFriendRequests(): HasMany
+    {
+        return $this->hasMany(Friendship::class, 'sender_id');
+    }
+
+    /**
+     * Заявки в друзья, полученные пользователем
+     */
+    public function receivedFriendRequests(): HasMany
+    {
+        return $this->hasMany(Friendship::class, 'receiver_id');
+    }
+
+    /**
+     * Входящие ожидающие заявки в друзья
+     */
+    public function pendingFriendRequests(): HasMany
+    {
+        return $this->hasMany(Friendship::class, 'receiver_id')->where('status', 'pending');
+    }
+
+    /**
+     * Список друзей (accepted в обе стороны)
+     */
+    public function friends(): Builder
+    {
+        $sentIds = Friendship::where('sender_id', $this->id)
+            ->where('status', 'accepted')
+            ->select('receiver_id');
+
+        $receivedIds = Friendship::where('receiver_id', $this->id)
+            ->where('status', 'accepted')
+            ->select('sender_id');
+
+        return User::where(function ($q) use ($sentIds, $receivedIds) {
+            $q->whereIn('id', $sentIds)
+                ->orWhereIn('id', $receivedIds);
+        });
+    }
+
+    /**
+     * Количество друзей
+     */
+    public function friendsCount(): int
+    {
+        return Friendship::where('status', 'accepted')
+            ->where(fn ($q) => $q->where('sender_id', $this->id)->orWhere('receiver_id', $this->id))
+            ->count();
+    }
+
+    /**
+     * Статус дружбы с другим пользователем
+     * Возвращает: null | 'pending_sent' | 'pending_received' | 'accepted'
+     */
+    public function friendshipStatusWith(User $other): ?string
+    {
+        $friendship = Friendship::where(function ($q) use ($other) {
+            $q->where('sender_id', $this->id)->where('receiver_id', $other->id);
+        })->orWhere(function ($q) use ($other) {
+            $q->where('sender_id', $other->id)->where('receiver_id', $this->id);
+        })->first();
+
+        if (! $friendship) {
+            return null;
+        }
+
+        if ($friendship->isAccepted()) {
+            return 'accepted';
+        }
+
+        return $friendship->sender_id === $this->id ? 'pending_sent' : 'pending_received';
+    }
+
+    /**
+     * Является ли пользователь другом
+     */
+    public function isFriendOf(User $other): bool
+    {
+        return $this->friendshipStatusWith($other) === 'accepted';
+    }
+
+    /**
+     * Друзья друзей (рекомендации) — исключая уже добавленных друзей и себя
+     */
+    public function friendsOfFriends(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    {
+        $friendIds = $this->friends()->pluck('id')->toArray();
+
+        if (empty($friendIds)) {
+            return new \Illuminate\Database\Eloquent\Collection();
+        }
+
+        // Находим друзей друзей
+        $sentByFriends = Friendship::whereIn('sender_id', $friendIds)
+            ->where('status', 'accepted')
+            ->pluck('receiver_id');
+
+        $receivedByFriends = Friendship::whereIn('receiver_id', $friendIds)
+            ->where('status', 'accepted')
+            ->pluck('sender_id');
+
+        $fofIds = $sentByFriends->merge($receivedByFriends)
+            ->unique()
+            ->diff($friendIds)
+            ->reject(fn ($id) => $id === $this->id);
+
+        if ($fofIds->isEmpty()) {
+            return new \Illuminate\Database\Eloquent\Collection();
+        }
+
+        return User::whereIn('id', $fofIds)
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Количество общих друзей с другим пользователем
+     */
+    public function mutualFriendsCount(User $other): int
+    {
+        $myFriends = $this->friends()->pluck('id');
+        $theirFriends = $other->friends()->pluck('id');
+
+        return $myFriends->intersect($theirFriends)->count();
     }
 
     // ========================

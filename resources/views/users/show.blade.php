@@ -20,10 +20,14 @@
                                     <p class="text-gray-600 mt-1">{{ $user->position }}</p>
                                 @endif
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                                <span class="text-sm text-gray-500">
+                                    {{ $friendsCount }} {{ trans_choice('друг|друга|друзей', $friendsCount) }}
+                                </span>
                                 <span class="text-sm text-gray-500">
                                     {{ $subscribersCount }} {{ trans_choice('подписчик|подписчика|подписчиков', $subscribersCount) }}
                                 </span>
+                                @include('components.friendship-button', ['user' => $user])
                                 @include('components.subscribe-button', ['target' => $user])
                             </div>
                         </div>
