@@ -101,7 +101,7 @@ class ProfileController extends Controller
             ($validated['company'] ? "Компания: {$validated['company']}\n" : '') .
             "\nСообщение:\n{$validated['message']}",
             function ($mail) use ($validated, $user) {
-                $mail->to('admin@bizzio.ru')
+                $mail->to(config('app.admin_email', 'admin@bizzio.ru'))
                      ->subject('Обратная связь: ' . mb_substr($validated['message'], 0, 50))
                      ->replyTo($user->email, $validated['name']);
             }

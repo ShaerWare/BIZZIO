@@ -22,6 +22,17 @@
                         {{ __('Проекты') }}
                     </x-nav-link>
                     
+                    <!-- Люди / Друзья -->
+                    @auth
+                        <x-nav-link :href="route('friends.index')" :active="request()->routeIs('friends.*')">
+                            {{ __('Друзья') }}
+                            @php $pendingFriendCount = auth()->user()->pendingFriendRequests()->count(); @endphp
+                            @if($pendingFriendCount > 0)
+                                <span class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">{{ $pendingFriendCount }}</span>
+                            @endif
+                        </x-nav-link>
+                    @endauth
+
                     <!-- Закупки (Dropdown) -->
                     <div class="hidden sm:flex sm:items-center sm:ms-6">
                         <div class="relative" x-data="{ open: false }">
@@ -326,6 +337,17 @@
             <x-responsive-nav-link :href="route('projects.index')" :active="request()->routeIs('projects.*')">
                 {{ __('Проекты') }}
             </x-responsive-nav-link>
+
+            <!-- Друзья -->
+            @auth
+                <x-responsive-nav-link :href="route('friends.index')" :active="request()->routeIs('friends.*')">
+                    {{ __('Друзья') }}
+                    @php $mobilePendingFriendCount = auth()->user()->pendingFriendRequests()->count(); @endphp
+                    @if($mobilePendingFriendCount > 0)
+                        <span class="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">{{ $mobilePendingFriendCount }}</span>
+                    @endif
+                </x-responsive-nav-link>
+            @endauth
 
             <!-- Закупки -->
             <div class="border-t border-gray-200 pt-2 mt-2">

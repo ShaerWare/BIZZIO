@@ -18,7 +18,8 @@ class UserProfileController extends Controller
             ->get();
 
         $subscribersCount = $user->subscribers()->count();
+        $friendsCount = $user->friendsCount();
 
-        return view('users.show', compact('user', 'companies', 'recentPosts', 'subscribersCount'));
+        return view('users.show', compact('user', 'companies', 'recentPosts', 'subscribersCount', 'friendsCount'));
     }
 }

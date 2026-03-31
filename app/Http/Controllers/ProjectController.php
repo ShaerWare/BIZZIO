@@ -129,7 +129,7 @@ class ProjectController extends Controller
             $user = auth()->user();
             $canComment = $project->isMember($user)
                 || $project->participants()
-                    ->whereIn('companies.id', $user->companies()->pluck('companies.id'))
+                    ->whereIn('companies.id', $user->moderatedCompanies()->pluck('companies.id'))
                     ->exists();
         }
 
@@ -240,7 +240,7 @@ class ProjectController extends Controller
         $user = auth()->user();
         $isMember = $project->isMember($user);
         $isCompanyParticipant = $project->participants()
-            ->whereIn('companies.id', $user->companies()->pluck('companies.id'))
+            ->whereIn('companies.id', $user->moderatedCompanies()->pluck('companies.id'))
             ->exists();
 
         if (!$isMember && !$isCompanyParticipant) {

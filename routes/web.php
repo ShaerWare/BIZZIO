@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyJoinRequestController;
 use App\Http\Controllers\CompanyModeratorController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -272,6 +273,17 @@ Route::middleware('auth')->group(function () {
 // ========================================================================
 
 Route::get('/users/{user}', [UserProfileController::class, 'show'])->name('users.show');
+
+// ========================================================================
+// FRIENDSHIP ROUTES
+// ========================================================================
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/friends', [FriendshipController::class, 'index'])->name('friends.index');
+    Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
+    Route::post('/friends/{user}/accept', [FriendshipController::class, 'accept'])->name('friends.accept');
+    Route::delete('/friends/{user}', [FriendshipController::class, 'remove'])->name('friends.remove');
+});
 
 // ========================================================================
 // SUBSCRIPTION ROUTES

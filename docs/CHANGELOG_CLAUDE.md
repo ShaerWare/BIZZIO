@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-03-31 — Правки #73, #65 + Модуль Друзья (#126)
+
+### #73 — Проекты: 500 ошибка при открытии + ограничение комментариев
+- **Причина бага:** `$user->companies()` не существует в модели User, вызывает `BadMethodCallException`
+- Заменено на `$user->moderatedCompanies()` в `ProjectController::show()` и `storeComment()`
+- Комментарии отображаются только участникам проекта (логика уже была, но падала из-за бага)
+- **Файлы:** `app/Http/Controllers/ProjectController.php`
+
+### #65 — Email-уведомление админу о новых компаниях
+- Добавлен `ADMIN_NOTIFICATION_EMAIL=admin@bizzio.ru` в .env и config/app.php
+- `SendCompanyCreatedNotification` теперь гарантированно отправляет email на admin@bizzio.ru (даже если нет admin-пользователей в системе)
+- Убран хардкод `admin@bizzio.ru` в ProfileController (обратная связь) — используется `config('app.admin_email')`
+- **Файлы:** `app/Listeners/SendCompanyCreatedNotification.php`, `config/app.php`, `.env`, `.env.example`, `app/Http/Controllers/ProfileController.php`
+
+### #126 — Модуль Друзья
+- **Миграция:** `friendships` таблица (sender_id, receiver_id, status: pending/accepted)
+- **Модель:** `Friendship` с отношениями sender/receiver
+- **User model:** добавлены методы `friends()`, `friendsCount()`, `friendshipStatusWith()`, `isFriendOf()`, `friendsOfFriends()`, `mutualFriendsCount()`, `pendingFriendRequests()`, `sentFriendRequests()`, `receivedFriendRequests()`
+- **Контроллер:** `FriendshipController` — sendRequest, accept, remove, index (с вкладками)
+- **Маршруты:** GET /friends, POST /friends/{user}/request, POST /friends/{user}/accept, DELETE /friends/{user}
+- **Views:**
+  - `friends/index.blade.php` — страница с 3 вкладками (Друзья, Входящие заявки, Рекомендации)
+  - `components/friendship-button.blade.php` — универсальная кнопка дружбы (4 состояния)
+- **Навигация:** ссылка «Друзья» в desktop и mobile меню с бейджем входящих заявок
+- **Профиль пользователя:** кнопка дружбы + счётчик друзей
+- **Логика:** авто-принятие при встречных заявках, друзья друзей как рекомендации, счётчик общих друзей
+- **Файлы:** `database/migrations/2026_03_31_100000_create_friendships_table.php`, `app/Models/Friendship.php`, `app/Models/User.php`, `app/Http/Controllers/FriendshipController.php`, `app/Http/Controllers/UserProfileController.php`, `routes/web.php`, `resources/views/friends/index.blade.php`, `resources/views/components/friendship-button.blade.php`, `resources/views/users/show.blade.php`, `resources/views/layouts/navigation.blade.php`
+
+---
+
 ## 2026-03-27 — Правки после тестов заказчика (batch 3)
 
 **Контекст:** 6 issues из столбца "Правки после тестов" канбана — повторные замечания от @MSverlov (25-26 марта).
