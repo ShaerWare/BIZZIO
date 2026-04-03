@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Events\FriendRequestAccepted;
+use App\Events\FriendRequestSent;
 use App\Models\Friendship;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,17 +19,35 @@ class FriendshipController extends Controller
     {
         $user = auth()->user();
         $tab = $request->get('tab', 'friends');
+        $search = $request->get('search', '');
 
-        $friends = $user->friends()->paginate(20, ['*'], 'friends_page');
+        $friendsQuery = $user->friends();
+
+        if ($search) {
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $friendsQuery->where(function ($q) use ($op, $search) {
+                $q->where('name', $op, "%{$search}%")
+                    ->orWhere('email', $op, "%{$search}%")
+                    ->orWhere('position', $op, "%{$search}%");
+            });
+        }
+
+        $friends = $friendsQuery->paginate(20, ['*'], 'friends_page');
 
         $incoming = $user->pendingFriendRequests()
             ->with('sender')
             ->latest()
             ->get();
 
+        $outgoing = $user->sentFriendRequests()
+            ->where('status', 'pending')
+            ->with('receiver')
+            ->latest()
+            ->get();
+
         $friendsOfFriends = $user->friendsOfFriends(12);
 
-        return view('friends.index', compact('friends', 'incoming', 'friendsOfFriends', 'tab'));
+        return view('friends.index', compact('friends', 'incoming', 'outgoing', 'friendsOfFriends', 'tab', 'search'));
     }
 
     /**
@@ -56,6 +76,7 @@ class FriendshipController extends Controller
             // Если другой пользователь уже отправил нам заявку — автоматически принимаем
             if ($existing->sender_id === $user->id && $existing->isPending()) {
                 $existing->update(['status' => 'accepted']);
+                FriendRequestAccepted::dispatch($existing);
 
                 return back()->with('success', 'Вы теперь друзья!');
             }
@@ -63,11 +84,13 @@ class FriendshipController extends Controller
             return back()->with('info', 'Заявка уже отправлена.');
         }
 
-        Friendship::create([
+        $friendship = Friendship::create([
             'sender_id' => $sender->id,
             'receiver_id' => $user->id,
             'status' => 'pending',
         ]);
+
+        FriendRequestSent::dispatch($friendship);
 
         return back()->with('success', 'Заявка в друзья отправлена!');
     }
@@ -85,6 +108,7 @@ class FriendshipController extends Controller
             ->firstOrFail();
 
         $friendship->update(['status' => 'accepted']);
+        FriendRequestAccepted::dispatch($friendship);
 
         return back()->with('success', 'Заявка принята! Вы теперь друзья.');
     }

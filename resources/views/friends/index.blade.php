@@ -29,24 +29,32 @@
             <div x-data="{ tab: '{{ $tab }}' }">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="border-b border-gray-200">
-                        <nav class="flex -mb-px">
+                        <nav class="flex -mb-px overflow-x-auto">
                             <button @click="tab = 'friends'"
                                     :class="tab === 'friends' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition">
+                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition whitespace-nowrap">
                                 Друзья
                                 <span class="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $friends->total() }}</span>
                             </button>
                             <button @click="tab = 'incoming'"
                                     :class="tab === 'incoming' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition">
-                                Входящие заявки
+                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition whitespace-nowrap">
+                                Входящие
                                 @if($incoming->count() > 0)
                                     <span class="ml-1 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{{ $incoming->count() }}</span>
                                 @endif
                             </button>
+                            <button @click="tab = 'outgoing'"
+                                    :class="tab === 'outgoing' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition whitespace-nowrap">
+                                Отправленные
+                                @if($outgoing->count() > 0)
+                                    <span class="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $outgoing->count() }}</span>
+                                @endif
+                            </button>
                             <button @click="tab = 'suggestions'"
                                     :class="tab === 'suggestions' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition">
+                                    class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition whitespace-nowrap">
                                 Рекомендации
                                 @if($friendsOfFriends->count() > 0)
                                     <span class="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $friendsOfFriends->count() }}</span>
@@ -57,6 +65,32 @@
 
                     {{-- Friends Tab --}}
                     <div x-show="tab === 'friends'" class="p-6">
+                        {{-- Search friends --}}
+                        <form action="{{ route('friends.index') }}" method="GET" class="mb-4">
+                            <input type="hidden" name="tab" value="friends">
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    name="search"
+                                    value="{{ $search }}"
+                                    placeholder="Поиск среди друзей..."
+                                    class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                                >
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                                @if($search)
+                                    <a href="{{ route('friends.index', ['tab' => 'friends']) }}" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
+                        </form>
+
                         @if($friends->isNotEmpty())
                             <div class="space-y-3">
                                 @foreach($friends as $friend)
@@ -84,11 +118,15 @@
                             </div>
 
                             <div class="mt-4">
-                                {{ $friends->links() }}
+                                {{ $friends->appends(['tab' => 'friends', 'search' => $search])->links() }}
                             </div>
                         @else
                             <p class="text-sm text-gray-500 text-center py-8">
-                                У вас пока нет друзей. Добавьте пользователей через их профили или раздел «Рекомендации».
+                                @if($search)
+                                    По запросу «{{ $search }}» ничего не найдено.
+                                @else
+                                    У вас пока нет друзей. Добавьте пользователей через их профили или раздел «Рекомендации».
+                                @endif
                             </p>
                         @endif
                     </div>
@@ -133,6 +171,41 @@
                         @else
                             <p class="text-sm text-gray-500 text-center py-8">
                                 Нет входящих заявок в друзья.
+                            </p>
+                        @endif
+                    </div>
+
+                    {{-- Outgoing Requests Tab --}}
+                    <div x-show="tab === 'outgoing'" class="p-6">
+                        @if($outgoing->isNotEmpty())
+                            <div class="space-y-3">
+                                @foreach($outgoing as $request)
+                                    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                                        <a href="{{ route('users.show', $request->receiver) }}" class="flex items-center space-x-3 flex-1 min-w-0">
+                                            <img src="{{ $request->receiver->avatar_url }}" alt=""
+                                                 class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate">{{ $request->receiver->name }}</p>
+                                                @if($request->receiver->position)
+                                                    <p class="text-xs text-gray-500 truncate">{{ $request->receiver->position }}</p>
+                                                @endif
+                                                <p class="text-xs text-gray-400">{{ $request->created_at->diffForHumans() }}</p>
+                                            </div>
+                                        </a>
+                                        <form action="{{ route('friends.remove', $request->receiver) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="inline-flex items-center px-3 py-1.5 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-red-100 hover:text-red-700 transition">
+                                                Отменить
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-500 text-center py-8">
+                                Нет отправленных заявок.
                             </p>
                         @endif
                     </div>

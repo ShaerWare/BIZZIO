@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Events\AuctionTradingStarted;
 use App\Events\CommentCreated;
 use App\Events\CompanyCreated;
+use App\Events\FriendRequestAccepted;
+use App\Events\FriendRequestSent;
 use App\Events\ProjectInvitationSent;
 use App\Events\ProjectJoinRequestCreated;
 use App\Events\ProjectJoinRequestReviewed;
@@ -15,6 +17,8 @@ use App\Events\UserSubscribed;
 use App\Listeners\SendAuctionTradingStartedNotification;
 use App\Listeners\SendCommentNotification;
 use App\Listeners\SendCompanyCreatedNotification;
+use App\Listeners\SendFriendRequestAcceptedNotification;
+use App\Listeners\SendFriendRequestNotification;
 use App\Listeners\SendProjectInvitationNotification;
 use App\Listeners\SendProjectJoinRequestNotification;
 use App\Listeners\SendProjectJoinRequestReviewedNotification;
@@ -111,6 +115,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ProjectJoinRequestCreated::class, SendProjectJoinRequestNotification::class);
         Event::listen(ProjectJoinRequestReviewed::class, SendProjectJoinRequestReviewedNotification::class);
         Event::listen(UserSubscribed::class, SendUserSubscribedNotification::class);
+        Event::listen(FriendRequestSent::class, SendFriendRequestNotification::class);
+        Event::listen(FriendRequestAccepted::class, SendFriendRequestAcceptedNotification::class);
     }
 
     /**
