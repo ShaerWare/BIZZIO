@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-04-03 — Доработки #126 (Друзья) + #130 (Поиск в шапке)
+
+### #126 — Модуль Друзья: доработки
+- **Таб «Отправленные заявки»** — добавлен 4-й таб с исходящими заявками и кнопкой «Отменить»
+- **Поиск друзей** — поле поиска на табе «Друзья» (по имени, email, должности)
+- **Уведомления** — `FriendRequestNotification` (новая заявка) и `FriendRequestAcceptedNotification` (принятие заявки), события `FriendRequestSent` / `FriendRequestAccepted`, слушатели зарегистрированы в `AppServiceProvider`
+
+**Файлы:**
+- `app/Http/Controllers/FriendshipController.php` — outgoing запрос, поиск, dispatch событий
+- `resources/views/friends/index.blade.php` — таб «Отправленные», поле поиска
+- `app/Events/FriendRequestSent.php`, `app/Events/FriendRequestAccepted.php` — новые события
+- `app/Notifications/FriendRequestNotification.php`, `app/Notifications/FriendRequestAcceptedNotification.php` — уведомления
+- `app/Listeners/SendFriendRequestNotification.php`, `app/Listeners/SendFriendRequestAcceptedNotification.php` — слушатели
+- `app/Providers/AppServiceProvider.php` — регистрация событий
+
+### #130 — Поле поиска в шапке
+- **Десктоп:** расширено поле (`w-64 lg:w-80 xl:w-96`), увеличен padding (`pl-10 pr-8 py-2`), иконка `h-5 w-5` — убрано наслоение placeholder и лупы
+- **Мобилка:** добавлено полноценное поле поиска с выпадающими результатами в мобильном меню
+
+**Файлы:**
+- `resources/views/layouts/navigation.blade.php` — расширение desktop поиска + добавление mobile поиска
+
+---
+
 ## 2026-03-31 — Правки #73, #65 + Модуль Друзья (#126)
 
 ### #73 — Проекты: 500 ошибка при открытии + ограничение комментариев

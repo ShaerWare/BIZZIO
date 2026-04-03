@@ -128,11 +128,11 @@
                             @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = Array.isArray(d) ? d : (d.results || []); loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
                             @focus="if(results.length > 0) open = true"
                             @keydown.escape="open = false"
-                            placeholder="Поиск..."
-                            class="w-48 lg:w-64 pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            placeholder="Поиск компаний, проектов..."
+                            class="w-64 lg:w-80 xl:w-96 pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
@@ -327,6 +327,46 @@
     <!-- Responsive Navigation Menu (Mobile) -->
     {{-- G3: Добавлен скролл для длинного мобильного меню --}}
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden max-h-[calc(100vh-4rem)] overflow-y-auto">
+        {{-- Mobile Search --}}
+        <div class="px-4 pt-3 pb-2" x-data="{ query: '', results: [], loading: false, open: false }">
+            <div class="relative">
+                <input
+                    type="text"
+                    x-model="query"
+                    @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = Array.isArray(d) ? d : (d.results || []); loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
+                    @focus="if(results.length > 0) open = true"
+                    placeholder="Поиск..."
+                    class="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <div x-show="loading" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+            {{-- Mobile Search Results --}}
+            <div x-show="open && results.length > 0" @click.away="open = false" class="mt-2 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 max-h-64 overflow-y-auto">
+                <template x-for="result in results" :key="result.type + '-' + result.id">
+                    <a :href="result.url" class="flex items-center px-4 py-2 hover:bg-gray-100 border-b border-gray-50 last:border-0">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 mr-3 text-xs font-medium flex-shrink-0" x-text="result.type_label.substring(0, 1)"></span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate" x-text="result.title"></p>
+                            <p class="text-xs text-gray-500 truncate" x-text="result.subtitle || result.type_label"></p>
+                        </div>
+                    </a>
+                </template>
+                <a :href="'{{ route('search.index') }}?q=' + encodeURIComponent(query)" class="block px-4 py-2 text-center text-sm text-emerald-600 hover:text-emerald-800 border-t border-gray-100 bg-gray-50">
+                    {{ __('Все результаты') }}
+                </a>
+            </div>
+        </div>
+
         <div class="pt-2 pb-3 space-y-1">
             <!-- Компании -->
             <x-responsive-nav-link :href="route('companies.index')" :active="request()->routeIs('companies.*')">

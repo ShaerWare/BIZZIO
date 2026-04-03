@@ -135,6 +135,8 @@ Events registered in `AppServiceProvider@registerEventListeners()`:
 - `ProjectJoinRequestCreated` → `SendProjectJoinRequestNotification`
 - `ProjectJoinRequestReviewed` → `SendProjectJoinRequestReviewedNotification`
 - `UserSubscribed` → `SendUserSubscribedNotification`
+- `FriendRequestSent` → `SendFriendRequestNotification`
+- `FriendRequestAccepted` → `SendFriendRequestAcceptedNotification`
 
 ### Key Packages
 - `orchid/platform` — Admin panel
