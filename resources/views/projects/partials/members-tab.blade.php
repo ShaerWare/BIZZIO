@@ -205,8 +205,8 @@
                                     </span>
                                 </div>
 
-                                {{-- Управление (для менеджеров) --}}
-                                @if($canManage && $member->id !== $project->created_by)
+                                {{-- Управление (для админов/модераторов проекта) --}}
+                                @if($member->id !== $project->created_by && auth()->check() && $project->canManageMember(auth()->user(), $member))
                                     <div class="flex items-center gap-2">
                                         {{-- Изменение роли --}}
                                         <form method="POST" action="{{ route('projects.members.update', [$project->slug, $member->id]) }}" class="inline">

@@ -57,8 +57,8 @@ class ProjectMemberController extends Controller
      */
     public function update(Request $request, Project $project, User $user)
     {
-        if (! $project->canManage(auth()->user())) {
-            abort(403, 'У вас нет прав для управления участниками этого проекта');
+        if (! $project->canManageMember(auth()->user(), $user)) {
+            abort(403, 'У вас нет прав для изменения роли этого участника');
         }
 
         $validated = $request->validate([
@@ -77,8 +77,8 @@ class ProjectMemberController extends Controller
      */
     public function destroy(Project $project, User $user)
     {
-        if (! $project->canManage(auth()->user())) {
-            abort(403, 'У вас нет прав для управления участниками этого проекта');
+        if (! $project->canManageMember(auth()->user(), $user)) {
+            abort(403, 'У вас нет прав для удаления этого участника');
         }
 
         // Нельзя удалить создателя проекта

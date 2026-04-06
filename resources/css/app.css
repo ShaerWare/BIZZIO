@@ -17,4 +17,9 @@
     select {
         @apply px-3 py-2;
     }
+
+    /* Поля с иконкой слева — сохраняем отступ для иконки */
+    input[type="text"].search-input {
+        @apply pl-10;
+    }
 }
