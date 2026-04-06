@@ -51,6 +51,6 @@
     </div>
 
     <!-- AI Chat Widget -->
-    <script async src="https://admin.ai-sekretar24.ru/widget.js?instance=httpsbizzioru"></script>
+    <script src="https://ai-sekretar24.ru/widget.js?instance=bizzio"></script>
 </body>
 </html>

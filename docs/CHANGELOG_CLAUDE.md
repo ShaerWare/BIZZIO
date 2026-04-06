@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-04-06 — Замена виджета AI-чата
+
+- Обновлён URL виджета AI-секретаря во всех шаблонах: `admin.ai-sekretar24.ru` → `ai-sekretar24.ru`, instance `httpsbizzioru` → `bizzio`
+- **Файлы:** `layouts/app.blade.php`, `layouts/guest.blade.php`, `welcome.blade.php`
+
+---
+
 ## 2026-04-06 — Доработки по замечаниям заказчика (#74, #130)
 
 ### #74 — Управление ролями участников проекта: ограничение прав
