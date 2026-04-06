@@ -128,8 +128,8 @@
                             @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = Array.isArray(d) ? d : (d.results || []); loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
                             @focus="if(results.length > 0) open = true"
                             @keydown.escape="open = false"
-                            placeholder="Поиск компаний, проектов..."
-                            class="w-64 lg:w-80 xl:w-96 pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            placeholder="Поиск..."
+                            class="search-input w-80 lg:w-96 xl:w-[28rem] pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -336,7 +336,7 @@
                     @input.debounce.300ms="if(query.length >= 2) { loading = true; fetch('{{ route('search.quick') }}?q=' + encodeURIComponent(query)).then(r => r.json()).then(d => { results = Array.isArray(d) ? d : (d.results || []); loading = false; open = true; }).catch(() => loading = false); } else { results = []; open = false; }"
                     @focus="if(results.length > 0) open = true"
                     placeholder="Поиск..."
-                    class="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    class="search-input w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                 >
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -167,6 +167,43 @@ class Project extends Model
     }
 
     /**
+     * Получить роль пользователя в проекте
+     */
+    public function getMemberRole(User $user): ?string
+    {
+        $member = $this->members()->where('users.id', $user->id)->first();
+
+        return $member?->pivot->role;
+    }
+
+    /**
+     * Проверка, может ли пользователь управлять ролью конкретного участника проекта.
+     * Администратор проекта — в рамках всего проекта.
+     * Модератор проекта — только участники своей компании.
+     */
+    public function canManageMember(User $actor, User $target): bool
+    {
+        if ($actor->inRole('admin')) {
+            return true;
+        }
+
+        $actorRole = $this->getMemberRole($actor);
+
+        if ($actorRole === 'admin') {
+            return true;
+        }
+
+        if ($actorRole === 'moderator') {
+            $actorCompanyId = $this->members()->where('users.id', $actor->id)->first()?->pivot->company_id;
+            $targetCompanyId = $this->members()->where('users.id', $target->id)->first()?->pivot->company_id;
+
+            return $actorCompanyId && $actorCompanyId === $targetCompanyId;
+        }
+
+        return false;
+    }
+
+    /**
      * Получение ролей пользователей в проекте
      */
     public static function getUserRoles(): array
