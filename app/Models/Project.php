@@ -183,16 +183,24 @@ class Project extends Model
      */
     public function canManageMember(User $actor, User $target): bool
     {
+        // Системный администратор (Orchid)
         if ($actor->inRole('admin')) {
+            return true;
+        }
+
+        // Модератор/владелец компании-заказчика проекта = полный доступ (как admin проекта)
+        if ($this->company->isModerator($actor)) {
             return true;
         }
 
         $actorRole = $this->getMemberRole($actor);
 
+        // Администратор проекта = полный доступ
         if ($actorRole === 'admin') {
             return true;
         }
 
+        // Модератор проекта = только участники своей компании
         if ($actorRole === 'moderator') {
             $actorCompanyId = $this->members()->where('users.id', $actor->id)->first()?->pivot->company_id;
             $targetCompanyId = $this->members()->where('users.id', $target->id)->first()?->pivot->company_id;
@@ -201,6 +209,35 @@ class Project extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Получить список ролей, которые actor может назначать.
+     * Администратор проекта — все роли.
+     * Модератор проекта — только модератор и участник.
+     */
+    public function getAssignableRoles(User $actor): array
+    {
+        $allRoles = self::getUserRoles();
+
+        // Системный администратор или модератор/владелец компании-заказчика
+        if ($actor->inRole('admin') || $this->company->isModerator($actor)) {
+            return $allRoles;
+        }
+
+        $actorRole = $this->getMemberRole($actor);
+
+        if ($actorRole === 'admin') {
+            return $allRoles;
+        }
+
+        if ($actorRole === 'moderator') {
+            unset($allRoles['admin']);
+
+            return $allRoles;
+        }
+
+        return [];
     }
 
     /**

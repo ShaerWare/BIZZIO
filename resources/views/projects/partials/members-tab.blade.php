@@ -206,14 +206,17 @@
                                 </div>
 
                                 {{-- Управление (для админов/модераторов проекта) --}}
-                                @if($member->id !== $project->created_by && auth()->check() && $project->canManageMember(auth()->user(), $member))
+                                @if($member->id !== $project->created_by && auth()->check() && auth()->id() !== $member->id && $project->canManageMember(auth()->user(), $member))
+                                    @php
+                                        $assignableRoles = $project->getAssignableRoles(auth()->user());
+                                    @endphp
                                     <div class="flex items-center gap-2">
                                         {{-- Изменение роли --}}
                                         <form method="POST" action="{{ route('projects.members.update', [$project->slug, $member->id]) }}" class="inline">
                                             @csrf
                                             @method('PUT')
                                             <select name="role" onchange="this.form.submit()" class="text-xs rounded border-gray-300 py-1">
-                                                @foreach(\App\Models\Project::getUserRoles() as $value => $label)
+                                                @foreach($assignableRoles as $value => $label)
                                                     <option value="{{ $value }}" {{ $member->pivot->role === $value ? 'selected' : '' }}>{{ $label }}</option>
                                                 @endforeach
                                             </select>

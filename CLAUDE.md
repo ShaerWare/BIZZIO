@@ -124,19 +124,7 @@ app/
 ```
 
 ### Event-Driven Architecture
-Events registered in `AppServiceProvider@registerEventListeners()`:
-- `ProjectInvitationSent` → `SendProjectInvitationNotification`
-- `TenderInvitationSent` → `SendTenderInvitationNotification`
-- `TenderClosed` → `SendTenderClosedNotification`
-- `AuctionTradingStarted` → `SendAuctionTradingStartedNotification`
-- `CommentCreated` → `SendCommentNotification`
-- `CompanyCreated` → `SendCompanyCreatedNotification`
-- `ProjectUserInvited` → `SendProjectUserInvitedNotification`
-- `ProjectJoinRequestCreated` → `SendProjectJoinRequestNotification`
-- `ProjectJoinRequestReviewed` → `SendProjectJoinRequestReviewedNotification`
-- `UserSubscribed` → `SendUserSubscribedNotification`
-- `FriendRequestSent` → `SendFriendRequestNotification`
-- `FriendRequestAccepted` → `SendFriendRequestAcceptedNotification`
+All event→listener mappings are registered in `AppServiceProvider@registerEventListeners()`. Pattern: domain `Event` classes in `app/Events/` are handled by `Send*Notification` listeners in `app/Listeners/`. Check that method for the authoritative list.
 
 ### Key Packages
 - `orchid/platform` — Admin panel
