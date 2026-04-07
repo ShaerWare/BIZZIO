@@ -57,6 +57,11 @@ class ProjectMemberController extends Controller
      */
     public function update(Request $request, Project $project, User $user)
     {
+        // Нельзя менять свою собственную роль
+        if (auth()->id() === $user->id) {
+            abort(403, 'Вы не можете изменить свою собственную роль');
+        }
+
         if (! $project->canManageMember(auth()->user(), $user)) {
             abort(403, 'У вас нет прав для изменения роли этого участника');
         }
@@ -64,6 +69,11 @@ class ProjectMemberController extends Controller
         $validated = $request->validate([
             'role' => 'required|in:admin,moderator,member',
         ]);
+
+        $assignableRoles = $project->getAssignableRoles(auth()->user());
+        if (! array_key_exists($validated['role'], $assignableRoles)) {
+            abort(403, 'У вас нет прав для назначения этой роли');
+        }
 
         $project->members()->updateExistingPivot($user->id, [
             'role' => $validated['role'],
