@@ -118,6 +118,80 @@ class ProjectMemberTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_project_moderator_can_add_member_from_own_company(): void
+    {
+        Event::fake();
+
+        $participantCompany = Company::factory()->create(['is_verified' => true]);
+        $this->project->addParticipant($participantCompany, 'contractor');
+
+        // Создаём модератора проекта
+        $moderator = User::factory()->create();
+        $participantCompany->assignModerator($moderator, 'moderator');
+        $this->project->addMember($moderator, $participantCompany, 'moderator', $this->user);
+
+        // Пользователь из той же компании
+        $newUser = User::factory()->create();
+        $participantCompany->assignModerator($newUser, 'moderator');
+
+        $response = $this->actingAs($moderator)->post(
+            route('projects.members.store', $this->project->slug),
+            ['user_id' => $newUser->id, 'role' => 'member']
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertTrue($this->project->fresh()->isMember($newUser));
+        Event::assertDispatched(ProjectUserInvited::class);
+    }
+
+    public function test_project_moderator_cannot_add_member_from_other_company(): void
+    {
+        $participantCompany = Company::factory()->create(['is_verified' => true]);
+        $otherCompany = Company::factory()->create(['is_verified' => true]);
+        $this->project->addParticipant($participantCompany, 'contractor');
+        $this->project->addParticipant($otherCompany, 'supplier');
+
+        // Модератор из participantCompany
+        $moderator = User::factory()->create();
+        $participantCompany->assignModerator($moderator, 'moderator');
+        $this->project->addMember($moderator, $participantCompany, 'moderator', $this->user);
+
+        // Пользователь из другой компании
+        $otherUser = User::factory()->create();
+        $otherCompany->assignModerator($otherUser, 'moderator');
+
+        $response = $this->actingAs($moderator)->post(
+            route('projects.members.store', $this->project->slug),
+            ['user_id' => $otherUser->id, 'role' => 'member']
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertFalse($this->project->fresh()->isMember($otherUser));
+    }
+
+    public function test_project_moderator_cannot_assign_admin_role(): void
+    {
+        $participantCompany = Company::factory()->create(['is_verified' => true]);
+        $this->project->addParticipant($participantCompany, 'contractor');
+
+        $moderator = User::factory()->create();
+        $participantCompany->assignModerator($moderator, 'moderator');
+        $this->project->addMember($moderator, $participantCompany, 'moderator', $this->user);
+
+        $newUser = User::factory()->create();
+        $participantCompany->assignModerator($newUser, 'moderator');
+
+        $response = $this->actingAs($moderator)->post(
+            route('projects.members.store', $this->project->slug),
+            ['user_id' => $newUser->id, 'role' => 'admin']
+        );
+
+        $response->assertStatus(403);
+        $this->assertFalse($this->project->fresh()->isMember($newUser));
+    }
+
     public function test_guest_cannot_invite(): void
     {
         $response = $this->post(

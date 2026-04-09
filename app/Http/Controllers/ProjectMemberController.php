@@ -18,7 +18,9 @@ class ProjectMemberController extends Controller
      */
     public function store(Request $request, Project $project)
     {
-        if (! $project->canManage(auth()->user())) {
+        $actor = auth()->user();
+
+        if (! $project->canAddMember($actor)) {
             abort(403, 'У вас нет прав для управления участниками этого проекта');
         }
 
@@ -26,6 +28,12 @@ class ProjectMemberController extends Controller
             'user_id' => 'required|exists:users,id',
             'role' => 'required|in:admin,moderator,member',
         ]);
+
+        // Проверка: роль доступна текущему пользователю
+        $assignableRoles = $project->getAssignableRoles($actor);
+        if (! array_key_exists($validated['role'], $assignableRoles)) {
+            abort(403, 'У вас нет прав для назначения этой роли');
+        }
 
         $user = User::findOrFail($validated['user_id']);
 
@@ -43,6 +51,14 @@ class ProjectMemberController extends Controller
 
         if (! $userParticipatingCompany) {
             return back()->with('error', 'Пользователь не принадлежит к компании-участнику проекта');
+        }
+
+        // Модератор проекта может добавлять только участников из своей компании
+        if (! $project->canManage($actor)) {
+            $actorCompanyId = $project->members()->where('users.id', $actor->id)->first()?->pivot->company_id;
+            if ($userParticipatingCompany != $actorCompanyId) {
+                return back()->with('error', 'Вы можете добавлять только участников из своей компании');
+            }
         }
 
         $project->addMember($user, \App\Models\Company::find($userParticipatingCompany), $validated['role'], auth()->user());
