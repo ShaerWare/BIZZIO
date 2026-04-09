@@ -1,5 +1,6 @@
 @php
     $canManage = auth()->check() && $project->canManage(auth()->user());
+    $canAddMember = auth()->check() && $project->canAddMember(auth()->user());
     $isMember = auth()->check() && $project->isMember(auth()->user());
     $pendingRequests = $project->joinRequests()->with(['user', 'company'])->pending()->get();
 
@@ -18,10 +19,16 @@
     $membersByCompany = $project->members->groupBy('pivot.company_id');
 @endphp
 
-{{-- Форма приглашения пользователя (для менеджеров) --}}
-@if($canManage)
+{{-- Форма приглашения пользователя (для менеджеров и модераторов проекта) --}}
+@if($canAddMember)
+    @php
+        $addMemberRoles = $project->getAssignableRoles(auth()->user());
+    @endphp
     <div class="mb-6 p-4 bg-gray-50 rounded-lg" x-data="projectUserSearch()">
-        <h4 class="text-sm font-semibold text-gray-700 mb-3">Пригласить пользователя</h4>
+        <h4 class="text-sm font-semibold text-gray-700 mb-3">Добавить участника</h4>
+        @if(!$canManage)
+            <p class="text-xs text-gray-500 mb-3">Вы можете добавлять участников только из своей компании</p>
+        @endif
         <form method="POST" action="{{ route('projects.members.store', $project->slug) }}">
             @csrf
             <input type="hidden" name="user_id" x-model="selectedUserId">
@@ -77,7 +84,7 @@
                 {{-- Выбор роли --}}
                 <div>
                     <select name="role" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">
-                        @foreach(\App\Models\Project::getUserRoles() as $value => $label)
+                        @foreach($addMemberRoles as $value => $label)
                             <option value="{{ $value }}" {{ $value === 'member' ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -88,7 +95,7 @@
                     <button type="submit"
                             :disabled="!selectedUserId"
                             class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                        Пригласить
+                        Добавить
                     </button>
                 </div>
             </div>

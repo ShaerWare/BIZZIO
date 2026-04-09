@@ -241,6 +241,19 @@ class Project extends Model
     }
 
     /**
+     * Проверка, может ли пользователь добавлять участников в проект.
+     * canManage() (админы/владельцы) + модераторы проекта (только из своей компании).
+     */
+    public function canAddMember(User $user): bool
+    {
+        if ($this->canManage($user)) {
+            return true;
+        }
+
+        return $this->getMemberRole($user) === 'moderator';
+    }
+
+    /**
      * Получение ролей пользователей в проекте
      */
     public static function getUserRoles(): array
