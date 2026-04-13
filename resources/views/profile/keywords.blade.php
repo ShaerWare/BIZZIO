@@ -37,7 +37,7 @@
                     <div class="mt-2 text-sm text-emerald-700">
                         <ul class="list-disc list-inside space-y-1">
                             <li>Если указано <strong>одно</strong> ключевое слово — показываем новости, содержащие это слово</li>
-                            <li>Если указано <strong>несколько</strong> ключевых слов — показываем новости, содержащие <strong>ВСЕ</strong> эти слова одновременно</li>
+                            <li>Если указано <strong>несколько</strong> ключевых слов — показываем новости, содержащие <strong>ЛЮБОЕ</strong> из этих слов</li>
                             <li>Поиск ведётся в заголовке и описании новости</li>
                             <li>Максимум {{ App\Http\Controllers\UserKeywordController::MAX_KEYWORDS }} ключевых слов</li>
                         </ul>
