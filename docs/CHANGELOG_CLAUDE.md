@@ -1506,3 +1506,16 @@ SESSION_SECURE_COOKIE=true
 
 **Изменённые файлы:**
 - `resources/views/profile/keywords.blade.php` — правка текста в блоке «Как работает фильтрация?»
+
+---
+
+## 2026-04-13: Модератор компании видит поле «Добавить участника» (#74)
+
+**Что сделано:** Обычный модератор компании (без флага `can_manage_moderators`) теперь видит форму «Добавить участника» на странице компании в вкладке «Люди» и может добавлять пользователей с ролью «Участник». Назначение ролей «Админ» и «Модератор» по-прежнему только у владельца / менеджеров (`canManageModerators`).
+
+**Причина:** заказчик сообщил, что после PR #135 (проектные модераторы) форма добавления всё ещё не появляется у обычного модератора на странице компании — PR #135 покрывал только проекты, а жалоба была по `/companies/{slug}`.
+
+**Изменённые файлы:**
+- `app/Models/Company.php` — методы `canAddMember()` и `getAssignableMemberRoles()`
+- `app/Http/Controllers/CompanyModeratorController.php` — `store()` теперь использует `canAddMember` и валидирует роль через `getAssignableMemberRoles`, обычный модератор не может выдавать флаг `can_manage_moderators`
+- `resources/views/companies/show.blade.php` — форма гейтится на `canAddCompanyMember`, dropdown ролей берётся из `assignableMemberRoles`, для обычного модератора показывается подсказка

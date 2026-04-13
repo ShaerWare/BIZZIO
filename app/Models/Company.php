@@ -195,6 +195,36 @@ class Company extends Model implements HasMedia
     }
 
     /**
+     * Может ли пользователь добавлять новых участников в компанию (#74).
+     * Расширяет canManageModerators: обычный модератор тоже может добавлять,
+     * но только с ролью «member» (см. getAssignableMemberRoles).
+     */
+    public function canAddMember(User $user): bool
+    {
+        if ($this->canManageModerators($user)) {
+            return true;
+        }
+
+        return $this->isModerator($user);
+    }
+
+    /**
+     * Роли, которые данный пользователь имеет право назначать при добавлении.
+     * Менеджеры (владелец / can_manage_moderators) — все роли;
+     * обычный модератор — только «Участник».
+     */
+    public function getAssignableMemberRoles(User $user): array
+    {
+        $all = ['admin' => 'Админ', 'moderator' => 'Модератор', 'member' => 'Участник'];
+
+        if ($this->canManageModerators($user)) {
+            return $all;
+        }
+
+        return ['member' => 'Участник'];
+    }
+
+    /**
      * Проверка: есть ли активный запрос от пользователя
      */
     public function hasPendingRequestFrom(User $user): bool
