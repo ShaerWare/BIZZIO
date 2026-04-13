@@ -310,6 +310,10 @@
                 <div id="content-people" class="tab-content hidden">
                     @php
                         $canManagePeople = auth()->check() && $company->canManageModerators(auth()->user());
+                        $canAddCompanyMember = auth()->check() && $company->canAddMember(auth()->user());
+                        $assignableMemberRoles = auth()->check()
+                            ? $company->getAssignableMemberRoles(auth()->user())
+                            : [];
                         $roleLabels = ['owner' => 'Владелец', 'admin' => 'Админ', 'moderator' => 'Модератор', 'member' => 'Участник'];
                         $roleBadgeColors = [
                             'owner' => 'bg-green-100 text-green-800',
@@ -320,10 +324,13 @@
                         $editableRoles = ['admin' => 'Админ', 'moderator' => 'Модератор', 'member' => 'Участник'];
                     @endphp
 
-                    {{-- #71: Форма добавления участника (по аналогии с проектами) --}}
-                    @if($canManagePeople)
+                    {{-- #71/#74: Форма добавления участника (по аналогии с проектами) --}}
+                    @if($canAddCompanyMember)
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg" x-data="companyUserSearch()">
                             <h4 class="text-sm font-semibold text-gray-700 mb-3">Добавить участника</h4>
+                            @if(!$canManagePeople)
+                                <p class="text-xs text-gray-500 mb-3">Вы можете добавлять пользователей в компанию с ролью «Участник»</p>
+                            @endif
                             <form method="POST" action="{{ route('companies.moderators.store', $company) }}">
                                 @csrf
                                 <input type="hidden" name="user_id" x-model="selectedUserId">
@@ -369,7 +376,7 @@
                                     </div>
                                     <div>
                                         <select name="role" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm">
-                                            @foreach($editableRoles as $value => $label)
+                                            @foreach($assignableMemberRoles as $value => $label)
                                                 <option value="{{ $value }}" {{ $value === 'member' ? 'selected' : '' }}>{{ $label }}</option>
                                             @endforeach
                                         </select>

@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 
 class CompanyModeratorController extends Controller
 {
@@ -16,13 +16,17 @@ class CompanyModeratorController extends Controller
      */
     public function store(Request $request, Company $company)
     {
-        if (!$company->canManageModerators(auth()->user())) {
-            abort(403, 'У вас нет прав для управления модераторами этой компании');
+        $actor = auth()->user();
+
+        if (! $company->canAddMember($actor)) {
+            abort(403, 'У вас нет прав для добавления участников этой компании');
         }
+
+        $assignableRoles = $company->getAssignableMemberRoles($actor);
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role' => 'nullable|string|max:100',
+            'role' => ['nullable', 'string', 'in:'.implode(',', array_keys($assignableRoles))],
             'can_manage_moderators' => 'boolean',
         ]);
 
@@ -33,11 +37,16 @@ class CompanyModeratorController extends Controller
             return back()->with('error', 'Этот пользователь уже является модератором компании');
         }
 
+        // Обычный модератор не может выдавать флаг can_manage_moderators
+        $canManageFlag = $company->canManageModerators($actor)
+            ? ($validated['can_manage_moderators'] ?? false)
+            : false;
+
         $company->assignModerator(
             $user,
-            $validated['role'] ?? 'moderator',
-            auth()->user(),
-            $validated['can_manage_moderators'] ?? false
+            $validated['role'] ?? 'member',
+            $actor,
+            $canManageFlag
         );
 
         // TODO: Отправить уведомление пользователю (Спринт 7)
@@ -50,7 +59,7 @@ class CompanyModeratorController extends Controller
      */
     public function update(Request $request, Company $company, User $user)
     {
-        if (!$company->canManageModerators(auth()->user())) {
+        if (! $company->canManageModerators(auth()->user())) {
             abort(403, 'У вас нет прав для управления модераторами этой компании');
         }
 
@@ -72,7 +81,7 @@ class CompanyModeratorController extends Controller
      */
     public function destroy(Company $company, User $user)
     {
-        if (!$company->canManageModerators(auth()->user())) {
+        if (! $company->canManageModerators(auth()->user())) {
             abort(403, 'У вас нет прав для управления модераторами этой компании');
         }
 
