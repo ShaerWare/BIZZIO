@@ -1,5 +1,0 @@
-# Local development overrides (this file is in .gitignore)
-services:
-  app:
-    ports:
-      - "8080:80"
