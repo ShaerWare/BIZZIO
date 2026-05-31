@@ -113,7 +113,7 @@ class SearchController extends Controller
                 'type_label' => 'Пользователь',
                 'id' => $user->id,
                 'title' => $user->name,
-                'subtitle' => $user->email,
+                'subtitle' => $user->position,
                 'url' => route('users.show', $user),
             ];
         }

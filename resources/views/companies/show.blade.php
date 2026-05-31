@@ -405,7 +405,6 @@
                                         </div>
                                         <div>
                                             <div class="text-sm font-medium text-gray-900">{{ $moderator->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $moderator->email }}</div>
                                         </div>
                                         @php $role = $moderator->pivot->role ?? 'member'; @endphp
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $roleBadgeColors[$role] ?? 'bg-gray-100 text-gray-800' }}">
@@ -479,7 +478,6 @@
                                                             <h4 class="text-base font-semibold text-gray-900">
                                                                 {{ $joinRequest->user->name }}
                                                             </h4>
-                                                            <p class="text-sm text-gray-600">{{ $joinRequest->user->email }}</p>
 
                                                             @if($joinRequest->desired_role)
                                                                 <div class="mt-2">
