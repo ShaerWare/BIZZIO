@@ -44,6 +44,8 @@ class User extends Orchid
         'password',
         'remember_token',
         'permissions',
+        // #139: never expose email to other users via JSON (comments/posts/search responses)
+        'email',
     ];
 
     /**

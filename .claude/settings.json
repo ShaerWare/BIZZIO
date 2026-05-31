@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(ssh-keygen -t ed25519 -f \"$env:USERPROFILE\\\\.ssh\\\\bizzio_deploy\" -N '\"\"' -C \"github-actions-deploy@bizzio\" -q; Write-Output \"=== pubkey ===\"; Get-Content \"$env:USERPROFILE\\\\.ssh\\\\bizzio_deploy.pub\")",
+      "Bash(ssh -i __TRACKED_VAR__/.ssh/bizzio_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new root@37.233.82.55 'echo '\\\\''deploy key OK as'\\\\'' $\\(whoami\\)')",
+      "Bash(gh repo *)",
+      "Bash(git checkout *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m '@ *)",
+      "Bash(git commit *)",
+      "Bash(ssh -o ConnectTimeout=20 bizzio \"cd /var/www/BIZZIO && echo '--- HEAD ---' && git rev-parse --short HEAD && echo '--- status ---' && git status --porcelain\")",
+      "Bash(gh run *)",
+      "Bash(./vendor/bin/pint --test)",
+      "Bash(php -v)",
+      "Bash(composer --version)",
+      "PowerShell(docker run --rm -v \"${PWD}:/app\" -w /app -e COMPOSER_HOME=/composer composer:2 sh -c \"composer global require laravel/pint:1.27.0 --no-interaction -q && /composer/vendor/bin/pint /app\" 2>&1 | Select-Object -Last 12)",
+      "Bash(docker run *)",
+      "Bash(echo \"exit: $?\")",
+      "PowerShell(docker run --rm -v \"${PWD}:/app\" -w /app -e COMPOSER_HOME=/composer composer:2 composer install --ignore-platform-reqs --no-scripts --no-interaction -q 2>&1 | Select-Object -Last 6; if \\(Test-Path vendor\\\\bin\\\\phpunit\\) { \"phpunit OK\" } else { \"phpunit MISSING\" })",
+      "PowerShell(docker build -f Dockerfile.citest -t bizzio-citest . 2>&1)",
+      "Bash(sed -n '1,40p' tests/Feature/ProjectTest.php)",
+      "Bash(sed -n '320,360p' tests/Feature/ProjectTest.php)",
+      "Bash(curl -sS -o /dev/null -w \"test.bizzio.ru \\(with creds\\): HTTP %{http_code}\\\\n\" --max-time 20 -u \"bizzio:SricOyh6ZN4Nsxs\" https://test.bizzio.ru)",
+      "Bash(curl -sS -o /dev/null -w \"bizzio.ru: HTTP %{http_code}\\\\n\" --max-time 20 https://bizzio.ru)",
+      "Bash(gh project *)",
+      "Bash(cd /c/Users/HP/Projects/BIZZIO; gh project item-list 4 --owner ShaerWare --format json --limit 100 2>/dev/null > /tmp/proj.json; echo \"=== distinct status values ===\"; jq -r '.items[].status // \"\\(no status\\)\"' /tmp/proj.json | sort | uniq -c; echo \"=== count items ===\"; jq '.items|length' /tmp/proj.json)",
+      "Read(//tmp/**)",
+      "Bash(sed -n '404,412p' resources/views/companies/show.blade.php)",
+      "Bash(sed -n '478,486p' resources/views/companies/show.blade.php)",
+      "Bash(sed -n '196,204p' resources/views/projects/partials/members-tab.blade.php)",
+      "Bash(sed -n '264,270p' resources/views/projects/partials/members-tab.blade.php)"
+    ]
+  }
+}
