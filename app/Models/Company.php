@@ -246,7 +246,8 @@ class Company extends Model implements HasMedia
         }
 
         $this->moderators()->attach($user->id, [
-            'role' => $role ?? 'moderator',
+            // #144: new members default to "Участник" (member), not moderator
+            'role' => $role ?: 'member',
             'added_by' => $addedBy?->id ?? auth()->id(),
             'added_at' => now(),
             'can_manage_moderators' => $canManageModerators,

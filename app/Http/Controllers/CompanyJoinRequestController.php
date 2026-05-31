@@ -95,10 +95,12 @@ class CompanyJoinRequestController extends Controller
         DB::beginTransaction();
 
         try {
-            // Добавляем пользователя как модератора
+            // Добавляем пользователя в компанию.
+            // #144: по умолчанию роль «Участник», а не желаемая роль из запроса,
+            // чтобы пользователь не мог сам себе назначить админа/модератора.
             $joinRequest->company->assignModerator(
                 $joinRequest->user,
-                $validated['role'] ?? $joinRequest->desired_role,
+                ! empty($validated['role']) ? $validated['role'] : 'member',
                 auth()->user(),
                 $validated['can_manage_moderators'] ?? false
             );

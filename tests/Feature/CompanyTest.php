@@ -428,6 +428,13 @@ class CompanyTest extends TestCase
 
         // Проверяем, что пользователь стал модератором
         $this->assertTrue($company->fresh()->isModerator($applicant));
+
+        // #144: без явной роли пользователь добавляется как «Участник» (member)
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'role' => 'member',
+        ]);
     }
 
     public function test_moderator_can_reject_join_request(): void

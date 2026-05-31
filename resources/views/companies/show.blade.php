@@ -614,7 +614,7 @@
                            id="approve_role"
                            placeholder="Например: Менеджер"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="text-xs text-gray-500 mt-1">Оставьте пустым, чтобы использовать роль из запроса</p>
+                    <p class="text-xs text-gray-500 mt-1">Оставьте пустым, чтобы назначить роль «Участник»</p>
                 </div>
 
                 <div class="flex justify-end space-x-2">
