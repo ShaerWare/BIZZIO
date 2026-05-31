@@ -1519,3 +1519,29 @@ SESSION_SECURE_COOKIE=true
 - `app/Models/Company.php` — методы `canAddMember()` и `getAssignableMemberRoles()`
 - `app/Http/Controllers/CompanyModeratorController.php` — `store()` теперь использует `canAddMember` и валидирует роль через `getAssignableMemberRoles`, обычный модератор не может выдавать флаг `can_manage_moderators`
 - `resources/views/companies/show.blade.php` — форма гейтится на `canAddCompanyMember`, dropdown ролей берётся из `assignableMemberRoles`, для обычного модератора показывается подсказка
+
+---
+
+## 2026-05-31: Staging-окружение test.bizzio.ru + CI/CD пайплайн
+
+**Что сделано:** Настроен полный пайплайн «локалка → git → проверка → merge → деплой». Появилось staging-окружение **test.bizzio.ru** (ветка `develop`) и автодеплой на прод **bizzio.ru** (ветка `main`) с ручным аппрувом.
+
+- **Staging на сервере:** новый каталог `/var/www/bizzio-test` (compose-проект `bizzio-test`, отдельная БД на порту 5436, том изолирован), за тем же Caddy. БД — копия прод-БД, медиа скопированы из прода, почта переключена на `log`. Доступ закрыт basic-auth (логин `bizzio`). В `Caddyfile` добавлен блок `test.bizzio.ru` с авто-TLS.
+- **CI/CD (`.github/workflows/ci.yml`):** джобы Tests / Pint / Assets на PR и push; деплой-джобы на push в `develop` (→ test) и `main` (→ prod, через GitHub Environment `production` с ручным аппрувом). Деплой по SSH выделенным ключом, общий скрипт `scripts/deploy.sh`. Включена защита веток `develop`/`main` (обязательные проверки).
+- **Чистка перед зелёным CI:** прогнал Pint по всему репо (148 файлов, только формат); пересобрал устаревший `public/build` (прод отдавал старый CSS); исправил предсуществующие падающие тесты (стало 241 passed).
+
+**Причина падавших тестов (для истории):**
+- `SCOUT_DRIVER` в `.env.example` = `null` → все Scout-поиски возвращали пусто. Добавил `SCOUT_DRIVER=collection` в `phpunit.xml`.
+- `MAIL_FROM_ADDRESS` пуст в тест-окружении → любое уведомление/событие с письмом падало с «email must have a From header» (в т.ч. создание компании → 500). Добавил `MAIL_FROM_ADDRESS` в `phpunit.xml`.
+- `GET /login` теперь редиректит на модалку `/#login-form` — обновил устаревший Breeze-тест.
+- Комментарии к проекту доступны только участникам; фабрика не добавляет создателя в участники (в отличие от `ProjectController`) — тесты добавляют участника явно.
+
+**Изменённые/созданные файлы:**
+- `.github/workflows/ci.yml` — пайплайн CI/CD
+- `scripts/deploy.sh` — общий скрипт деплоя
+- `phpunit.xml` — `SCOUT_DRIVER`, `MAIL_FROM_ADDRESS`
+- `tests/Feature/Auth/AuthenticationTest.php`, `tests/Feature/ProjectTest.php` — фиксы тестов
+- `public/build/*` — пересборка ассетов
+- 148 PHP-файлов — форматирование Pint
+- `docker-compose.override.yml` — снят с git-трекинга (был и в .gitignore, и закоммичен)
+- `CLAUDE.md` — секция CI/CD, Caddy вместо nginx-proxy
