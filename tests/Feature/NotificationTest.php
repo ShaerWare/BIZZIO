@@ -21,6 +21,24 @@ class NotificationTest extends TestCase
         $this->user = User::factory()->create();
     }
 
+    public function test_event_creates_exactly_one_notification(): void
+    {
+        // Regression for #143: listeners were registered both manually in
+        // AppServiceProvider AND auto-discovered by Laravel, so every event
+        // fired its listener twice and stored two identical notifications.
+        $sender = User::factory()->create();
+        $receiver = User::factory()->create();
+        $friendship = \App\Models\Friendship::create([
+            'sender_id' => $sender->id,
+            'receiver_id' => $receiver->id,
+            'status' => 'pending',
+        ]);
+
+        \App\Events\FriendRequestSent::dispatch($friendship);
+
+        $this->assertCount(1, $receiver->fresh()->notifications);
+    }
+
     public function test_user_can_view_notifications_page(): void
     {
         $response = $this->actingAs($this->user)

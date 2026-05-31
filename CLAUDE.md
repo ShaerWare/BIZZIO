@@ -113,7 +113,7 @@ php artisan tinker
 ```
 app/
 ├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, *ProtocolService, NewsFilterService
-├── Events/         # Domain events (registered in AppServiceProvider@registerEventListeners)
+├── Events/         # Domain events (listeners auto-discovered from app/Listeners)
 ├── Listeners/      # Send*Notification handlers
 ├── Jobs/           # CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, NotifyAdminOnRSSErrorJob
 ├── Policies/       # RfqPolicy, AuctionPolicy (registered via Gate::policy in AppServiceProvider)
@@ -124,7 +124,7 @@ app/
 ```
 
 ### Event-Driven Architecture
-All event→listener mappings are registered in `AppServiceProvider@registerEventListeners()`. Pattern: domain `Event` classes in `app/Events/` are handled by `Send*Notification` listeners in `app/Listeners/`. Check that method for the authoritative list.
+Event→listener wiring uses Laravel's **automatic listener discovery** (Laravel 11+): each `Send*Notification` listener in `app/Listeners/` is auto-registered for the event its `handle()` type-hints. Do NOT also register them manually with `Event::listen` — that double-registers the listener and fires it twice (see #143). Pattern: domain `Event` classes in `app/Events/` → `Send*Notification` listeners in `app/Listeners/`.
 
 ### Key Packages
 - `orchid/platform` — Admin panel
