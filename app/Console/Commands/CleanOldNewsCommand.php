@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 class CleanOldNewsCommand extends Command
 {
     protected $signature = 'news:clean-old';
+
     protected $description = 'Удаление новостей старше 1 месяца';
 
     public function handle()

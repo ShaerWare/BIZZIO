@@ -2,8 +2,8 @@
 
 namespace App\Orchid\Screens;
 
-use App\Models\Rfq;
 use App\Models\Company;
+use App\Models\Rfq;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\DateTimer;
@@ -26,7 +26,6 @@ class RfqEditScreen extends Screen
     /**
      * Query data.
      *
-     * @param Rfq $rfq
      * @return array
      */
     public function query(Rfq $rfq): iterable
@@ -40,25 +39,21 @@ class RfqEditScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return $this->rfq->exists 
-            ? 'Редактировать RFQ: ' . $this->rfq->number 
+        return $this->rfq->exists
+            ? 'Редактировать RFQ: '.$this->rfq->number
             : 'Создать новый RFQ';
     }
 
     /**
      * Display header description.
-     *
-     * @return string|null
      */
     public function description(): ?string
     {
-        return $this->rfq->exists 
-            ? $this->rfq->title 
+        return $this->rfq->exists
+            ? $this->rfq->title
             : 'Размещение нового запроса цен';
     }
 
@@ -73,7 +68,7 @@ class RfqEditScreen extends Screen
             Button::make('Сохранить')
                 ->icon('check')
                 ->method('createOrUpdate')
-                ->canSee(!$this->rfq->exists),
+                ->canSee(! $this->rfq->exists),
 
             Button::make('Обновить')
                 ->icon('note')
@@ -212,8 +207,6 @@ class RfqEditScreen extends Screen
     /**
      * Create or update RFQ.
      *
-     * @param Request $request
-     * @param Rfq $rfq
      * @return \Illuminate\Http\RedirectResponse
      */
     public function createOrUpdate(Request $request, Rfq $rfq)
@@ -232,19 +225,20 @@ class RfqEditScreen extends Screen
         ]);
 
         // Проверка суммы весов
-        $totalWeight = $request->input('rfq.weight_price') 
-            + $request->input('rfq.weight_deadline') 
+        $totalWeight = $request->input('rfq.weight_price')
+            + $request->input('rfq.weight_deadline')
             + $request->input('rfq.weight_advance');
 
         if (abs($totalWeight - 100) > 0.01) {
             Alert::error('Сумма весов критериев должна быть равна 100%');
+
             return back();
         }
 
         $rfqData = $request->get('rfq');
 
         // Генерация номера для нового RFQ
-        if (!$rfq->exists) {
+        if (! $rfq->exists) {
             $rfqData['number'] = Rfq::generateNumber();
             $rfqData['created_by'] = auth()->id();
         }
@@ -258,7 +252,7 @@ class RfqEditScreen extends Screen
                 ->toMediaCollection('technical_specification');
         }
 
-        Alert::info('RFQ успешно ' . ($rfq->wasRecentlyCreated ? 'создан' : 'обновлён'));
+        Alert::info('RFQ успешно '.($rfq->wasRecentlyCreated ? 'создан' : 'обновлён'));
 
         return redirect()->route('platform.rfqs.list');
     }
@@ -266,13 +260,13 @@ class RfqEditScreen extends Screen
     /**
      * Remove RFQ.
      *
-     * @param Rfq $rfq
      * @return \Illuminate\Http\RedirectResponse
      */
     public function remove(Rfq $rfq)
     {
         if ($rfq->status !== 'draft') {
             Alert::error('Можно удалить только черновики');
+
             return back();
         }
 

@@ -15,29 +15,29 @@ class StoreAuctionBidRequest extends FormRequest
     public function rules(): array
     {
         $auction = $this->route('auction');
-        
+
         $rules = [
             'company_id' => 'required|exists:companies,id',
             'comment' => 'nullable|string|max:1000',
             'acknowledgement' => 'required|accepted',
         ];
-        
+
         // Для торгов цена обязательна и должна быть в допустимом диапазоне
         if ($auction && $auction->isTrading()) {
             $currentPrice = $auction->getCurrentPrice();
             $stepRange = $auction->getStepRange();
-            
+
             $rules['price'] = [
                 'required',
                 'numeric',
-                'min:' . ($currentPrice - $stepRange['max']),
-                'max:' . ($currentPrice - $stepRange['min']),
+                'min:'.($currentPrice - $stepRange['max']),
+                'max:'.($currentPrice - $stepRange['min']),
             ];
         } else {
             // Для заявок цена НЕ обязательна (используется стартовая)
             $rules['price'] = 'nullable|numeric|min:0';
         }
-        
+
         return $rules;
     }
 
@@ -50,8 +50,8 @@ class StoreAuctionBidRequest extends FormRequest
             'acknowledgement.accepted' => 'Необходимо принять условия проведения аукциона.',
             'price.required' => 'Необходимо указать цену ставки.',
             'price.numeric' => 'Цена должна быть числом.',
-            'price.min' => 'Ставка слишком низкая. Минимальная цена: :min ' . ($this->route('auction')?->currency_symbol ?? '₽'),
-            'price.max' => 'Ставка слишком высокая. Максимальная цена: :max ' . ($this->route('auction')?->currency_symbol ?? '₽'),
+            'price.min' => 'Ставка слишком низкая. Минимальная цена: :min '.($this->route('auction')?->currency_symbol ?? '₽'),
+            'price.max' => 'Ставка слишком высокая. Максимальная цена: :max '.($this->route('auction')?->currency_symbol ?? '₽'),
             'comment.max' => 'Комментарий не может быть длиннее 1000 символов.',
         ];
     }

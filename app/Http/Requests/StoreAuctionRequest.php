@@ -14,13 +14,13 @@ class StoreAuctionRequest extends FormRequest
     {
         // Только модераторы компаний могут создавать аукционы
         $companyId = $this->input('company_id');
-        
-        if (!$companyId) {
+
+        if (! $companyId) {
             return false;
         }
-        
+
         $company = \App\Models\Company::find($companyId);
-        
+
         return $company && $company->isModerator(auth()->user());
     }
 

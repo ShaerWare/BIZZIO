@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Company;
 use App\Models\Project;
+use App\Models\User;
 use App\Notifications\ProjectInvitationNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

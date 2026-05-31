@@ -25,7 +25,7 @@ class YandexProvider extends AbstractProvider
     {
         $response = $this->getHttpClient()->get('https://login.yandex.ru/info', [
             'headers' => [
-                'Authorization' => 'OAuth ' . $token,
+                'Authorization' => 'OAuth '.$token,
             ],
             'query' => [
                 'format' => 'json',
@@ -42,7 +42,7 @@ class YandexProvider extends AbstractProvider
             'name' => $user['display_name'] ?? $user['real_name'] ?? $user['login'],
             'email' => $user['default_email'] ?? null,
             'avatar' => isset($user['default_avatar_id'])
-                ? 'https://avatars.yandex.net/get-yapic/' . $user['default_avatar_id'] . '/islands-200'
+                ? 'https://avatars.yandex.net/get-yapic/'.$user['default_avatar_id'].'/islands-200'
                 : null,
         ]);
     }

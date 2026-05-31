@@ -16,7 +16,7 @@ return new class extends Migration
             $table->index('created_at');
             $table->index(['subject_type', 'subject_id']);
             $table->index(['causer_type', 'causer_id']);
-            
+
             // Составной индекс для частых запросов
             $table->index(['subject_type', 'created_at']);
         });

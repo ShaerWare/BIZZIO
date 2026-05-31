@@ -112,10 +112,10 @@ class AuctionListScreen extends Screen
                         return Link::make('Ред.')
                             ->icon('pencil')
                             ->route('platform.auctions.edit', $auction)
-                            ->class('btn btn-sm btn-link') .
+                            ->class('btn btn-sm btn-link').
                         Button::make('Удалить')
                             ->icon('trash')
-                            ->confirm('Вы уверены, что хотите удалить аукцион «' . $auction->number . '»?')
+                            ->confirm('Вы уверены, что хотите удалить аукцион «'.$auction->number.'»?')
                             ->method('remove', ['auction' => $auction->id])
                             ->class('btn btn-sm btn-link text-danger');
                     }),
@@ -131,6 +131,6 @@ class AuctionListScreen extends Screen
         $auction = Auction::findOrFail($request->get('auction'));
         $auction->delete();
 
-        \Orchid\Support\Facades\Toast::info('Аукцион «' . $auction->number . '» удалён.');
+        \Orchid\Support\Facades\Toast::info('Аукцион «'.$auction->number.'» удалён.');
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\News;
 use App\Models\RSSSource;
 use App\Services\NewsFilterService;
 use Illuminate\Http\Request;
@@ -42,8 +41,8 @@ class NewsController extends Controller
         $sources = RSSSource::orderBy('name')->get();
 
         // Ключевые слова пользователя (если залогинен)
-        $userKeywords = auth()->check() 
-            ? auth()->user()->keywords()->pluck('keyword')->toArray() 
+        $userKeywords = auth()->check()
+            ? auth()->user()->keywords()->pluck('keyword')->toArray()
             : [];
 
         return view('news.index', compact('news', 'sources', 'filters', 'userKeywords'));

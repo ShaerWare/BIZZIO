@@ -89,9 +89,6 @@ class RSSSourceEditScreen extends Screen
     }
 
     /**
-     * @param RSSSource $source
-     * @param Request   $request
-     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function save(RSSSource $source, Request $request)
@@ -111,8 +108,6 @@ class RSSSourceEditScreen extends Screen
     }
 
     /**
-     * @param RSSSource $source
-     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function remove(RSSSource $source)

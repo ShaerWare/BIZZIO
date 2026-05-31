@@ -81,7 +81,7 @@ class CompanyJoinRequest extends Model
     public function canReview(User $user): bool
     {
         // Загружаем связь company если она ещё не загружена
-        if (!$this->relationLoaded('company')) {
+        if (! $this->relationLoaded('company')) {
             $this->load('company');
         }
 

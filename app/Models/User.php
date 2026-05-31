@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -299,7 +299,7 @@ class User extends Orchid
         $friendIds = $this->friends()->pluck('id')->toArray();
 
         if (empty($friendIds)) {
-            return new \Illuminate\Database\Eloquent\Collection();
+            return new \Illuminate\Database\Eloquent\Collection;
         }
 
         // Находим друзей друзей
@@ -317,7 +317,7 @@ class User extends Orchid
             ->reject(fn ($id) => $id === $this->id);
 
         if ($fofIds->isEmpty()) {
-            return new \Illuminate\Database\Eloquent\Collection();
+            return new \Illuminate\Database\Eloquent\Collection;
         }
 
         return User::whereIn('id', $fofIds)

@@ -22,7 +22,7 @@ return new class extends Migration
 
             // Уникальность: один активный запрос на компанию от пользователя
             $table->unique(['company_id', 'user_id', 'status'], 'unique_pending_request');
-            
+
             // Индексы
             $table->index(['company_id', 'status']);
             $table->index('user_id');

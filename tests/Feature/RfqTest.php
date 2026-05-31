@@ -2,25 +2,24 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Jobs\CloseRfqJob;
 use App\Models\Company;
 use App\Models\Rfq;
 use App\Models\RfqBid;
-use App\Models\RfqInvitation;
+use App\Models\User;
 use App\Services\RfqScoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\CloseRfqJob;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class RfqTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
+
     protected Company $company;
 
     protected function setUp(): void
@@ -498,7 +497,7 @@ class RfqTest extends TestCase
             ]);
         }
 
-        $scoringService = new RfqScoringService();
+        $scoringService = new RfqScoringService;
         $scoringService->calculateScores($rfq);
 
         // Проверяем, что у всех заявок есть баллы
@@ -545,7 +544,7 @@ class RfqTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $scoringService = new RfqScoringService();
+        $scoringService = new RfqScoringService;
         $scoringService->calculateScores($rfq);
 
         $bid1->refresh();
@@ -644,7 +643,7 @@ class RfqTest extends TestCase
 
         // Добавляем техническое задание напрямую через модель (требуется для активации)
         // Используем реальный путь к файлу чтобы Media Library принял его
-        $tempFile = tempnam(sys_get_temp_dir(), 'tz_') . '.pdf';
+        $tempFile = tempnam(sys_get_temp_dir(), 'tz_').'.pdf';
         file_put_contents($tempFile, '%PDF-1.4 test technical specification content');
         $rfq->addMedia($tempFile)->toMediaCollection('technical_specification');
 

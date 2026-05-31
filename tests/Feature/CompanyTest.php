@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Company;
-use App\Models\Industry;
 use App\Models\CompanyJoinRequest;
+use App\Models\Industry;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +16,7 @@ class CompanyTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Industry $industry;
 
     protected function setUp(): void
@@ -522,7 +523,7 @@ class CompanyTest extends TestCase
             'is_verified' => true,
         ]);
 
-        $response = $this->get('/companies/' . $company->slug);
+        $response = $this->get('/companies/'.$company->slug);
 
         $response->assertStatus(200);
     }

@@ -26,7 +26,7 @@ class RfqPolicy
         }
 
         // Закрытые RFQ доступны только организатору и приглашённым компаниям
-        return $rfq->canManage($user) 
+        return $rfq->canManage($user)
             || $rfq->invitations()->whereHas('company.moderators', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })->exists();

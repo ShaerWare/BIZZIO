@@ -8,16 +8,11 @@ use Orchid\Platform\Dashboard;
 use Orchid\Platform\ItemPermission;
 use Orchid\Platform\OrchidServiceProvider;
 use Orchid\Screen\Actions\Menu;
-use Orchid\Support\Color;
 
 class PlatformProvider extends OrchidServiceProvider
 {
     /**
      * Bootstrap the application services.
-     *
-     * @param Dashboard $dashboard
-     *
-     * @return void
      */
     public function boot(Dashboard $dashboard): void
     {
@@ -66,14 +61,14 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Новости')
                 ->icon('feed')
                 ->route('platform.systems.news')
-                //->permission('platform.systems.news')
+                // ->permission('platform.systems.news')
                 ->title('Контент'),
 
             Menu::make('RSS-источники')
                 ->icon('globe')
                 ->route('platform.systems.rss-sources')
-                //->permission('platform.systems.rss-sources')
-                ,
+            // ->permission('platform.systems.rss-sources')
+            ,
 
             Menu::make('Статус проекта по ТЗ')
                 ->title('Документация')

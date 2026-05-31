@@ -2,24 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Company;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
+use App\Models\Company;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\CloseAuctionJob;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class AuctionTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
+
     protected Company $company;
 
     protected function setUp(): void
@@ -380,7 +378,7 @@ class AuctionTest extends TestCase
         // На странице не должна отображаться форма подачи заявки для организатора
         // Проверяем что компания организатора не в списке доступных компаний
         $response->assertViewHas('userCompanies', function ($companies) {
-            return $companies->isEmpty() || !$companies->contains('id', $this->company->id);
+            return $companies->isEmpty() || ! $companies->contains('id', $this->company->id);
         });
     }
 

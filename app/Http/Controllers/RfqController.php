@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreRfqRequest;
+use App\Http\Requests\UpdateRfqRequest;
+use App\Jobs\CloseRfqJob;
+use App\Models\Company;
 use App\Models\Rfq;
 use App\Models\RfqBid;
 use App\Models\RfqInvitation;
-use App\Models\Company;
-use App\Http\Requests\StoreRfqRequest;
-use App\Http\Requests\UpdateRfqRequest;
-use App\Http\Requests\StoreBidRequest;
-use App\Jobs\CloseRfqJob;
+use App\Traits\HandlesTempUploads;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use App\Traits\HandlesTempUploads;
 
 class RfqController extends Controller
 {
     use AuthorizesRequests, HandlesTempUploads;
-     
+
     /**
      * Каталог RFQ
      */
@@ -33,7 +32,7 @@ class RfqController extends Controller
             $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
             $query->where(function ($q) use ($userCompanies) {
                 $q->where('status', '!=', 'draft')
-                  ->orWhereIn('company_id', $userCompanies);
+                    ->orWhereIn('company_id', $userCompanies);
             });
         } else {
             $query->where('status', '!=', 'draft');
@@ -134,15 +133,16 @@ class RfqController extends Controller
             DB::commit();
 
             // ✅ РАЗНЫЕ СООБЩЕНИЯ В ЗАВИСИМОСТИ ОТ СТАТУСА
-            $message = $rfq->status === 'active' 
-                ? 'Запрос цен создан и активирован. Приём заявок открыт!' 
+            $message = $rfq->status === 'active'
+                ? 'Запрос цен создан и активирован. Приём заявок открыт!'
                 : 'Запрос цен создан как черновик. Активируйте его для начала приёма заявок.';
 
             return redirect()->route('rfqs.show', $rfq)
                 ->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Ошибка при создании: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Ошибка при создании: '.$e->getMessage());
         }
     }
 
@@ -155,7 +155,7 @@ class RfqController extends Controller
         $rfq->load([
             'company.industry',
             'bids.company',
-            'invitations.company'
+            'invitations.company',
         ]);
 
         // Проверка доступа к закрытым RFQ
@@ -165,7 +165,7 @@ class RfqController extends Controller
                        $rfq->invitations()->whereIn('company_id', auth()->user()->moderatedCompanies->pluck('id'))->exists()
                    ));
 
-        if (!$canView) {
+        if (! $canView) {
             abort(403, 'У вас нет доступа к этому запросу цен.');
         }
 
@@ -174,14 +174,14 @@ class RfqController extends Controller
         $userCompanies = auth()->check() ? auth()->user()->moderatedCompanies : collect();
         $alreadyBid = false;
 
-        if ($rfq->isActive() && !$rfq->isExpired()) {
+        if ($rfq->isActive() && ! $rfq->isExpired()) {
             if ($rfq->type === 'open') {
                 // Открытая процедура: любая компания пользователя (кроме организатора)
                 foreach ($userCompanies as $company) {
                     if ($company->id !== $rfq->company_id) {
                         // Проверяем, не подана ли уже заявка от этой компании
                         $bidExists = $rfq->bids()->where('company_id', $company->id)->exists();
-                        if (!$bidExists) {
+                        if (! $bidExists) {
                             $canBid = true;
                             break;
                         } else {
@@ -199,7 +199,7 @@ class RfqController extends Controller
                 foreach ($invitedCompanyIds as $companyId) {
                     // Проверяем, не подана ли уже заявка от этой компании
                     $bidExists = $rfq->bids()->where('company_id', $companyId)->exists();
-                    if (!$bidExists) {
+                    if (! $bidExists) {
                         $canBid = true;
                         break;
                     } else {
@@ -215,17 +215,17 @@ class RfqController extends Controller
             if ($rfq->type === 'open') {
                 $availableCompanies = $userCompanies->filter(function ($company) use ($rfq) {
                     return $company->id !== $rfq->company_id &&
-                           !$rfq->bids()->where('company_id', $company->id)->exists();
+                           ! $rfq->bids()->where('company_id', $company->id)->exists();
                 });
             } else {
                 $invitedIds = $rfq->invitations()
                     ->whereIn('company_id', $userCompanies->pluck('id'))
                     ->pluck('company_id')
                     ->toArray();
-                
+
                 $availableCompanies = $userCompanies->filter(function ($company) use ($invitedIds, $rfq) {
                     return in_array($company->id, $invitedIds) &&
-                           !$rfq->bids()->where('company_id', $company->id)->exists();
+                           ! $rfq->bids()->where('company_id', $company->id)->exists();
                 });
             }
         }
@@ -277,7 +277,8 @@ class RfqController extends Controller
                 ->with('success', 'Запрос цен обновлён');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Ошибка при обновлении: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Ошибка при обновлении: '.$e->getMessage());
         }
     }
 
@@ -307,7 +308,7 @@ class RfqController extends Controller
                 'company_id' => $request->company_id,
                 'user_id' => auth()->id(),
                 'price' => $request->price,
-                'deadline' => $request->deadline, 
+                'deadline' => $request->deadline,
                 'advance_percent' => $request->advance_percent,
                 'comment' => $request->comment,
                 'status' => 'pending',
@@ -319,7 +320,8 @@ class RfqController extends Controller
                 ->with('success', 'Заявка подана успешно');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Ошибка при подаче заявки: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Ошибка при подаче заявки: '.$e->getMessage());
         }
     }
 
@@ -329,7 +331,7 @@ class RfqController extends Controller
     public function storeInvitation(Request $request, Rfq $rfq)
     {
         // Проверка: пользователь может управлять RFQ
-        if (!$rfq->canManage(auth()->user())) {
+        if (! $rfq->canManage(auth()->user())) {
             return response()->json(['error' => 'Недостаточно прав'], 403);
         }
 
@@ -410,7 +412,7 @@ class RfqController extends Controller
     public function myInvitations()
     {
         $userCompanyIds = auth()->user()->moderatedCompanies->pluck('id');
-        
+
         $invitations = RfqInvitation::with(['rfq.company', 'company'])
             ->whereIn('company_id', $userCompanyIds)
             ->whereHas('rfq', function ($query) {
@@ -418,7 +420,7 @@ class RfqController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-        
+
         return view('rfqs.my-invitations', compact('invitations'));
     }
 
@@ -434,7 +436,7 @@ class RfqController extends Controller
         }
 
         // Проверка готовности RFQ
-        if (!$rfq->hasMedia('technical_specification')) {
+        if (! $rfq->hasMedia('technical_specification')) {
             return back()->with('error', 'Загрузите техническое задание перед активацией');
         }
 
@@ -453,7 +455,8 @@ class RfqController extends Controller
                 ->with('success', 'RFQ успешно активирован! Приём заявок открыт.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Ошибка при активации: ' . $e->getMessage());
+
+            return back()->with('error', 'Ошибка при активации: '.$e->getMessage());
         }
     }
 }

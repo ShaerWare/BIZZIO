@@ -64,7 +64,7 @@ class AuctionBid extends Model
     public function canManage(User $user): bool
     {
         // Автор ставки или модератор компании или админ
-        return $this->user_id === $user->id 
+        return $this->user_id === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.auctions');
     }

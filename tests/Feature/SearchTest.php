@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Company;
-use App\Models\Project;
 use App\Models\Industry;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -181,4 +181,3 @@ class SearchTest extends TestCase
         $this->assertTrue(route('search.quick') !== null);
     }
 }
-

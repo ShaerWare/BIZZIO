@@ -17,6 +17,7 @@ class NotifyAdminOnRSSErrorJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $source;
+
     public $errorMessage;
 
     /**
@@ -40,6 +41,7 @@ class NotifyAdminOnRSSErrorJob implements ShouldQueue
 
         if ($admins->isEmpty()) {
             Log::warning('Нет администраторов для отправки уведомления об ошибке RSS');
+
             return;
         }
 
@@ -47,7 +49,7 @@ class NotifyAdminOnRSSErrorJob implements ShouldQueue
             try {
                 // В продакшене здесь будет отправка email
                 // Mail::to($admin->email)->send(new RSSErrorMail($this->source, $this->errorMessage));
-                
+
                 // Для разработки — просто логируем
                 Log::info("Уведомление админу {$admin->email}: Ошибка парсинга RSS-источника {$this->source->name}", [
                     'source_url' => $this->source->url,

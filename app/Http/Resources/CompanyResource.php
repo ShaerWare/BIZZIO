@@ -33,13 +33,13 @@ class CompanyResource extends JsonResource
                 'name' => $this->creator->name,
                 'email' => $this->creator->email,
             ],
-            'moderators' => $this->moderators->map(fn($user) => [
+            'moderators' => $this->moderators->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->pivot->role,
             ]),
-            'documents' => $this->getMedia('documents')->map(fn($media) => [
+            'documents' => $this->getMedia('documents')->map(fn ($media) => [
                 'id' => $media->id,
                 'name' => $media->name,
                 'file_name' => $media->file_name,

@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateRfqRequest extends FormRequest
 {
@@ -13,6 +12,7 @@ class UpdateRfqRequest extends FormRequest
     public function authorize(): bool
     {
         $rfq = $this->route('rfq');
+
         return $rfq && $rfq->canManage($this->user());
     }
 
@@ -26,7 +26,7 @@ class UpdateRfqRequest extends FormRequest
         return [
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'end_date' => ['sometimes', 'required', 'date', 'after:' . $this->route('rfq')->start_date],
+            'end_date' => ['sometimes', 'required', 'date', 'after:'.$this->route('rfq')->start_date],
             'technical_specification' => 'nullable|file|mimes:pdf|max:10240',
             'technical_specification_temp' => 'nullable|string',
             'is_results_hidden' => 'nullable|boolean',

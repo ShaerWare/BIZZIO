@@ -2,17 +2,18 @@
 
 namespace App\Notifications;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class TenderInvitationNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public Model $tender;
+
     public string $tenderType;
 
     /**
@@ -38,17 +39,17 @@ class TenderInvitationNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $tenderTypeName = $this->tenderType === 'rfq' ? 'Запрос цен' : 'Аукцион';
-        $route = $this->tenderType === 'rfq' 
-            ? route('rfqs.show', $this->tender) 
+        $route = $this->tenderType === 'rfq'
+            ? route('rfqs.show', $this->tender)
             : route('auctions.show', $this->tender);
 
         return (new MailMessage)
-            ->subject("Приглашение в {$tenderTypeName}: " . $this->tender->title)
+            ->subject("Приглашение в {$tenderTypeName}: ".$this->tender->title)
             ->greeting('Здравствуйте!')
             ->line("Вашу компанию пригласили принять участие в процедуре: {$tenderTypeName}.")
-            ->line('**Номер:** ' . $this->tender->number)
-            ->line('**Название:** ' . $this->tender->title)
-            ->line('**Организатор:** ' . $this->tender->company->name)
+            ->line('**Номер:** '.$this->tender->number)
+            ->line('**Название:** '.$this->tender->title)
+            ->line('**Организатор:** '.$this->tender->company->name)
             ->action("Просмотреть {$tenderTypeName}", $route)
             ->line('Спасибо за использование Bizzo.ru!');
     }
@@ -65,8 +66,8 @@ class TenderInvitationNotification extends Notification implements ShouldQueue
             'tender_number' => $this->tender->number,
             'tender_title' => $this->tender->title,
             'company_name' => $this->tender->company->name,
-            'url' => $this->tenderType === 'rfq' 
-                ? route('rfqs.show', $this->tender) 
+            'url' => $this->tenderType === 'rfq'
+                ? route('rfqs.show', $this->tender)
                 : route('auctions.show', $this->tender),
         ];
     }

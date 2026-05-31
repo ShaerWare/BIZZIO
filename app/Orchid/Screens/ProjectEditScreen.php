@@ -2,20 +2,20 @@
 
 namespace App\Orchid\Screens;
 
-use App\Models\Project;
 use App\Models\Company;
+use App\Models\Project;
 use Illuminate\Http\Request;
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\Button;
-use Orchid\Support\Facades\Layout;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Fields\Quill;
-use Orchid\Screen\Fields\DateTimer;
-use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Fields\Picture;
-use Orchid\Screen\Fields\CheckBox;
-use Orchid\Support\Facades\Toast;
 use Illuminate\Support\Str;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\DateTimer;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Picture;
+use Orchid\Screen\Fields\Quill;
+use Orchid\Screen\Fields\Select;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Layout;
+use Orchid\Support\Facades\Toast;
 
 class ProjectEditScreen extends Screen
 {
@@ -30,14 +30,14 @@ class ProjectEditScreen extends Screen
     public function query(Project $project): iterable
     {
         // Проверка прав: только модератор компании-заказчика или админ
-        if ($project->exists && !$project->canManage(auth()->user())) {
+        if ($project->exists && ! $project->canManage(auth()->user())) {
             abort(403, 'У вас нет прав для редактирования этого проекта.');
         }
 
         $project->load(['company', 'participants']);
 
         return [
-            'project' => $project
+            'project' => $project,
         ];
     }
 
@@ -54,8 +54,8 @@ class ProjectEditScreen extends Screen
      */
     public function description(): ?string
     {
-        return $this->project->exists 
-            ? 'Редактирование проекта: ' . $this->project->name 
+        return $this->project->exists
+            ? 'Редактирование проекта: '.$this->project->name
             : 'Создание нового проекта';
     }
 
@@ -155,8 +155,9 @@ class ProjectEditScreen extends Screen
     public function save(Request $request, Project $project)
     {
         // Проверка прав при редактировании существующего проекта
-        if ($project->exists && !$project->canManage(auth()->user())) {
+        if ($project->exists && ! $project->canManage(auth()->user())) {
             Toast::error('У вас нет прав для редактирования этого проекта.');
+
             return redirect()->route('platform.projects');
         }
 
@@ -172,7 +173,7 @@ class ProjectEditScreen extends Screen
         ]);
 
         // Если проект продолжается, убираем дату окончания
-        if (!empty($data['is_ongoing'])) {
+        if (! empty($data['is_ongoing'])) {
             $data['end_date'] = null;
         }
 
@@ -190,7 +191,7 @@ class ProjectEditScreen extends Screen
         $project->fill($data)->save();
 
         // Синхронизация участников (если указаны)
-        if (!empty($data['participants'])) {
+        if (! empty($data['participants'])) {
             $project->participants()->sync($data['participants']);
         }
 
@@ -205,8 +206,9 @@ class ProjectEditScreen extends Screen
     public function remove(Project $project)
     {
         // Проверка прав
-        if (!$project->canManage(auth()->user())) {
+        if (! $project->canManage(auth()->user())) {
             Toast::error('У вас нет прав для удаления этого проекта.');
+
             return redirect()->route('platform.projects');
         }
 

@@ -4,17 +4,17 @@ namespace App\Orchid\Screens;
 
 use App\Models\Auction;
 use App\Models\Company;
-use Orchid\Screen\Screen;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Fields\DateTimer;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\TextArea;
-use Orchid\Screen\Fields\DateTimer;
 use Orchid\Screen\Fields\Upload;
-use Orchid\Screen\Actions\Button;
-use Orchid\Support\Facades\Layout;
+use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
-use Illuminate\Http\Request;
 
 class AuctionEditScreen extends Screen
 {
@@ -47,7 +47,7 @@ class AuctionEditScreen extends Screen
             Button::make('Сохранить')
                 ->icon('check')
                 ->method('save')
-                ->canSee(!$this->auction->exists),
+                ->canSee(! $this->auction->exists),
 
             Button::make('Обновить')
                 ->icon('note')
@@ -158,16 +158,16 @@ class AuctionEditScreen extends Screen
     public function save(Request $request, Auction $auction)
     {
         $data = $request->get('auction');
-        
-        if (!$auction->exists) {
+
+        if (! $auction->exists) {
             $data['number'] = Auction::generateNumber();
             $data['created_by'] = auth()->id();
         }
-        
+
         $auction->fill($data)->save();
-        
+
         Toast::info('Аукцион успешно сохранён.');
-        
+
         return redirect()->route('platform.auctions.list');
     }
 

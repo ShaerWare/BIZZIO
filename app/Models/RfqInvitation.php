@@ -10,8 +10,8 @@ use Orchid\Screen\AsSource;
 
 class RfqInvitation extends Model
 {
-    use HasFactory;
     use AsSource, Filterable;
+    use HasFactory;
 
     protected $fillable = [
         'rfq_id',

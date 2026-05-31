@@ -6,12 +6,10 @@ use App\Http\Requests\UpdateCompanyOrchidRequest;
 use App\Models\Company;
 use App\Models\Industry;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Relation;
-use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Fields\Upload;
 use Orchid\Screen\Screen;
@@ -48,7 +46,7 @@ class CompanyEditScreen extends Screen
     public function description(): ?string
     {
         return $this->company->exists
-            ? 'Редактирование информации о компании: ' . $this->company->name
+            ? 'Редактирование информации о компании: '.$this->company->name
             : 'Создание новой компании';
     }
 
@@ -85,7 +83,7 @@ class CompanyEditScreen extends Screen
 
                 Input::make('company.inn')
                     ->title('ИНН')
-                    //->mask('9999999999')
+                    // ->mask('9999999999')
                     ->placeholder('1234567890')
                     ->required()
                     ->help('ИНН должен содержать 10 цифр'),
@@ -159,15 +157,16 @@ class CompanyEditScreen extends Screen
         // Очистка ИНН от всего лишнего (пробелы, подчёркивания, буквы)
         if (isset($data['inn'])) {
             $data['inn'] = preg_replace('/\D/', '', $data['inn']);
-            
+
             // Если после очистки длина != 10 — возвращаем ошибку
             if (strlen($data['inn']) !== 10) {
                 Alert::error('ИНН должен содержать ровно 10 цифр.');
+
                 return redirect()->back()->withInput();
             }
         }
 
-        if (!$company->exists) {
+        if (! $company->exists) {
             $data['created_by'] = auth()->id();
             $company = Company::create($data);
         } else {
@@ -178,7 +177,7 @@ class CompanyEditScreen extends Screen
         if ($request->hasFile('company.logo.0')) {
             $company->clearMediaCollection('logo');
             $company->addMediaFromRequest('company.logo.0')
-                    ->toMediaCollection('logo');
+                ->toMediaCollection('logo');
         }
 
         // Документы

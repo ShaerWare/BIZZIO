@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Comment;
 use App\Models\Company;
 use App\Models\Project;
-use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -16,6 +15,7 @@ class ProjectTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Company $company;
 
     protected function setUp(): void

@@ -13,7 +13,7 @@ class UpdateAuctionRequest extends FormRequest
     public function authorize(): bool
     {
         $auction = $this->route('auction');
-        
+
         // Только создатель или модератор компании может редактировать
         // И только если статус = 'draft'
         return $auction->status === 'draft' && $auction->canManage(auth()->user());

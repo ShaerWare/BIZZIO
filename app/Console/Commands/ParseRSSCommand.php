@@ -5,14 +5,14 @@ namespace App\Console\Commands;
 use App\Jobs\NotifyAdminOnRSSErrorJob;
 use App\Models\News;
 use App\Models\RSSSource;
-use Carbon\Carbon;
+use Feeds;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Feeds;
 
 class ParseRSSCommand extends Command
 {
     protected $signature = 'rss:parse';
+
     protected $description = 'Парсинг RSS-лент из всех включённых источников';
 
     public function handle()
@@ -23,6 +23,7 @@ class ParseRSSCommand extends Command
 
         if ($sources->isEmpty()) {
             $this->warn('⚠️ Нет включённых RSS-источников');
+
             return 0;
         }
 
@@ -35,15 +36,16 @@ class ParseRSSCommand extends Command
                 $interval = $source->parse_interval ?? 15;
                 if ($source->last_parsed_at && $source->last_parsed_at->diffInMinutes(now()) < $interval) {
                     $this->line("⏭️  Пропускаем {$source->name} (интервал {$interval} мин, последний парсинг: {$source->last_parsed_at->format('H:i')})");
+
                     continue;
                 }
 
                 $this->info("📡 Парсим: {$source->name} ({$source->url})");
 
                 $feed = Feeds::make($source->url);
-                
-                if (!$feed) {
-                    throw new \Exception("Не удалось загрузить RSS-ленту");
+
+                if (! $feed) {
+                    throw new \Exception('Не удалось загрузить RSS-ленту');
                 }
 
                 $items = $feed->get_items();
@@ -53,7 +55,7 @@ class ParseRSSCommand extends Command
                     try {
                         // Извлечение данных из RSS
                         $link = $item->get_permalink();
-                        
+
                         // Проверка на дубль
                         if (News::where('link', $link)->exists()) {
                             continue;
@@ -69,13 +71,13 @@ class ParseRSSCommand extends Command
                         }
 
                         // Валидация URL изображения
-                        if ($image && !filter_var($image, FILTER_VALIDATE_URL)) {
+                        if ($image && ! filter_var($image, FILTER_VALIDATE_URL)) {
                             $image = null;
                         }
 
                         // Дата публикации
                         $publishedAt = $item->get_date('Y-m-d H:i:s');
-                        if (!$publishedAt) {
+                        if (! $publishedAt) {
                             $publishedAt = now();
                         }
 
@@ -95,6 +97,7 @@ class ParseRSSCommand extends Command
                             'source' => $source->name,
                             'item_link' => $item->get_permalink() ?? 'unknown',
                         ]);
+
                         continue;
                     }
                 }
@@ -107,7 +110,7 @@ class ParseRSSCommand extends Command
 
             } catch (\Exception $e) {
                 $this->error("❌ Ошибка при парсинге {$source->name}: {$e->getMessage()}");
-                
+
                 Log::error("RSS Parse Error: {$source->name}", [
                     'url' => $source->url,
                     'error' => $e->getMessage(),
@@ -116,14 +119,15 @@ class ParseRSSCommand extends Command
 
                 // Отправка уведомления админу
                 NotifyAdminOnRSSErrorJob::dispatch($source, $e->getMessage());
-                
+
                 $totalErrors++;
+
                 continue;
             }
         }
 
         $this->info("🎉 Парсинг завершён. Всего добавлено: {$totalParsed} новостей. Ошибок: {$totalErrors}");
-        
+
         return 0;
     }
 }

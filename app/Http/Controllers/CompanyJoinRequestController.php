@@ -5,15 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\CompanyJoinRequest;
 use App\Notifications\JoinRequestNotification;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CompanyJoinRequestController extends Controller
 {
     use AuthorizesRequests;
 
-        /**
+    /**
      * Отображение списка моих запросов на присоединение
      */
     public function index()
@@ -23,9 +23,10 @@ class CompanyJoinRequestController extends Controller
             ->with(['company.industry'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-        
+
         return view('join-requests.index', compact('requests'));
     }
+
     /**
      * Отправить запрос на присоединение
      */
@@ -68,7 +69,7 @@ class CompanyJoinRequestController extends Controller
      */
     public function destroy(CompanyJoinRequest $joinRequest)
     {
-        if (!$joinRequest->canCancel(auth()->user())) {
+        if (! $joinRequest->canCancel(auth()->user())) {
             abort(403, 'Вы не можете отозвать этот запрос');
         }
 
@@ -82,7 +83,7 @@ class CompanyJoinRequestController extends Controller
      */
     public function approve(CompanyJoinRequest $joinRequest, Request $request)
     {
-        if (!$joinRequest->canReview(auth()->user())) {
+        if (! $joinRequest->canReview(auth()->user())) {
             abort(403, 'У вас нет прав для рассмотрения этого запроса');
         }
 
@@ -116,7 +117,8 @@ class CompanyJoinRequestController extends Controller
             return back()->with('success', "Запрос одобрен. Пользователь {$joinRequest->user->name} добавлен как модератор.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Ошибка при одобрении: ' . $e->getMessage());
+
+            return back()->with('error', 'Ошибка при одобрении: '.$e->getMessage());
         }
     }
 
@@ -125,7 +127,7 @@ class CompanyJoinRequestController extends Controller
      */
     public function reject(CompanyJoinRequest $joinRequest, Request $request)
     {
-        if (!$joinRequest->canReview(auth()->user())) {
+        if (! $joinRequest->canReview(auth()->user())) {
             abort(403, 'У вас нет прав для рассмотрения этого запроса');
         }
 

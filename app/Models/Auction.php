@@ -8,18 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable;
 use Orchid\Screen\AsSource;
-use Carbon\Carbon;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Auction extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, Searchable;
     use AsSource, Filterable, LogsActivity;
+    use HasFactory, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'number',
@@ -138,13 +137,13 @@ class Auction extends Model implements HasMedia
     {
         $prefix = 'А';
         $date = now()->format('ymd'); // ГГММДД
-        
+
         // Найти последний номер за сегодня (включая удалённые)
         $lastNumber = static::withTrashed()
             ->where('number', 'like', "{$prefix}-{$date}-%")
             ->orderBy('number', 'desc')
             ->value('number');
-        
+
         if ($lastNumber) {
             // Извлечь последний порядковый номер
             $lastSequence = (int) substr($lastNumber, -4);
@@ -153,7 +152,7 @@ class Auction extends Model implements HasMedia
             // Первый аукцион за сегодня
             $newSequence = 1;
         }
-        
+
         // Формат: А-ГГММДД-0001
         return sprintf('%s-%s-%04d', $prefix, $date, $newSequence);
     }
@@ -166,9 +165,9 @@ class Auction extends Model implements HasMedia
         do {
             // Генерируем случайный код (2 буквы + 2 цифры)
             $code = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2))
-                  . substr(str_shuffle('0123456789'), 0, 2);
+                  .substr(str_shuffle('0123456789'), 0, 2);
         } while (AuctionBid::where('anonymous_code', $code)->exists());
-        
+
         return $code;
     }
 
@@ -178,7 +177,7 @@ class Auction extends Model implements HasMedia
     public function canManage(User $user): bool
     {
         // Создатель или модератор компании-организатора или админ
-        return $this->created_by === $user->id 
+        return $this->created_by === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.auctions');
     }
@@ -188,8 +187,8 @@ class Auction extends Model implements HasMedia
      */
     public function isAcceptingApplications(): bool
     {
-        return $this->status === 'active' 
-        && $this->start_date->isPast() 
+        return $this->status === 'active'
+        && $this->start_date->isPast()
         && $this->end_date->isFuture();
     }
 
@@ -215,7 +214,7 @@ class Auction extends Model implements HasMedia
     public function getCurrentPrice(): float
     {
         $lastBid = $this->tradingBids()->first();
-        
+
         return $lastBid ? (float) $lastBid->price : (float) $this->starting_price;
     }
 
@@ -225,7 +224,7 @@ class Auction extends Model implements HasMedia
     public function getStepRange(): array
     {
         $currentPrice = $this->getCurrentPrice();
-        
+
         return [
             'min' => $currentPrice * 0.005, // 0.5%
             'max' => $currentPrice * 0.05,  // 5%
@@ -240,7 +239,7 @@ class Auction extends Model implements HasMedia
         $this->addMediaCollection('technical_specification')
             ->singleFile()
             ->acceptsMimeTypes(['application/pdf']);
-        
+
         $this->addMediaCollection('protocol')
             ->singleFile()
             ->acceptsMimeTypes(['application/pdf']);
@@ -282,7 +281,7 @@ class Auction extends Model implements HasMedia
         return $query->where(function ($q) use ($search) {
             $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
             $q->where('title', $op, "%{$search}%")
-              ->orWhere('number', $op, "%{$search}%");
+                ->orWhere('number', $op, "%{$search}%");
         });
     }
 
@@ -295,7 +294,7 @@ class Auction extends Model implements HasMedia
             ->logOnly(['title', 'number', 'status', 'type'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'разместил(а) аукцион',
                 'updated' => 'обновил(а) аукцион',
                 'deleted' => 'удалил(а) аукцион',

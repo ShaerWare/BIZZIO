@@ -2,24 +2,24 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Orchid\Filters\Filterable;
 use Orchid\Screen\AsSource;
-use Carbon\Carbon;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Rfq extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, Searchable;
     use AsSource, Filterable, LogsActivity;
+    use HasFactory, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'number',
@@ -113,21 +113,21 @@ class Rfq extends Model implements HasMedia
     public static function generateNumber(): string
     {
         $date = Carbon::now()->format('ymd'); // ГГММДД
-        $prefix = 'К-' . $date . '-';
-        
+        $prefix = 'К-'.$date.'-';
+
         // Находим последний номер за сегодня
-        $lastRfq = self::where('number', 'like', $prefix . '%')
+        $lastRfq = self::where('number', 'like', $prefix.'%')
             ->orderBy('number', 'desc')
             ->first();
-        
+
         if ($lastRfq) {
             $lastNumber = (int) substr($lastRfq->number, -4);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
-        
-        return $prefix . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -136,7 +136,7 @@ class Rfq extends Model implements HasMedia
     public function canManage(User $user): bool
     {
         // Создатель или модератор компании-организатора
-        return $this->created_by === $user->id 
+        return $this->created_by === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.rfqs');
     }
@@ -146,7 +146,7 @@ class Rfq extends Model implements HasMedia
      */
     public function isActive(): bool
     {
-        return $this->status === 'active' 
+        return $this->status === 'active'
             && Carbon::now()->between($this->start_date, $this->end_date);
     }
 
@@ -166,7 +166,7 @@ class Rfq extends Model implements HasMedia
         $this->addMediaCollection('technical_specification')
             ->singleFile()
             ->acceptsMimeTypes(['application/pdf']);
-        
+
         $this->addMediaCollection('protocol')
             ->singleFile()
             ->acceptsMimeTypes(['application/pdf']);
@@ -200,7 +200,7 @@ class Rfq extends Model implements HasMedia
         return $query->where(function ($q) use ($search) {
             $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
             $q->where('title', $op, "%{$search}%")
-              ->orWhere('number', $op, "%{$search}%");
+                ->orWhere('number', $op, "%{$search}%");
         });
     }
 
@@ -213,7 +213,7 @@ class Rfq extends Model implements HasMedia
             ->logOnly(['title', 'number', 'status', 'type'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'разместил(а) запрос цен',
                 'updated' => 'обновил(а) запрос цен',
                 'deleted' => 'удалил(а) запрос цен',

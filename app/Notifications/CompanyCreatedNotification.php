@@ -5,8 +5,8 @@ namespace App\Notifications;
 use App\Models\Company;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class CompanyCreatedNotification extends Notification implements ShouldQueue
 {
@@ -27,12 +27,12 @@ class CompanyCreatedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Новая компания: ' . $this->company->name)
+            ->subject('Новая компания: '.$this->company->name)
             ->greeting('Здравствуйте!')
             ->line('На платформе зарегистрирована новая компания.')
-            ->line('**Название:** ' . $this->company->name)
-            ->line('**ИНН:** ' . ($this->company->inn ?? '—'))
-            ->line('**Создатель:** ' . ($this->company->creator->name ?? '—'))
+            ->line('**Название:** '.$this->company->name)
+            ->line('**ИНН:** '.($this->company->inn ?? '—'))
+            ->line('**Создатель:** '.($this->company->creator->name ?? '—'))
             ->action('Верифицировать в админке', route('platform.companies.edit', $this->company))
             ->line('Пожалуйста, проверьте данные и верифицируйте компанию.');
     }

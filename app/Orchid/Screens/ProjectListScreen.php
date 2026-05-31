@@ -2,20 +2,19 @@
 
 namespace App\Orchid\Screens;
 
-use App\Models\Project;
 use App\Models\Company;
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\Link;
-use Orchid\Support\Facades\Layout;
-use Orchid\Screen\TD;
-use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Fields\Input;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
-use Orchid\Screen\Actions\DropDown;
-//use Orchid\Screen\Actions\Link;
-//use Orchid\Screen\Actions\DropDown;
-use Orchid\Support\Facades\Toast;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Select;
+use Orchid\Screen\Screen;
+use Orchid\Screen\TD;
+use Orchid\Support\Facades\Layout;
+
+// use Orchid\Screen\Actions\Link;
+// use Orchid\Screen\Actions\DropDown;
 
 class ProjectListScreen extends Screen
 {
@@ -29,7 +28,7 @@ class ProjectListScreen extends Screen
         // Фильтр по поиску
         if ($request->filled('filter.search')) {
             $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where('name', $op, '%' . $request->input('filter.search') . '%');
+            $query->where('name', $op, '%'.$request->input('filter.search').'%');
         }
 
         // Фильтр по статусу
@@ -115,12 +114,13 @@ class ProjectListScreen extends Screen
                     ->sort()
                     ->render(function (Project $project) {
                         $badges = [
-                            'active'    => 'success',
+                            'active' => 'success',
                             'completed' => 'info',
                             'cancelled' => 'danger',
                         ];
                         $statusText = Project::getStatuses()[$project->status] ?? $project->status;
                         $badgeClass = $badges[$project->status] ?? 'secondary';
+
                         return "<span class='badge bg-{$badgeClass}'>{$statusText}</span>";
                     }),
 
@@ -144,15 +144,14 @@ class ProjectListScreen extends Screen
                 TD::make('actions', 'Действия')
                     ->align(TD::ALIGN_CENTER)
                     ->width('100px')
-                    ->render(fn (Project $project) =>
-                        Link::make()
-                            ->icon('pencil')
-                            ->route('platform.projects.edit', $project)
-                            
+                    ->render(fn (Project $project) => Link::make()
+                        ->icon('pencil')
+                        ->route('platform.projects.edit', $project)
+
                         .
                         Button::make()
                             ->icon('trash')
-                            ->confirm('Удалить «' . $project->name . '»?')
+                            ->confirm('Удалить «'.$project->name.'»?')
                             ->method('remove')
                             ->parameters(['project' => $project->id])
                             ->canSee(true)
@@ -161,14 +160,15 @@ class ProjectListScreen extends Screen
         ];
     }
 
-     /**
+    /**
      * Удаление проекта из списка
      */
     public function remove(Project $project)
     {
         // Проверка прав
-        if (!$project->canManage(auth()->user())) {
+        if (! $project->canManage(auth()->user())) {
             \Orchid\Support\Facades\Toast::error('У вас нет прав для удаления этого проекта.');
+
             return redirect()->route('platform.projects');
         }
 

@@ -33,9 +33,9 @@ class News extends Model
 
     /**
      * Scope: Поиск по ключевым словам (FULLTEXT)
-     * 
-     * @param array $keywords Массив ключевых слов
-     * @param string $mode 'any' (OR) или 'all' (AND)
+     *
+     * @param  array  $keywords  Массив ключевых слов
+     * @param  string  $mode  'any' (OR) или 'all' (AND)
      */
     public function scopeSearchByKeywords($query, array $keywords, string $mode = 'all')
     {
@@ -48,7 +48,7 @@ class News extends Model
             foreach ($keywords as $keyword) {
                 $query->where(function ($q) use ($keyword) {
                     $q->where('title', 'LIKE', "%{$keyword}%")
-                      ->orWhere('description', 'LIKE', "%{$keyword}%");
+                        ->orWhere('description', 'LIKE', "%{$keyword}%");
                 });
             }
         } else {
@@ -56,7 +56,7 @@ class News extends Model
             $query->where(function ($q) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $q->orWhere('title', 'LIKE', "%{$keyword}%")
-                      ->orWhere('description', 'LIKE', "%{$keyword}%");
+                        ->orWhere('description', 'LIKE', "%{$keyword}%");
                 }
             });
         }
@@ -72,6 +72,7 @@ class News extends Model
         if ($sourceId) {
             return $query->where('rss_source_id', $sourceId);
         }
+
         return $query;
     }
 
@@ -83,6 +84,7 @@ class News extends Model
         if ($date) {
             return $query->whereDate('published_at', $date);
         }
+
         return $query;
     }
 }
