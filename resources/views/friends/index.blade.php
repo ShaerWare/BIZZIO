@@ -99,7 +99,7 @@
                                             <img src="{{ $friend->avatar_url }}" alt=""
                                                  class="w-10 h-10 rounded-full object-cover flex-shrink-0">
                                             <div class="min-w-0">
-                                                <p class="text-sm font-medium text-gray-900 truncate">{{ $friend->name }}</p>
+                                                <p class="text-sm font-medium text-gray-900 truncate">{{ $friend->full_name }}</p>
                                                 @if($friend->position)
                                                     <p class="text-xs text-gray-500 truncate">{{ $friend->position }}</p>
                                                 @endif
@@ -213,7 +213,7 @@
                                         <a href="{{ route('users.show', $suggested) }}" class="block">
                                             <img src="{{ $suggested->avatar_url }}" alt=""
                                                  class="w-16 h-16 rounded-full object-cover mx-auto mb-2">
-                                            <p class="text-sm font-medium text-gray-900 truncate">{{ $suggested->name }}</p>
+                                            <p class="text-sm font-medium text-gray-900 truncate">{{ $suggested->full_name }}</p>
                                             @if($suggested->position)
                                                 <p class="text-xs text-gray-500 truncate mb-1">{{ $suggested->position }}</p>
                                             @endif

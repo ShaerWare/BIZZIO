@@ -34,6 +34,7 @@ class RegisteredUserController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'min:2', 'max:255'],
+            'last_name' => ['required', 'string', 'min:2', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->numbers()],
         ];
@@ -62,6 +63,7 @@ class RegisteredUserController extends Controller
 
         $user = User::create([
             'name' => $request->name,
+            'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
