@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   pull_request:
@@ -6,8 +6,9 @@ on:
     branches: [develop, main]
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: cicd-${{ github.ref }}
+  # Cancel superseded PR checks, but never cancel an in-progress deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   tests:
@@ -94,3 +95,47 @@ jobs:
             exit 1
           fi
           echo "public/build is up to date."
+
+  deploy-test:
+    name: Deploy develop -> test.bizzio.ru
+    runs-on: ubuntu-latest
+    needs: [tests, pint, assets]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /var/www/bizzio-test
+            git fetch origin develop
+            git reset --hard origin/develop
+            bash scripts/deploy.sh
+
+  deploy-prod:
+    name: Deploy main -> bizzio.ru
+    runs-on: ubuntu-latest
+    needs: [tests, pint, assets]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Requires manual approval (repo Settings -> Environments -> production).
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /var/www/BIZZIO
+            git fetch origin main
+            git reset --hard origin/main
+            bash scripts/deploy.sh
