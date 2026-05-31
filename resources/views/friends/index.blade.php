@@ -34,7 +34,7 @@
                                     :class="tab === 'friends' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                                     class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition whitespace-nowrap">
                                 Друзья
-                                <span class="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $friends->total() }}</span>
+                                <span class="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $friendsCount }}</span>
                             </button>
                             <button @click="tab = 'incoming'"
                                     :class="tab === 'incoming' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
@@ -73,7 +73,7 @@
                                     type="text"
                                     name="search"
                                     value="{{ $search }}"
-                                    placeholder="Поиск среди друзей..."
+                                    placeholder="Поиск по всем пользователям сайта..."
                                     class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                                 >
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -105,14 +105,8 @@
                                                 @endif
                                             </div>
                                         </a>
-                                        <form action="{{ route('friends.remove', $friend) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="inline-flex items-center px-3 py-1.5 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-red-100 hover:text-red-700 transition">
-                                                Удалить
-                                            </button>
-                                        </form>
+                                        {{-- #142: статус-зависимая кнопка (В друзьях / Добавить / Заявка отправлена / Принять) --}}
+                                        <x-friendship-button :user="$friend" />
                                     </div>
                                 @endforeach
                             </div>
