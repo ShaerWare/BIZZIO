@@ -139,6 +139,15 @@
                 <div class="form-group">
                     <div class="input-wrapper">
                         <span class="icon">
+                            <i class="uil-user"></i>
+                        </span>
+                        <input type="text" name="last_name" class="form-control" required placeholder="Фамилия" value="{{ old('last_name') }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <span class="icon">
                             <i class="uil-envelope"></i>
                         </span>
                         <input type="email" name="email" class="form-control" required placeholder="Email" value="{{ old('email') }}">

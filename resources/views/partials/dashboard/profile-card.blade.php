@@ -3,7 +3,7 @@
         <div class="flex flex-col items-center text-center">
             <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->name }}"
                  class="w-16 h-16 rounded-full object-cover mb-3">
-            <h3 class="text-sm font-semibold text-gray-900 truncate w-full">{{ auth()->user()->name }}</h3>
+            <h3 class="text-sm font-semibold text-gray-900 truncate w-full">{{ auth()->user()->full_name }}</h3>
             @if(auth()->user()->position)
                 <p class="text-xs text-gray-500 mt-0.5">{{ auth()->user()->position }}</p>
             @endif
