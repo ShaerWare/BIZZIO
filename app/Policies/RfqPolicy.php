@@ -57,4 +57,12 @@ class RfqPolicy
         // Удаление только до начала приёма заявок
         return $rfq->status === 'draft' && $rfq->canManage($user);
     }
+
+    /**
+     * #148: отменить запрос цен может организатор до его закрытия.
+     */
+    public function cancel(User $user, Rfq $rfq): bool
+    {
+        return $rfq->canBeCancelled() && $rfq->canManage($user);
+    }
 }

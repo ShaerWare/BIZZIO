@@ -459,4 +459,26 @@ class RfqController extends Controller
             return back()->with('error', 'Ошибка при активации: '.$e->getMessage());
         }
     }
+
+    /**
+     * #148: отмена запроса цен организатором (до закрытия) с указанием причины.
+     */
+    public function cancel(Request $request, Rfq $rfq)
+    {
+        $this->authorize('cancel', $rfq);
+
+        $validated = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'cancellation_reason.required' => 'Укажите причину отмены.',
+        ]);
+
+        $rfq->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $validated['cancellation_reason'],
+        ]);
+
+        return redirect()->route('rfqs.show', $rfq)
+            ->with('success', 'Запрос цен отменён.');
+    }
 }

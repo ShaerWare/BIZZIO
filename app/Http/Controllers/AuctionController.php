@@ -273,6 +273,28 @@ class AuctionController extends Controller
             ->with('success', 'Аукцион активирован! Теперь компании могут подавать заявки на участие.');
     }
 
+    /**
+     * #148: отмена аукциона организатором (до начала торгов) с указанием причины.
+     */
+    public function cancel(Request $request, Auction $auction)
+    {
+        $this->authorize('cancel', $auction);
+
+        $validated = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'cancellation_reason.required' => 'Укажите причину отмены.',
+        ]);
+
+        $auction->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $validated['cancellation_reason'],
+        ]);
+
+        return redirect()->route('auctions.show', $auction)
+            ->with('success', 'Аукцион отменён.');
+    }
+
     public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
     {
         DB::beginTransaction();
