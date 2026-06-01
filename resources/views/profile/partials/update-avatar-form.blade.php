@@ -24,24 +24,7 @@
             <form method="post" action="{{ route('profile.avatar.update') }}" enctype="multipart/form-data" class="space-y-4">
                 @csrf
 
-                <div>
-                    <x-input-label for="avatar" :value="__('Выберите изображение')" />
-                    <input
-                        type="file"
-                        id="avatar"
-                        name="avatar"
-                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                        class="mt-1 block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-md file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-emerald-50 file:text-emerald-700
-                            hover:file:bg-emerald-100
-                            cursor-pointer"
-                    >
-                    <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
-                    <p class="mt-1 text-xs text-gray-500">JPG, PNG, GIF или WebP. Максимум 2 МБ.</p>
-                </div>
+                <x-avatar-cropper name="avatar" hint="JPG, PNG, GIF или WebP. Максимум 2 МБ. Можно приблизить и обрезать." />
 
                 <div class="flex items-center gap-4">
                     <x-primary-button>{{ __('Загрузить') }}</x-primary-button>

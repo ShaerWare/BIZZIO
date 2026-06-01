@@ -142,18 +142,7 @@
 
                     <!-- Логотип -->
                     <div>
-                        <label for="logo" class="block text-sm font-medium text-gray-700">
-                            Логотип
-                        </label>
-                        <input type="file" 
-                               name="logo" 
-                               id="logo" 
-                               accept="image/*"
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p class="mt-1 text-xs text-gray-500">Форматы: JPG, PNG. Максимальный размер: 2MB</p>
-                        @error('logo')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <x-avatar-cropper name="logo" label="Логотип" hint="JPG, PNG. Максимум 2MB. Можно приблизить и обрезать." />
                     </div>
 
                     <!-- Документы -->
