@@ -534,4 +534,56 @@ class CompanyTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    // #137: должность участника в компании
+
+    public function test_member_can_update_own_company_position(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $member = User::factory()->create();
+        $company->assignModerator($member, 'member', $this->user);
+
+        $this->actingAs($member)
+            ->put(route('companies.members.position', [$company, $member]), ['position' => 'Прораб'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $member->id,
+            'position' => 'Прораб',
+        ]);
+    }
+
+    public function test_member_cannot_edit_another_members_position(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $m1 = User::factory()->create();
+        $m2 = User::factory()->create();
+        $company->assignModerator($m1, 'member', $this->user);
+        $company->assignModerator($m2, 'member', $this->user);
+
+        $this->actingAs($m1)
+            ->put(route('companies.members.position', [$company, $m2]), ['position' => 'Хакер'])
+            ->assertStatus(403);
+    }
+
+    public function test_company_manager_can_set_member_position(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $member = User::factory()->create();
+        $company->assignModerator($member, 'member', $this->user);
+
+        $this->actingAs($this->user)
+            ->put(route('companies.members.position', [$company, $member]), ['position' => 'Главный инженер'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $member->id,
+            'position' => 'Главный инженер',
+        ]);
+    }
 }

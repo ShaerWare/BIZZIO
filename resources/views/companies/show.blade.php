@@ -405,6 +405,19 @@
                                         </div>
                                         <div>
                                             <div class="text-sm font-medium text-gray-900">{{ $moderator->name }}</div>
+                                            {{-- #137: должность в компании --}}
+                                            @php $canEditPosition = auth()->check() && (auth()->id() === $moderator->id || $canManagePeople); @endphp
+                                            @if($canEditPosition)
+                                                <form method="POST" action="{{ route('companies.members.position', [$company, $moderator]) }}" class="mt-1 flex items-center gap-1">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="text" name="position" value="{{ $moderator->pivot->position }}" placeholder="Должность"
+                                                           class="text-xs rounded border-gray-300 py-0.5 px-1 w-40">
+                                                    <button type="submit" class="text-xs text-emerald-600 hover:text-emerald-800">Сохранить</button>
+                                                </form>
+                                            @elseif($moderator->pivot->position)
+                                                <div class="text-xs text-gray-500">{{ $moderator->pivot->position }}</div>
+                                            @endif
                                         </div>
                                         @php $role = $moderator->pivot->role ?? 'member'; @endphp
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $roleBadgeColors[$role] ?? 'bg-gray-100 text-gray-800' }}">
