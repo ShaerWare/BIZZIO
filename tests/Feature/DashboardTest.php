@@ -40,7 +40,6 @@ class DashboardTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('dashboard');
-        $response->assertViewHas('activities');
     }
 
     public function test_guest_cannot_view_dashboard(): void
@@ -48,42 +47,6 @@ class DashboardTest extends TestCase
         $response = $this->get(route('dashboard'));
 
         $response->assertRedirect(route('login'));
-    }
-
-    public function test_dashboard_displays_activity_section(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->get(route('dashboard'));
-
-        $response->assertStatus(200);
-        $response->assertViewHas('activities');
-    }
-
-    public function test_user_can_load_more_activities(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->get(route('dashboard.activities', ['offset' => 0]));
-
-        $response->assertStatus(200);
-    }
-
-    public function test_load_more_activities_with_offset(): void
-    {
-        for ($i = 0; $i < 5; $i++) {
-            Project::factory()->create([
-                'company_id' => $this->company->id,
-                'name' => "Проект $i",
-                'status' => 'active',
-            ]);
-        }
-
-        $response1 = $this->actingAs($this->user)
-            ->get(route('dashboard.activities', ['offset' => 0]));
-        $response1->assertStatus(200);
-
-        $response2 = $this->actingAs($this->user)
-            ->get(route('dashboard.activities', ['offset' => 3]));
-        $response2->assertStatus(200);
     }
 
     public function test_activity_log_records_company_creation(): void
@@ -134,7 +97,6 @@ class DashboardTest extends TestCase
         $response->assertViewHas('userProjects');
         $response->assertViewHas('latestNews');
         $response->assertViewHas('recentPosts');
-        $response->assertViewHas('activities');
         $response->assertViewHas('myTenders');
         $response->assertViewHas('myInvitations');
         $response->assertViewHas('myBids');

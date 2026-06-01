@@ -14,8 +14,6 @@ use App\Models\RfqBid;
 use App\Models\RfqInvitation;
 use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -70,28 +68,6 @@ class DashboardController extends Controller
                 ->where('user_id', $user->id)
                 ->latest()
                 ->take(10)
-                ->get();
-        }
-
-        // Активности: от прямых подписок (1-й уровень)
-        $directUserIds = $subscriptionContext['directUserIds'];
-        if ($directUserIds->isNotEmpty() || $directCompanyIds->isNotEmpty()) {
-            $activities = Activity::with(['causer', 'subject'])
-                ->where(function ($q) use ($directUserIds, $directCompanyIds, $user) {
-                    $q->whereIn('causer_id', $directUserIds->push($user->id))
-                        ->orWhere(function ($q2) use ($directCompanyIds) {
-                            $q2->where('subject_type', Company::class)
-                                ->whereIn('subject_id', $directCompanyIds);
-                        });
-                })
-                ->latest()
-                ->take(20)
-                ->get();
-        } else {
-            $activities = Activity::with(['causer', 'subject'])
-                ->where('causer_id', $user->id)
-                ->latest()
-                ->take(20)
                 ->get();
         }
 
@@ -249,45 +225,11 @@ class DashboardController extends Controller
             'userProjects',
             'latestNews',
             'recentPosts',
-            'activities',
             'myTenders',
             'myInvitations',
             'myBids',
             'recommendedCompanies',
         ));
-    }
-
-    public function loadMoreActivities(Request $request)
-    {
-        $offset = $request->input('offset', 0);
-        $user = auth()->user();
-        $subscriptionContext = $this->getSubscriptionContext($user);
-        $directUserIds = $subscriptionContext['directUserIds'];
-        $directCompanyIds = $subscriptionContext['directCompanyIds'];
-
-        if ($directUserIds->isNotEmpty() || $directCompanyIds->isNotEmpty()) {
-            $activities = Activity::with(['causer', 'subject'])
-                ->where(function ($q) use ($directUserIds, $directCompanyIds, $user) {
-                    $q->whereIn('causer_id', $directUserIds->push($user->id))
-                        ->orWhere(function ($q2) use ($directCompanyIds) {
-                            $q2->where('subject_type', Company::class)
-                                ->whereIn('subject_id', $directCompanyIds);
-                        });
-                })
-                ->latest()
-                ->skip($offset)
-                ->take(10)
-                ->get();
-        } else {
-            $activities = Activity::with(['causer', 'subject'])
-                ->where('causer_id', $user->id)
-                ->latest()
-                ->skip($offset)
-                ->take(10)
-                ->get();
-        }
-
-        return view('partials.activity-items', compact('activities'));
     }
 
     private function getSubscriptionContext(User $user): array
