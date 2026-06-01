@@ -17,7 +17,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between">
                             <a href="{{ route('users.show', $post->user) }}" class="text-sm font-medium text-gray-900 hover:text-emerald-600">
-                                {{ $post->user->name }}
+                                {{ $post->user->full_name }}
                             </a>
                             <div class="flex items-center space-x-2">
                                 <span class="text-xs text-gray-500">{{ $post->created_at->diffForHumans() }}</span>

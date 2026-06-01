@@ -46,51 +46,7 @@
 
     <div id="beehive-page">
 
-        <!-- Header -->
-        <header class="site-header">
-            <nav class="navbar">
-                <!-- Logo -->
-                <a href="{{ url('/') }}" class="navbar-brand">
-                    <img src="{{ asset('images/bizzio_horizontal_logo_color_blackbg.svg') }}" alt="{{ config('app.name') }}">
-                </a>
-
-                <!-- Mobile Toggle -->
-                <button class="beehive-toggler" type="button" aria-label="Toggle navigation">
-                    <span class="icon-bar bar1"></span>
-                    <span class="icon-bar bar2"></span>
-                    <span class="icon-bar bar3"></span>
-                </button>
-
-                <!-- Navigation -->
-                <div class="navbar-main-container">
-                    <ul class="navbar-nav navbar-main">
-                        <li><a href="{{ url('/') }}" class="nav-link">Home</a></li>
-                        <li><a href="{{ route('companies.index') }}" class="nav-link">Компании</a></li>
-                        <li><a href="{{ route('projects.index') }}" class="nav-link">Проекты</a></li>
-                        
-                        <li><a href="{{ route('auctions.index') }}" class="nav-link">Тендеры и Аукционы</a></li>
-                        <li><a href="{{ route('news.index') }}" class="nav-link">Новости</a></li>
-                    </ul>
-                </div>
-
-                <!-- User Navigation -->
-                <ul class="navbar-nav navbar-user">
-                    @auth
-                        <li>
-                            <a href="{{ route('dashboard') }}" class="nav-link">
-                                {{ Auth::user()->name }}
-                            </a>
-                        </li>
-                        <li>
-                            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-                                @csrf
-                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Выход</button>
-                            </form>
-                        </li>
-                    @endauth
-                </ul>
-            </nav>
-        </header>
+        {{-- #136: старое верхнее меню убрано со страницы входа --}}
 
         <!-- Main Content -->
         <div class="site-content">
@@ -177,6 +133,15 @@
                             <i class="uil-user"></i>
                         </span>
                         <input type="text" name="name" class="form-control" required placeholder="Имя" value="{{ old('name') }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <span class="icon">
+                            <i class="uil-user"></i>
+                        </span>
+                        <input type="text" name="last_name" class="form-control" required placeholder="Фамилия" value="{{ old('last_name') }}">
                     </div>
                 </div>
 

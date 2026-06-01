@@ -140,7 +140,7 @@
                     <tr class="{{ $bid->status === 'winner' ? 'winner' : '' }}">
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $bid->company->name }}</td>
-                        <td>{{ number_format($bid->price, 2, ',', ' ') }}</td>
+                        <td style="white-space: nowrap;">{{ number_format($bid->price, 2, ',', ' ') }}</td>
                         <td>{{ $bid->deadline }}</td>
                         <td>{{ $bid->advance_percent }}</td>
                         <td>{{ number_format($bid->score_price, 2, ',', ' ') }}</td>

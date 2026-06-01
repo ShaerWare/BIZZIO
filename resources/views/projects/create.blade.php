@@ -70,9 +70,7 @@
 
                     <!-- Аватар -->
                     <div class="mb-6">
-                        <label for="avatar" class="block text-sm font-medium text-gray-700 mb-2">Аватар проекта</label>
-                        <input type="file" name="avatar" id="avatar" accept="image/*"
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                        <x-avatar-cropper name="avatar" label="Аватар проекта" hint="JPG, PNG. Можно приблизить и обрезать." />
                     </div>
 
                     <!-- Даты -->

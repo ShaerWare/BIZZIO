@@ -66,8 +66,14 @@ class SocialiteController extends Controller
             $user->update([
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
-                'avatar' => $socialUser->getAvatar(),
             ]);
+
+            // #134: не перезаписываем аватар, если у пользователя он уже есть
+            // (например, обновлён вручную в bizzio). Берём аватар провайдера
+            // только когда своего ещё нет.
+            if (empty($user->avatar)) {
+                $user->update(['avatar' => $socialUser->getAvatar()]);
+            }
         }
 
         // Входим в систему
