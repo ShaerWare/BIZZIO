@@ -82,6 +82,9 @@ Route::middleware('auth')->group(function () {
         ->name('companies.moderators.store');
     Route::put('/companies/{company}/moderators/{user}', [CompanyModeratorController::class, 'update'])
         ->name('companies.moderators.update');
+    // #137: должность участника в компании
+    Route::put('/companies/{company}/members/{user}/position', [CompanyModeratorController::class, 'updatePosition'])
+        ->name('companies.members.position');
     Route::delete('/companies/{company}/moderators/{user}', [CompanyModeratorController::class, 'destroy'])
         ->name('companies.moderators.destroy');
 });
