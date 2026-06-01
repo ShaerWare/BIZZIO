@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $user->name)
+@section('title', $user->full_name)
 
 @section('content')
 <div class="py-12">
@@ -15,7 +15,7 @@
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h1 class="text-2xl font-bold text-gray-900">{{ $user->name }}</h1>
+                                <h1 class="text-2xl font-bold text-gray-900">{{ $user->full_name }}</h1>
                                 @if($user->position)
                                     <p class="text-gray-600 mt-1">{{ $user->position }}</p>
                                 @endif

@@ -109,7 +109,7 @@
             <span class="label">Тип процедуры:</span> {{ $auction->type === 'open' ? 'Открытая' : 'Закрытая' }}
         </div>
         <div class="info-row">
-            <span class="label">Начальная (максимальная) цена:</span> {{ number_format($auction->starting_price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
+            <span class="label">Начальная (максимальная) цена:</span> <span style="white-space: nowrap;">{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</span>
         </div>
         <div class="info-row">
             <span class="label">Шаг аукциона:</span> {{ $auction->step_percent }}%
@@ -144,7 +144,7 @@
                         <td>{{ $index + 1 }}</td>
                         <td style="font-weight: bold;">{{ $bid->anonymous_code }}</td>
                         <td>{{ $bid->company->name }}</td>
-                        <td style="font-weight: bold;">{{ number_format($bid->price, 2, '.', ' ') }}</td>
+                        <td style="font-weight: bold; white-space: nowrap;">{{ number_format($bid->price, 2, ',', ' ') }}</td>
                         <td>{{ $bid->created_at->format('H:i:s') }}</td>
                     </tr>
                 @endforeach
@@ -163,10 +163,10 @@
                 <span class="label">Код участника:</span> {{ $winner->anonymous_code }}
             </div>
             <div class="info-row">
-                <span class="label">Итоговая цена:</span> {{ number_format($winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
+                <span class="label">Итоговая цена:</span> <span style="white-space: nowrap;">{{ number_format($winner->price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</span>
             </div>
             <div class="info-row">
-                <span class="label">Снижение от начальной цены:</span> {{ number_format($auction->starting_price - $winner->price, 2, '.', ' ') }} {{ $auction->currency_symbol }}
+                <span class="label">Снижение от начальной цены:</span> <span style="white-space: nowrap;">{{ number_format($auction->starting_price - $winner->price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</span>
                 ({{ number_format((($auction->starting_price - $winner->price) / $auction->starting_price) * 100, 2) }}%)
             </div>
         </div>

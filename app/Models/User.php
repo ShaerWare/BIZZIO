@@ -25,6 +25,7 @@ class User extends Orchid
      */
     protected $fillable = [
         'name',
+        'last_name',
         'email',
         'password',
         'provider',
@@ -363,7 +364,15 @@ class User extends Orchid
         }
 
         // Дефолтный аватар (генерация по инициалам)
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->full_name).'&color=7F9CF5&background=EBF4FF';
+    }
+
+    /**
+     * Полное имя «Имя Фамилия» для отображения рядом с аватаром (#145).
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->name.' '.$this->last_name);
     }
 
     // ========================

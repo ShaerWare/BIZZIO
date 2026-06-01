@@ -46,7 +46,8 @@ class RegistrationTest extends TestCase
         $this->fakeRecaptchaSuccess();
 
         $response = $this->post('/register', [
-            'name' => 'Test User',
+            'name' => 'Test',
+            'last_name' => 'User',
             'email' => 'testuser@gmail.com',
             'password' => 'password1A',
             'password_confirmation' => 'password1A',
@@ -64,6 +65,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'last_name' => 'User',
             'email' => 'testuser@gmail.com',
             'password' => 'password1A',
             'password_confirmation' => 'password1A',
@@ -82,6 +84,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'last_name' => 'User',
             'email' => 'testuser@gmail.com',
             'password' => 'password1A',
             'password_confirmation' => 'password1A',
@@ -99,6 +102,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'last_name' => 'User',
             'email' => 'testuser@gmail.com',
             'password' => 'password1A',
             'password_confirmation' => 'password1A',
@@ -115,6 +119,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post('/register', [
             'name' => 'A',
+            'last_name' => 'User',
             'email' => 'testuser@gmail.com',
             'password' => 'password1A',
             'password_confirmation' => 'password1A',
@@ -132,6 +137,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'last_name' => 'User',
             'email' => 'testuser@gmail.com',
             'password' => 'abcdefgh',
             'password_confirmation' => 'abcdefgh',
