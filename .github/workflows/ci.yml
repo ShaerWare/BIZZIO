@@ -84,17 +84,11 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      # Verify assets compile. We intentionally do NOT byte-compare against the
+      # committed public/build: Vite/Tailwind output hashes are not identical
+      # across machines (local vs CI), which caused false "stale" failures.
       - name: Build assets
         run: npm run build
-
-      - name: Ensure committed public/build is up to date
-        run: |
-          if ! git diff --quiet -- public/build; then
-            echo "::error::public/build is out of date. Run 'npm run build' locally and commit the result before pushing."
-            git --no-pager diff --stat -- public/build
-            exit 1
-          fi
-          echo "public/build is up to date."
 
   deploy-test:
     name: Deploy develop -> test.bizzio.ru
