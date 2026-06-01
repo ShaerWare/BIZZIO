@@ -36,6 +36,7 @@ class Auction extends Model implements HasMedia
         'step_percent',
         'last_bid_at',
         'status',
+        'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
     ];
@@ -180,6 +181,14 @@ class Auction extends Model implements HasMedia
         return $this->created_by === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.auctions');
+    }
+
+    /**
+     * #148: можно ли отменить аукцион — только до начала торгов (черновик или приём заявок).
+     */
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, ['draft', 'active']);
     }
 
     /**

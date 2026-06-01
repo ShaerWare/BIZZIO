@@ -35,6 +35,7 @@ class Rfq extends Model implements HasMedia
         'weight_deadline',
         'weight_advance',
         'status',
+        'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
     ];
@@ -139,6 +140,14 @@ class Rfq extends Model implements HasMedia
         return $this->created_by === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.rfqs');
+    }
+
+    /**
+     * #148: можно ли отменить запрос цен — пока он черновик или активен (до закрытия).
+     */
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, ['draft', 'active']);
     }
 
     /**

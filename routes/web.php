@@ -204,6 +204,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Активация RFQ
     Route::post('/rfqs/{rfq}/activate', [RfqController::class, 'activate'])->name('rfqs.activate');
+    Route::post('/rfqs/{rfq}/cancel', [RfqController::class, 'cancel'])->name('rfqs.cancel');
 
     // Подача заявки
     Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
@@ -243,6 +244,7 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::put('/{auction}', [AuctionController::class, 'update'])->name('update');
         Route::delete('/{auction}', [AuctionController::class, 'destroy'])->name('destroy');
         Route::post('/{auction}/activate', [AuctionController::class, 'activate'])->name('activate');
+        Route::post('/{auction}/cancel', [AuctionController::class, 'cancel'])->name('cancel');
         Route::post('/{auction}/bids', [AuctionController::class, 'storeBid'])->name('bids.store');
 
         // Генерация протокола (для организатора)
