@@ -81,6 +81,14 @@ class AuctionPolicy
     }
 
     /**
+     * #148: отменить аукцион может организатор до начала торгов.
+     */
+    public function cancel(User $user, Auction $auction): bool
+    {
+        return $auction->canBeCancelled() && $auction->canManage($user);
+    }
+
+    /**
      * Determine if the user can generate/download protocol.
      */
     public function generateProtocol(User $user, Auction $auction): bool

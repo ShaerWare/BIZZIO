@@ -691,4 +691,38 @@ class RfqTest extends TestCase
 
         $this->assertEquals($seq1 + 1, $seq2);
     }
+
+    // #148: отмена запроса цен организатором
+
+    public function test_organizer_can_cancel_rfq(): void
+    {
+        $rfq = $this->createRfq(['status' => 'active']);
+
+        $this->actingAs($this->user)
+            ->post(route('rfqs.cancel', $rfq), ['cancellation_reason' => 'Передумали'])
+            ->assertRedirect();
+
+        $rfq->refresh();
+        $this->assertSame('cancelled', $rfq->status);
+        $this->assertSame('Передумали', $rfq->cancellation_reason);
+    }
+
+    public function test_cannot_cancel_closed_rfq(): void
+    {
+        $rfq = $this->createRfq(['status' => 'closed']);
+
+        $this->actingAs($this->user)
+            ->post(route('rfqs.cancel', $rfq), ['cancellation_reason' => 'Поздно'])
+            ->assertStatus(403);
+    }
+
+    public function test_non_organizer_cannot_cancel_rfq(): void
+    {
+        $rfq = $this->createRfq(['status' => 'active']);
+        $stranger = User::factory()->create();
+
+        $this->actingAs($stranger)
+            ->post(route('rfqs.cancel', $rfq), ['cancellation_reason' => 'Хочу'])
+            ->assertStatus(403);
+    }
 }

@@ -735,4 +735,49 @@ class AuctionTest extends TestCase
         $this->assertCount(1, $results);
         $this->assertEquals($auction->id, $results->first()->id);
     }
+
+    // #148: отмена аукциона организатором
+
+    public function test_organizer_can_cancel_auction_before_trading(): void
+    {
+        $auction = $this->createAuction(['status' => 'active']);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Изменились условия']);
+
+        $response->assertRedirect();
+        $auction->refresh();
+        $this->assertSame('cancelled', $auction->status);
+        $this->assertSame('Изменились условия', $auction->cancellation_reason);
+    }
+
+    public function test_cancellation_requires_reason(): void
+    {
+        $auction = $this->createAuction(['status' => 'active']);
+
+        $this->actingAs($this->user)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => ''])
+            ->assertSessionHasErrors('cancellation_reason');
+
+        $this->assertSame('active', $auction->fresh()->status);
+    }
+
+    public function test_cannot_cancel_auction_in_trading(): void
+    {
+        $auction = $this->createAuction(['status' => 'trading']);
+
+        $this->actingAs($this->user)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Поздно'])
+            ->assertStatus(403);
+    }
+
+    public function test_non_organizer_cannot_cancel_auction(): void
+    {
+        $auction = $this->createAuction(['status' => 'active']);
+        $stranger = User::factory()->create();
+
+        $this->actingAs($stranger)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Хочу'])
+            ->assertStatus(403);
+    }
 }
