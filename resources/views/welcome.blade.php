@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Bizzo.ru') }} – соединяя бизнес</title>
 
+    @include('partials.seo')
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700&family=Quicksand:wght@700&display=swap" rel="stylesheet">
     
