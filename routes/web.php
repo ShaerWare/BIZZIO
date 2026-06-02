@@ -15,6 +15,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectMemberController;
 use App\Http\Controllers\RfqController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TempUploadController;
 use App\Http\Controllers\TenderController;
@@ -40,6 +41,9 @@ Route::get('/', function () {
 
     return view('welcome');
 });
+
+// #152: SEO — динамический sitemap
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 
 // ========================================================================
 // COMPANIES ROUTES
