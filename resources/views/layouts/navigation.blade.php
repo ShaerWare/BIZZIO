@@ -389,66 +389,71 @@
                 </x-responsive-nav-link>
             @endauth
 
+            {{-- #150: раскрывающиеся группы в мобильном меню (как выпадающие в десктопе) --}}
             <!-- Закупки -->
-            <div class="border-t border-gray-200 pt-2 mt-2">
-                <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {{ __('Закупки') }}
+            <div class="border-t border-gray-200 pt-2 mt-2" x-data="{ expanded: {{ request()->routeIs('tenders.*', 'rfqs.*', 'auctions.*') ? 'true' : 'false' }} }">
+                <button type="button" @click="expanded = ! expanded"
+                        class="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider focus:outline-none">
+                    <span>{{ __('Закупки') }}</span>
+                    <svg class="w-4 h-4 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="expanded" class="space-y-1">
+                    <x-responsive-nav-link :href="route('tenders.index')" :active="request()->routeIs('tenders.index')">
+                        {{ __('Найти закупку') }}
+                    </x-responsive-nav-link>
+
+                    @auth
+                        <x-responsive-nav-link :href="route('tenders.bids.my')" :active="request()->routeIs('tenders.bids.my')">
+                            {{ __('Мои заявки') }}
+                        </x-responsive-nav-link>
+
+                        <x-responsive-nav-link :href="route('tenders.invitations.my')" :active="request()->routeIs('tenders.invitations.my')">
+                            {{ __('Мои приглашения') }}
+                        </x-responsive-nav-link>
+
+                        @if(auth()->user()->isModeratorOfAnyCompany())
+                            <x-responsive-nav-link :href="route('tenders.my')" :active="request()->routeIs('tenders.my')">
+                                {{ __('Мои закупки') }}
+                            </x-responsive-nav-link>
+
+                            <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create')">
+                                {{ __('Создать запрос цен') }}
+                            </x-responsive-nav-link>
+
+                            <x-responsive-nav-link :href="route('auctions.create')" :active="request()->routeIs('auctions.create')">
+                                {{ __('Создать аукцион') }}
+                            </x-responsive-nav-link>
+                        @endif
+                    @endauth
+
+                    <x-responsive-nav-link :href="route('tenders.rules')" :active="request()->routeIs('tenders.rules')">
+                        {{ __('Правила проведения') }}
+                    </x-responsive-nav-link>
                 </div>
-
-                <x-responsive-nav-link :href="route('tenders.index')" :active="request()->routeIs('tenders.index')">
-                    {{ __('Найти закупку') }}
-                </x-responsive-nav-link>
-
-                @auth
-                    <div class="border-t border-gray-100 my-2"></div>
-
-                    <x-responsive-nav-link :href="route('tenders.bids.my')" :active="request()->routeIs('tenders.bids.my')">
-                        {{ __('Мои заявки') }}
-                    </x-responsive-nav-link>
-
-                    <x-responsive-nav-link :href="route('tenders.invitations.my')" :active="request()->routeIs('tenders.invitations.my')">
-                        {{ __('Мои приглашения') }}
-                    </x-responsive-nav-link>
-
-                    @if(auth()->user()->isModeratorOfAnyCompany())
-                        <div class="border-t border-gray-100 my-2"></div>
-
-                        <x-responsive-nav-link :href="route('tenders.my')" :active="request()->routeIs('tenders.my')">
-                            {{ __('Мои закупки') }}
-                        </x-responsive-nav-link>
-
-                        <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create')">
-                            {{ __('Создать запрос цен') }}
-                        </x-responsive-nav-link>
-
-                        <x-responsive-nav-link :href="route('auctions.create')" :active="request()->routeIs('auctions.create')">
-                            {{ __('Создать аукцион') }}
-                        </x-responsive-nav-link>
-                    @endif
-                @endauth
-
-                <div class="border-t border-gray-100 my-2"></div>
-
-                <x-responsive-nav-link :href="route('tenders.rules')" :active="request()->routeIs('tenders.rules')">
-                    {{ __('Правила проведения') }}
-                </x-responsive-nav-link>
             </div>
 
             <!-- Новости -->
-            <div class="border-t border-gray-200 pt-2 mt-2">
-                <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {{ __('Новости') }}
-                </div>
-                
-                <x-responsive-nav-link :href="route('news.index')" :active="request()->routeIs('news.index')">
-                    {{ __('Лента новостей') }}
-                </x-responsive-nav-link>
-
-                @auth
-                    <x-responsive-nav-link :href="route('profile.keywords.index')" :active="request()->routeIs('profile.keywords.*')">
-                        {{ __('Ключевые слова') }}
+            <div class="border-t border-gray-200 pt-2 mt-2" x-data="{ expanded: {{ request()->routeIs('news.*', 'profile.keywords.*') ? 'true' : 'false' }} }">
+                <button type="button" @click="expanded = ! expanded"
+                        class="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider focus:outline-none">
+                    <span>{{ __('Новости') }}</span>
+                    <svg class="w-4 h-4 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="expanded" class="space-y-1">
+                    <x-responsive-nav-link :href="route('news.index')" :active="request()->routeIs('news.index')">
+                        {{ __('Лента новостей') }}
                     </x-responsive-nav-link>
-                @endauth
+
+                    @auth
+                        <x-responsive-nav-link :href="route('profile.keywords.index')" :active="request()->routeIs('profile.keywords.*')">
+                            {{ __('Ключевые слова') }}
+                        </x-responsive-nav-link>
+                    @endauth
+                </div>
             </div>
         </div>
 
