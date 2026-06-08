@@ -1545,3 +1545,20 @@ SESSION_SECURE_COOKIE=true
 - 148 PHP-файлов — форматирование Pint
 - `docker-compose.override.yml` — снят с git-трекинга (был и в .gitignore, и закоммичен)
 - `CLAUDE.md` — секция CI/CD, Caddy вместо nginx-proxy
+
+---
+
+## 2026-06: Блок «Первоочередные» (16 задач) + тесты + отчёт
+
+**Что сделано:** Реализованы 15 из 16 приоритетных задач (#139, #143, #144, #140, #149, #136, #142, #145, #137, #146, #134, #147, #148, #150, #152); #151 ожидает уточнения (не воспроизводится). Каждая задача — отдельным PR в develop с авто-деплоем на test.bizzio.ru.
+
+**Тесты:** добавлены автотесты по задачам (NotificationTest, CompanyTest, FriendshipTest, RegistrationTest, SocialiteAvatarTest, AuctionTest, RfqTest, DashboardTest, SeoTest, PriorityTasksTest). Полный прогон — **264 теста, все зелёные**; Pint без замечаний.
+
+**Отчёт заказчику:** `docs/ОТЧЁТ_приоритетные_задачи_2026-06.md`.
+
+**Ключевые технические моменты:**
+- #143: причина дублей — слушатели регистрировались дважды (авто-discovery Laravel 11 + ручной Event::listen). Убрана ручная регистрация; добавлена миграция-очистка старых дублей (pgsql self-join, т.к. MIN(uuid) не поддерживается).
+- #145/#137/#148: миграции — users.last_name, company_user.position, auctions/rfqs.cancellation_reason.
+- #146: Cropper.js через npm+Vite, переиспользуемый компонент x-avatar-cropper.
+- #152: partials/seo.blade.php (meta/OG/Twitter/canonical + Schema.org JSON-LD), robots.txt, динамический /sitemap.xml, llms.txt.
+- CI: проверка свежести public/build заменена на сборку (хэши Vite/Tailwind отличаются между машинами).
