@@ -102,4 +102,19 @@ class PriorityTasksTest extends TestCase
             ->assertSee('application/ld+json', false)
             ->assertSee('rel="canonical"', false);
     }
+
+    // #145 (правка): в составе компании показывается имя + фамилия
+    public function test_145_company_members_show_full_name(): void
+    {
+        $owner = $this->verifiedUser();
+        $company = Company::factory()->create(['created_by' => $owner->id, 'is_verified' => true]);
+        $company->assignModerator($owner, 'owner');
+        $member = User::factory()->create(['name' => 'Пётр', 'last_name' => 'Сидоров']);
+        $company->assignModerator($member, 'member', $owner);
+
+        $this->actingAs($owner)
+            ->get(route('companies.show', $company))
+            ->assertStatus(200)
+            ->assertSee('Пётр Сидоров');
+    }
 }

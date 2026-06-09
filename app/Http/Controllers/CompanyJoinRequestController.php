@@ -92,15 +92,20 @@ class CompanyJoinRequestController extends Controller
             'can_manage_moderators' => 'boolean',
         ]);
 
+        // #144: роль ограничиваем теми, что доступны проверяющему (защита от
+        // подделки запроса). По умолчанию — «Участник».
+        $assignableRoles = array_keys($joinRequest->company->getAssignableMemberRoles(auth()->user()));
+        $role = in_array($validated['role'] ?? null, $assignableRoles, true)
+            ? $validated['role']
+            : 'member';
+
         DB::beginTransaction();
 
         try {
-            // Добавляем пользователя в компанию.
-            // #144: по умолчанию роль «Участник», а не желаемая роль из запроса,
-            // чтобы пользователь не мог сам себе назначить админа/модератора.
+            // Добавляем пользователя в компанию (с проверенной ролью).
             $joinRequest->company->assignModerator(
                 $joinRequest->user,
-                ! empty($validated['role']) ? $validated['role'] : 'member',
+                $role,
                 auth()->user(),
                 $validated['can_manage_moderators'] ?? false
             );
