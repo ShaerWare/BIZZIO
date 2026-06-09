@@ -11,7 +11,9 @@ class TenderClosed
     use Dispatchable, SerializesModels;
 
     public Model $tender; // Rfq или Auction
+
     public string $tenderType; // 'rfq' или 'auction'
+
     public ?int $winnerCompanyId;
 
     /**

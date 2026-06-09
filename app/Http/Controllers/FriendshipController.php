@@ -15,24 +15,56 @@ class FriendshipController extends Controller
     /**
      * Страница «Друзья» с вкладками
      */
+    public function searchUsers(Request $request)
+    {
+        // #142: живой поиск пользователей для выпадающего списка на /friends.
+        $q = trim((string) $request->get('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        $users = User::where('id', '!=', auth()->id())
+            ->where(function ($query) use ($op, $q) {
+                $query->where('name', $op, "%{$q}%")
+                    ->orWhere('last_name', $op, "%{$q}%")
+                    ->orWhere('position', $op, "%{$q}%");
+            })
+            ->orderBy('name')
+            ->limit(8)
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'title' => $u->full_name,
+                'subtitle' => $u->position,
+                'avatar' => $u->avatar_url,
+                'url' => route('users.show', $u),
+            ]);
+
+        return response()->json($users);
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $tab = $request->get('tab', 'friends');
         $search = $request->get('search', '');
 
-        $friendsQuery = $user->friends();
-
-        if ($search) {
+        // #142: при поиске ищем по всем пользователям сайта (чтобы находить новых друзей),
+        // без поиска — показываем список текущих друзей. Email в поиске не используем (#139).
+        if ($search !== '') {
             $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $friendsQuery->where(function ($q) use ($op, $search) {
-                $q->where('name', $op, "%{$search}%")
-                    ->orWhere('email', $op, "%{$search}%")
-                    ->orWhere('position', $op, "%{$search}%");
-            });
+            $friends = User::where('id', '!=', $user->id)
+                ->where(function ($q) use ($op, $search) {
+                    $q->where('name', $op, "%{$search}%")
+                        ->orWhere('position', $op, "%{$search}%");
+                })
+                ->orderBy('name')
+                ->paginate(20, ['*'], 'friends_page');
+        } else {
+            $friends = $user->friends()->paginate(20, ['*'], 'friends_page');
         }
-
-        $friends = $friendsQuery->paginate(20, ['*'], 'friends_page');
 
         $incoming = $user->pendingFriendRequests()
             ->with('sender')
@@ -47,7 +79,10 @@ class FriendshipController extends Controller
 
         $friendsOfFriends = $user->friendsOfFriends(12);
 
-        return view('friends.index', compact('friends', 'incoming', 'outgoing', 'friendsOfFriends', 'tab', 'search'));
+        // Реальное число друзей для бейджа вкладки (не зависит от поиска по всем пользователям).
+        $friendsCount = $user->friends()->count();
+
+        return view('friends.index', compact('friends', 'incoming', 'outgoing', 'friendsOfFriends', 'tab', 'search', 'friendsCount'));
     }
 
     /**

@@ -26,7 +26,7 @@ class RfqPolicy
         }
 
         // Закрытые RFQ доступны только организатору и приглашённым компаниям
-        return $rfq->canManage($user) 
+        return $rfq->canManage($user)
             || $rfq->invitations()->whereHas('company.moderators', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })->exists();
@@ -56,5 +56,13 @@ class RfqPolicy
     {
         // Удаление только до начала приёма заявок
         return $rfq->status === 'draft' && $rfq->canManage($user);
+    }
+
+    /**
+     * #148: отменить запрос цен может организатор до его закрытия.
+     */
+    public function cancel(User $user, Rfq $rfq): bool
+    {
+        return $rfq->canBeCancelled() && $rfq->canManage($user);
     }
 }

@@ -1,2 +1,16 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Приватные разделы (не для индексации)
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /friends
+Disallow: /notifications
+Disallow: /my-join-requests
+Disallow: /subscriptions
+Disallow: /login
+Disallow: /register
+Disallow: /admin
+Disallow: /temp-upload
+
+Sitemap: https://bizzio.ru/sitemap.xml

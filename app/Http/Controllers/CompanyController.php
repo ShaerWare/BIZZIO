@@ -34,7 +34,7 @@ class CompanyController extends Controller
             $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
             $query->where(function ($q) use ($search, $op) {
                 $q->where('name', $op, "%{$search}%")
-                  ->orWhere('inn', $op, "%{$search}%");
+                    ->orWhere('inn', $op, "%{$search}%");
             });
         }
 
@@ -54,6 +54,7 @@ class CompanyController extends Controller
     public function create()
     {
         $industries = Industry::orderBy('name')->get();
+
         return view('companies.create', compact('industries'));
     }
 
@@ -95,16 +96,16 @@ class CompanyController extends Controller
     public function show(Company $company)
     {
         $company->load([
-        'industry', 
-        'creator', 
-        'moderators',
-        'joinRequests' => function ($query) {
-            $query->where('status', 'pending')
-                  ->with('user')
-                  ->orderBy('created_at', 'desc');
-            }
+            'industry',
+            'creator',
+            'moderators',
+            'joinRequests' => function ($query) {
+                $query->where('status', 'pending')
+                    ->with('user')
+                    ->orderBy('created_at', 'desc');
+            },
         ]);
-        
+
         return view('companies.show', compact('company'));
     }
 
@@ -114,11 +115,12 @@ class CompanyController extends Controller
     public function edit(Company $company)
     {
         // Проверка прав доступа
-        if ($company->created_by !== auth()->id() && !$company->isModerator(auth()->user())) {
+        if ($company->created_by !== auth()->id() && ! $company->isModerator(auth()->user())) {
             abort(403, 'У вас нет прав для редактирования этой компании');
         }
 
         $industries = Industry::orderBy('name')->get();
+
         return view('companies.edit', compact('company', 'industries'));
     }
 
@@ -178,7 +180,7 @@ class CompanyController extends Controller
     public function uploadPhotos(Request $request, Company $company)
     {
         // Проверка прав доступа
-        if (!$company->isModerator(auth()->user())) {
+        if (! $company->isModerator(auth()->user())) {
             abort(403, 'У вас нет прав для загрузки фото');
         }
 
@@ -201,13 +203,13 @@ class CompanyController extends Controller
     public function deletePhoto(Request $request, Company $company, int $mediaId)
     {
         // Проверка прав доступа
-        if (!$company->isModerator(auth()->user())) {
+        if (! $company->isModerator(auth()->user())) {
             abort(403, 'У вас нет прав для удаления фото');
         }
 
         $media = $company->getMedia('photos')->firstWhere('id', $mediaId);
 
-        if (!$media) {
+        if (! $media) {
             abort(404, 'Фото не найдено');
         }
 

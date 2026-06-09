@@ -60,7 +60,42 @@
                     @endcan
                 </div>
             @endcan
+
+            {{-- #148: отмена аукциона организатором до начала торгов --}}
+            @can('cancel', $auction)
+                <div x-data="{ showCancel: false }">
+                    <button type="button" @click="showCancel = true"
+                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                        Отменить аукцион
+                    </button>
+                    <div x-show="showCancel" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div class="bg-white rounded-lg shadow-xl p-5 w-full max-w-md" @click.outside="showCancel = false">
+                            <h3 class="text-base font-semibold text-gray-900 mb-2">Отмена аукциона</h3>
+                            <p class="text-sm text-gray-600 mb-3">Укажите причину отмены — она будет видна участникам.</p>
+                            <form method="POST" action="{{ route('auctions.cancel', $auction) }}">
+                                @csrf
+                                <textarea name="cancellation_reason" rows="3" maxlength="1000" required
+                                          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+                                          placeholder="Причина отмены">{{ old('cancellation_reason') }}</textarea>
+                                <x-input-error :messages="$errors->get('cancellation_reason')" class="mt-2" />
+                                <div class="mt-4 flex justify-end gap-2">
+                                    <button type="button" @click="showCancel = false"
+                                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300">Назад</button>
+                                    <button type="submit"
+                                            class="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">Отменить аукцион</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endcan
         </div>
+
+        @if($auction->status === 'cancelled' && $auction->cancellation_reason)
+            <div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
+                <strong>Аукцион отменён.</strong> Причина: {{ $auction->cancellation_reason }}
+            </div>
+        @endif
 
         <!-- Главная информация -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">

@@ -131,10 +131,10 @@ class RfqListScreen extends Screen
                         return Link::make('Ред.')
                             ->icon('pencil')
                             ->route('platform.rfqs.edit', $rfq)
-                            ->class('btn btn-sm btn-link') .
+                            ->class('btn btn-sm btn-link').
                         Button::make('Удалить')
                             ->icon('trash')
-                            ->confirm('Вы уверены, что хотите удалить RFQ «' . $rfq->number . '»?')
+                            ->confirm('Вы уверены, что хотите удалить RFQ «'.$rfq->number.'»?')
                             ->method('remove', ['rfq' => $rfq->id])
                             ->class('btn btn-sm btn-link text-danger');
                     }),
@@ -150,6 +150,6 @@ class RfqListScreen extends Screen
         $rfq = Rfq::findOrFail($request->get('rfq'));
         $rfq->delete();
 
-        \Orchid\Support\Facades\Toast::info('Запрос цен «' . $rfq->number . '» удалён.');
+        \Orchid\Support\Facades\Toast::info('Запрос цен «'.$rfq->number.'» удалён.');
     }
 }

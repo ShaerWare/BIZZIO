@@ -15,6 +15,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectMemberController;
 use App\Http\Controllers\RfqController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TempUploadController;
 use App\Http\Controllers\TenderController;
@@ -40,6 +41,9 @@ Route::get('/', function () {
 
     return view('welcome');
 });
+
+// #152: SEO — динамический sitemap
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 
 // ========================================================================
 // COMPANIES ROUTES
@@ -82,6 +86,9 @@ Route::middleware('auth')->group(function () {
         ->name('companies.moderators.store');
     Route::put('/companies/{company}/moderators/{user}', [CompanyModeratorController::class, 'update'])
         ->name('companies.moderators.update');
+    // #137: должность участника в компании
+    Route::put('/companies/{company}/members/{user}/position', [CompanyModeratorController::class, 'updatePosition'])
+        ->name('companies.members.position');
     Route::delete('/companies/{company}/moderators/{user}', [CompanyModeratorController::class, 'destroy'])
         ->name('companies.moderators.destroy');
 });
@@ -95,7 +102,6 @@ Route::get('companies/{company}', [CompanyController::class, 'show'])->name('com
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/activities', [DashboardController::class, 'loadMoreActivities'])->name('dashboard.activities');
 
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
@@ -202,6 +208,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Активация RFQ
     Route::post('/rfqs/{rfq}/activate', [RfqController::class, 'activate'])->name('rfqs.activate');
+    Route::post('/rfqs/{rfq}/cancel', [RfqController::class, 'cancel'])->name('rfqs.cancel');
 
     // Подача заявки
     Route::post('/rfqs/{rfq}/bids', [RfqController::class, 'storeBid'])->name('rfqs.bids.store');
@@ -241,6 +248,7 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::put('/{auction}', [AuctionController::class, 'update'])->name('update');
         Route::delete('/{auction}', [AuctionController::class, 'destroy'])->name('destroy');
         Route::post('/{auction}/activate', [AuctionController::class, 'activate'])->name('activate');
+        Route::post('/{auction}/cancel', [AuctionController::class, 'cancel'])->name('cancel');
         Route::post('/{auction}/bids', [AuctionController::class, 'storeBid'])->name('bids.store');
 
         // Генерация протокола (для организатора)
@@ -280,6 +288,7 @@ Route::get('/users/{user}', [UserProfileController::class, 'show'])->name('users
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/friends', [FriendshipController::class, 'index'])->name('friends.index');
+    Route::get('/friends/search', [FriendshipController::class, 'searchUsers'])->name('friends.search');
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
     Route::post('/friends/{user}/accept', [FriendshipController::class, 'accept'])->name('friends.accept');
     Route::delete('/friends/{user}', [FriendshipController::class, 'remove'])->name('friends.remove');

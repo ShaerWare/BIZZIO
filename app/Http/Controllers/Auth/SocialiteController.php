@@ -14,7 +14,7 @@ class SocialiteController extends Controller
     /**
      * Redirect to OAuth provider
      *
-     * @param string $provider (google, yandex)
+     * @param  string  $provider  (google, yandex)
      */
     public function redirect(string $provider)
     {
@@ -23,16 +23,15 @@ class SocialiteController extends Controller
 
     /**
      * Handle OAuth callback
-     *
-     * @param string $provider
      */
     public function callback(string $provider)
     {
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Exception $e) {
-            \Log::error("OAuth callback error for {$provider}: " . $e->getMessage());
-            return redirect('/login')->withErrors(['msg' => 'Ошибка авторизации через ' . $provider . ': ' . $e->getMessage()]);
+            \Log::error("OAuth callback error for {$provider}: ".$e->getMessage());
+
+            return redirect('/login')->withErrors(['msg' => 'Ошибка авторизации через '.$provider.': '.$e->getMessage()]);
         }
 
         // Ищем пользователя по provider + provider_id
@@ -41,12 +40,12 @@ class SocialiteController extends Controller
             ->first();
 
         // Если не нашли, ищем по email
-        if (!$user) {
+        if (! $user) {
             $user = User::where('email', $socialUser->getEmail())->first();
         }
 
         // Если всё ещё нет — создаём нового
-        if (!$user) {
+        if (! $user) {
             $user = User::create([
                 'name' => $socialUser->getName(),
                 'email' => $socialUser->getEmail(),
@@ -67,8 +66,14 @@ class SocialiteController extends Controller
             $user->update([
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
-                'avatar' => $socialUser->getAvatar(),
             ]);
+
+            // #134: не перезаписываем аватар, если у пользователя он уже есть
+            // (например, обновлён вручную в bizzio). Берём аватар провайдера
+            // только когда своего ещё нет.
+            if (empty($user->avatar)) {
+                $user->update(['avatar' => $socialUser->getAvatar()]);
+            }
         }
 
         // Входим в систему

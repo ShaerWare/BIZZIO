@@ -111,7 +111,7 @@ class CleanupTestDataCommand extends Command
             return self::SUCCESS;
         }
 
-        DB::transaction(function () use ($companyIds, $rfqIds, $auctionIds, $projectIds) {
+        DB::transaction(function () use ($companyIds, $rfqIds, $auctionIds) {
             // Soft-delete ставок
             RfqBid::whereIn('rfq_id', $rfqIds)->delete();
             AuctionBid::whereIn('auction_id', $auctionIds)->delete();

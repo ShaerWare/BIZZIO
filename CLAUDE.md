@@ -113,7 +113,7 @@ php artisan tinker
 ```
 app/
 ├── Services/       # Business logic: RfqScoringService, AuctionWinnerService, *ProtocolService, NewsFilterService
-├── Events/         # Domain events (registered in AppServiceProvider@registerEventListeners)
+├── Events/         # Domain events (listeners auto-discovered from app/Listeners)
 ├── Listeners/      # Send*Notification handlers
 ├── Jobs/           # CloseAuctionJob, CloseRfqJob, UpdateAuctionStatuses, NotifyAdminOnRSSErrorJob
 ├── Policies/       # RfqPolicy, AuctionPolicy (registered via Gate::policy in AppServiceProvider)
@@ -124,7 +124,7 @@ app/
 ```
 
 ### Event-Driven Architecture
-All event→listener mappings are registered in `AppServiceProvider@registerEventListeners()`. Pattern: domain `Event` classes in `app/Events/` are handled by `Send*Notification` listeners in `app/Listeners/`. Check that method for the authoritative list.
+Event→listener wiring uses Laravel's **automatic listener discovery** (Laravel 11+): each `Send*Notification` listener in `app/Listeners/` is auto-registered for the event its `handle()` type-hints. Do NOT also register them manually with `Event::listen` — that double-registers the listener and fires it twice (see #143). Pattern: domain `Event` classes in `app/Events/` → `Send*Notification` listeners in `app/Listeners/`.
 
 ### Key Packages
 - `orchid/platform` — Admin panel
@@ -192,23 +192,36 @@ Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom
 
 ## Docker Setup
 
-- **app** container (`my_project_app`): PHP 8.2-FPM + Nginx + Supervisor, timezone Europe/Moscow, resource limits: 1 CPU / 0.9G RAM. Port 80 not exposed by default (use nginx-proxy in production)
+- **app** container (`my_project_app`): PHP 8.2-FPM + Nginx + Supervisor, timezone Europe/Moscow, resource limits: 1 CPU / 0.9G RAM. Port 80 not exposed; the Caddy proxy reaches it over the Docker network.
 - **db** container (`my_project_db`): PostgreSQL 14 Alpine, host port 5435, timezone Europe/Moscow
-- Production: `docker-compose.override.yml.prod` with nginx-proxy + Let's Encrypt
+- Production proxy: **Caddy** (`bizzio-caddy`, caddy:2-alpine) terminates TLS (auto Let's Encrypt) on ports 80/443 and reverse-proxies each domain to the right app container. Config: `Caddyfile` (untracked, lives on the server). The prod `docker-compose.override.yml` (also untracked) defines the `caddy` service and `expose: 80` on the app.
 - Upload limits: 100M (`docker/uploads.ini`), client_max_body_size 100M (`docker/nginx.conf`)
+- **No Node.js in the app container** — Vite assets are built locally and `public/build` is committed to git (see `.gitignore`). There is no `npm` step on the server.
 
-## Production Deployment
+## CI/CD & Deployment
 
-Supervisor (configured in `docker/supervisord.conf`) auto-starts: php-fpm, nginx, queue worker (`queue:work database`), and scheduler (`schedule:run` every 60 sec).
+Two environments live on the same server (37.233.82.55), both behind the shared Caddy proxy:
+
+| | Staging | Production |
+|---|---|---|
+| Domain | test.bizzio.ru (basic-auth) | bizzio.ru |
+| Branch | `develop` | `main` |
+| Path | `/var/www/bizzio-test` (project `bizzio-test`, db port 5436) | `/var/www/BIZZIO` (project `bizzio`) |
+
+**Pipeline** (`.github/workflows/ci.yml`, GitHub Actions):
+- On every PR / push to `develop` or `main`: jobs **Tests** (`php artisan test`, SQLite), **Code style (Pint)** (`pint --test`), **Assets freshness** (`npm run build` must match committed `public/build`). All three are required status checks (branch protection on `develop` + `main`).
+- Push to `develop` → after checks pass, `deploy-test` SSH-deploys to test.bizzio.ru.
+- Push to `main` → after checks pass, `deploy-prod` SSH-deploys to bizzio.ru, **gated by the `production` GitHub Environment (manual approval)**.
+
+**Promotion flow:** feature branch → PR to `develop` → checks green → merge (auto-deploys to test) → review on test.bizzio.ru → PR `develop` → `main` → approve in GitHub → prod deploy.
+
+Both deploy jobs run `scripts/deploy.sh` inside the app container (composer install --no-dev, migrate --force, config/route/view cache, queue:restart). Supervisor (`docker/supervisord.conf`) auto-starts php-fpm, nginx, queue worker, and scheduler. Secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY` (dedicated deploy key).
 
 ```bash
-# Deploy
-git pull origin main
-docker compose exec app composer install --no-dev --optimize-autoloader
-docker compose exec app npm run build                    # Rebuild frontend assets (Vite)
-docker compose exec app php artisan migrate --force
-docker compose exec app php artisan config:cache && docker compose exec app php artisan route:cache && docker compose exec app php artisan view:cache
-docker compose exec app php artisan queue:restart
+# Manual deploy fallback (run on server; NO npm step — assets are committed)
+cd /var/www/BIZZIO            # or /var/www/bizzio-test
+git fetch origin main && git reset --hard origin/main
+bash scripts/deploy.sh
 
 # Logs
 docker compose exec app tail -f /var/log/queue-worker.log    # Queue worker
@@ -286,7 +299,7 @@ All project docs in `docs/`:
 
 Wiki docs in `wiki/` — detailed module documentation (architecture, models, services, deploy, frontend, etc.)
 
-**Note:** No CI/CD pipelines configured. Deployment is manual via SSH.
+**Note:** CI/CD via GitHub Actions — see the "CI/CD & Deployment" section above.
 
 ## Claude Code Instructions
 - После каждого успешного выполнения задачи записывай краткий отчет (что сделано, какие файлы изменены) в конец файла `docs/CHANGELOG_CLAUDE.md`.

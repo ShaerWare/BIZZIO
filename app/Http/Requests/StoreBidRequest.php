@@ -12,14 +12,14 @@ class StoreBidRequest extends FormRequest
     public function authorize(): bool
     {
         $rfq = $this->route('rfq');
-        
+
         // Проверка: RFQ активен
-        if (!$rfq || !$rfq->isActive()) {
+        if (! $rfq || ! $rfq->isActive()) {
             return false;
         }
 
         // Проверка: пользователь является модератором какой-либо компании
-        if (!$this->user() || !$this->user()->isModeratorOfAnyCompany()) {
+        if (! $this->user() || ! $this->user()->isModeratorOfAnyCompany()) {
             return false;
         }
 
@@ -56,7 +56,7 @@ class StoreBidRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             // Проверка: пользователь является модератором выбранной компании
-            if ($this->company_id && !$this->user()->isModeratorOf(\App\Models\Company::find($this->company_id))) {
+            if ($this->company_id && ! $this->user()->isModeratorOf(\App\Models\Company::find($this->company_id))) {
                 $validator->errors()->add('company_id', 'Вы не являетесь модератором этой компании');
             }
 

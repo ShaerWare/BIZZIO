@@ -18,7 +18,7 @@ class SendTenderInvitationNotification
 
         // Отправляем уведомление каждому модератору
         Notification::send(
-            $moderators, 
+            $moderators,
             new TenderInvitationNotification($event->tender, $event->tenderType)
         );
     }

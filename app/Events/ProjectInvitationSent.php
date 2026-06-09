@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
-use App\Models\Project;
 use App\Models\Company;
+use App\Models\Project;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -12,6 +12,7 @@ class ProjectInvitationSent
     use Dispatchable, SerializesModels;
 
     public Project $project;
+
     public Company $invitedCompany;
 
     /**

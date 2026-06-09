@@ -111,7 +111,7 @@ class Company extends Model implements HasMedia
     public function moderators(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'company_user')
-            ->withPivot(['role', 'added_by', 'added_at', 'can_manage_moderators'])
+            ->withPivot(['role', 'position', 'added_by', 'added_at', 'can_manage_moderators'])
             ->withTimestamps();
     }
 
@@ -246,7 +246,8 @@ class Company extends Model implements HasMedia
         }
 
         $this->moderators()->attach($user->id, [
-            'role' => $role ?? 'moderator',
+            // #144: new members default to "Участник" (member), not moderator
+            'role' => $role ?: 'member',
             'added_by' => $addedBy?->id ?? auth()->id(),
             'added_at' => now(),
             'can_manage_moderators' => $canManageModerators,

@@ -243,7 +243,7 @@ class ProjectController extends Controller
             ->whereIn('companies.id', $user->moderatedCompanies()->pluck('companies.id'))
             ->exists();
 
-        if (!$isMember && !$isCompanyParticipant) {
+        if (! $isMember && ! $isCompanyParticipant) {
             abort(403, 'Комментировать могут только участники проекта.');
         }
 

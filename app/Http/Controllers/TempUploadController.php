@@ -25,7 +25,7 @@ class TempUploadController extends Controller
         $collection = $request->input('collection');
 
         // Генерируем уникальное имя
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
 
         // Сохраняем во временную папку
         $path = $file->storeAs('temp-uploads', $filename, 'local');
@@ -94,11 +94,12 @@ class TempUploadController extends Controller
     private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1048576) {
-            return number_format($bytes / 1048576, 1) . ' MB';
+            return number_format($bytes / 1048576, 1).' MB';
         }
         if ($bytes >= 1024) {
-            return number_format($bytes / 1024, 1) . ' KB';
+            return number_format($bytes / 1024, 1).' KB';
         }
-        return $bytes . ' B';
+
+        return $bytes.' B';
     }
 }

@@ -17,7 +17,7 @@ class CompanyFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->randomNumber(4),
+            'slug' => Str::slug($name).'-'.fake()->unique()->randomNumber(4),
             'inn' => fake()->numerify('##########'),
             'legal_form' => fake()->randomElement(['ООО', 'ИП', 'АО', 'ПАО']),
             'short_description' => fake()->sentence(10),

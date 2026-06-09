@@ -58,10 +58,9 @@ class NewsListScreen extends Screen
                 TD::make('title', 'Заголовок')
                     ->sort()
                     ->filter(TD::FILTER_TEXT)
-                    ->render(fn (News $news) => 
-                        '<a href="' . e($news->link) . '" target="_blank" class="text-blue-600 hover:text-blue-500">' 
-                        . e(Str::limit($news->title, 80)) 
-                        . '</a>'
+                    ->render(fn (News $news) => '<a href="'.e($news->link).'" target="_blank" class="text-blue-600 hover:text-blue-500">'
+                        .e(Str::limit($news->title, 80))
+                        .'</a>'
                     ),
 
                 TD::make('rss_source_id', 'Источник')
@@ -71,9 +70,8 @@ class NewsListScreen extends Screen
 
                 TD::make('published_at', 'Дата публикации')
                     ->sort()
-                    ->render(fn (News $news) => 
-                        $news->published_at 
-                            ? $news->published_at->format('d.m.Y H:i') 
+                    ->render(fn (News $news) => $news->published_at
+                            ? $news->published_at->format('d.m.Y H:i')
                             : '<span class="text-muted">Н/Д</span>'
                     ),
 
@@ -84,19 +82,16 @@ class NewsListScreen extends Screen
                 TD::make('actions', 'Действия')
                     ->align(TD::ALIGN_CENTER)
                     ->width('100px')
-                    ->render(fn (News $news) => 
-                        Button::make('Удалить')
-                            ->icon('trash')
-                            ->confirm('Удалить эту новость?')
-                            ->method('remove', ['id' => $news->id])
+                    ->render(fn (News $news) => Button::make('Удалить')
+                        ->icon('trash')
+                        ->confirm('Удалить эту новость?')
+                        ->method('remove', ['id' => $news->id])
                     ),
             ]),
         ];
     }
 
     /**
-     * @param Request $request
-     *
      * @return void
      */
     public function remove(Request $request)

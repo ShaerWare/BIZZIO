@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Rfq;
-use App\Models\RfqBid;
-use App\Models\RfqInvitation;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
+use App\Models\Rfq;
+use App\Models\RfqBid;
+use App\Models\RfqInvitation;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -29,7 +29,7 @@ class TenderController extends Controller
             $this->applyDraftFilter($rfqQuery);
             $this->applyFilters($rfqQuery, $request);
 
-            $rfqs = $rfqQuery->get()->map(fn($r) => [
+            $rfqs = $rfqQuery->get()->map(fn ($r) => [
                 'model' => $r,
                 'kind' => 'rfq',
                 'created_at' => $r->created_at,
@@ -47,7 +47,7 @@ class TenderController extends Controller
             $this->applyClosedAuctionFilter($auctionQuery);
             $this->applyFilters($auctionQuery, $request);
 
-            $auctions = $auctionQuery->get()->map(fn($a) => [
+            $auctions = $auctionQuery->get()->map(fn ($a) => [
                 'model' => $a,
                 'kind' => 'auction',
                 'created_at' => $a->created_at,
@@ -72,7 +72,7 @@ class TenderController extends Controller
             ->whereIn('company_id', $userCompanies)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($r) => [
+            ->map(fn ($r) => [
                 'model' => $r,
                 'kind' => 'rfq',
                 'created_at' => $r->created_at,
@@ -85,7 +85,7 @@ class TenderController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'model' => $a,
                 'kind' => 'auction',
                 'created_at' => $a->created_at,
@@ -107,7 +107,7 @@ class TenderController extends Controller
             ->whereIn('company_id', $userCompanies)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($b) => [
+            ->map(fn ($b) => [
                 'model' => $b,
                 'kind' => 'rfq',
                 'created_at' => $b->created_at,
@@ -117,7 +117,7 @@ class TenderController extends Controller
             ->whereIn('company_id', $userCompanies)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($b) => [
+            ->map(fn ($b) => [
                 'model' => $b,
                 'kind' => 'auction',
                 'created_at' => $b->created_at,
@@ -137,10 +137,10 @@ class TenderController extends Controller
 
         $rfqInvitations = RfqInvitation::with(['rfq.company', 'company'])
             ->whereIn('company_id', $userCompanies)
-            ->whereHas('rfq', fn($q) => $q->where('status', '!=', 'cancelled'))
+            ->whereHas('rfq', fn ($q) => $q->where('status', '!=', 'cancelled'))
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($i) => [
+            ->map(fn ($i) => [
                 'model' => $i,
                 'kind' => 'rfq',
                 'created_at' => $i->created_at,
@@ -150,7 +150,7 @@ class TenderController extends Controller
             ->whereIn('company_id', $userCompanies)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn($i) => [
+            ->map(fn ($i) => [
                 'model' => $i,
                 'kind' => 'auction',
                 'created_at' => $i->created_at,
@@ -178,7 +178,7 @@ class TenderController extends Controller
             $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
             $query->where(function ($q) use ($userCompanies) {
                 $q->where('status', '!=', 'draft')
-                  ->orWhereIn('company_id', $userCompanies);
+                    ->orWhereIn('company_id', $userCompanies);
             });
         } else {
             $query->where('status', '!=', 'draft');
@@ -194,10 +194,10 @@ class TenderController extends Controller
             $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
             $query->where(function ($q) use ($userCompanies) {
                 $q->where('type', '!=', 'closed')
-                  ->orWhereIn('company_id', $userCompanies)
-                  ->orWhereHas('invitations', function ($inv) use ($userCompanies) {
-                      $inv->whereIn('company_id', $userCompanies);
-                  });
+                    ->orWhereIn('company_id', $userCompanies)
+                    ->orWhereHas('invitations', function ($inv) use ($userCompanies) {
+                        $inv->whereIn('company_id', $userCompanies);
+                    });
             });
         } else {
             $query->where('type', '!=', 'closed');

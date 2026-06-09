@@ -14,7 +14,7 @@ class UpdateCompanyOrchidRequest extends FormRequest
     {
         $company = $this->route('company');
 
-        if (!$company) {
+        if (! $company) {
             return auth()->check(); // создание — разрешено
         }
 
@@ -32,8 +32,8 @@ class UpdateCompanyOrchidRequest extends FormRequest
         $companyId = $this->route('company')?->id;
 
         return [
-            'company.name'              => ['sometimes', 'required', 'string', 'max:255'],
-            'company.inn'               => [
+            'company.name' => ['sometimes', 'required', 'string', 'max:255'],
+            'company.inn' => [
                 'sometimes',
                 'required',
                 'string',
@@ -41,20 +41,20 @@ class UpdateCompanyOrchidRequest extends FormRequest
                 'regex:/^\d{10}$/',
                 Rule::unique('companies', 'inn')->ignore($companyId)->whereNull('deleted_at'),
             ],
-            'company.legal_form'        => ['nullable', 'string', 'max:255'],
+            'company.legal_form' => ['nullable', 'string', 'max:255'],
             'company.short_description' => ['nullable', 'string', 'max:500'],
-            'company.full_description'  => ['nullable', 'string'],
-            'company.industry_id'       => ['nullable', 'exists:industries,id'],
+            'company.full_description' => ['nullable', 'string'],
+            'company.industry_id' => ['nullable', 'exists:industries,id'],
 
             // Orchid Upload отправляет ID вложений (integer) для существующих файлов
             // и UploadedFile для новых. Валидация файлов на клиенте (acceptedFiles).
-            'company.logo'              => ['sometimes', 'nullable'],
-            'company.documents'         => ['sometimes', 'nullable'],
+            'company.logo' => ['sometimes', 'nullable'],
+            'company.documents' => ['sometimes', 'nullable'],
 
-            'company.is_verified'       => ['nullable', 'boolean'],
+            'company.is_verified' => ['nullable', 'boolean'],
 
-            'company.moderators'        => ['nullable', 'array'],
-            'company.moderators.*'      => ['exists:users,id'],
+            'company.moderators' => ['nullable', 'array'],
+            'company.moderators.*' => ['exists:users,id'],
         ];
     }
 }

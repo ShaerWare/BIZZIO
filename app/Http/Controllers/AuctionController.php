@@ -2,23 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAuctionBidRequest;
+use App\Http\Requests\StoreAuctionRequest;
+use App\Http\Requests\UpdateAuctionRequest;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
-use App\Http\Requests\StoreAuctionRequest;
-use App\Http\Requests\UpdateAuctionRequest;
-use App\Http\Requests\StoreAuctionBidRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Services\AuctionProtocolService;
 use App\Traits\HandlesTempUploads;
+use Carbon\Carbon;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AuctionController extends Controller
 {
     use AuthorizesRequests, HandlesTempUploads;
-    
+
     public function index(Request $request)
     {
         $query = Auction::with(['company.industry', 'creator', 'bids']);
@@ -30,19 +30,19 @@ class AuctionController extends Controller
                 $q->where(function ($inner) use ($userCompanies) {
                     // Черновики — только свои
                     $inner->where('status', '!=', 'draft')
-                          ->orWhereIn('company_id', $userCompanies);
+                        ->orWhereIn('company_id', $userCompanies);
                 })->where(function ($inner) use ($userCompanies) {
                     // #38: Закрытые аукционы — только организатор или приглашённые
                     $inner->where('type', '!=', 'closed')
-                          ->orWhereIn('company_id', $userCompanies)
-                          ->orWhereHas('invitations', function ($inv) use ($userCompanies) {
-                              $inv->whereIn('company_id', $userCompanies);
-                          });
+                        ->orWhereIn('company_id', $userCompanies)
+                        ->orWhereHas('invitations', function ($inv) use ($userCompanies) {
+                            $inv->whereIn('company_id', $userCompanies);
+                        });
                 });
             });
         } else {
             $query->where('status', '!=', 'draft')
-                  ->where('type', '!=', 'closed');
+                ->where('type', '!=', 'closed');
         }
 
         if ($request->filled('search')) {
@@ -70,7 +70,7 @@ class AuctionController extends Controller
     public function create()
     {
         $this->authorize('create', Auction::class);
-        
+
         $companies = auth()->user()->moderatedCompanies;
 
         return view('auctions.create', compact('companies'));
@@ -79,7 +79,7 @@ class AuctionController extends Controller
     public function store(StoreAuctionRequest $request)
     {
         DB::beginTransaction();
-        
+
         try {
             $auction = Auction::create([
                 'number' => Auction::generateNumber(),
@@ -97,7 +97,7 @@ class AuctionController extends Controller
                 'status' => $request->status ?? 'draft',
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);
-            
+
             // F3: Загрузка технического задания с поддержкой temp-файлов
             $this->addFileToModel($auction, $request, 'technical_specification', 'technical_specification');
 
@@ -109,43 +109,43 @@ class AuctionController extends Controller
                     ]);
                 }
             }
-            
+
             DB::commit();
-            
+
             if ($auction->status === 'active') {
                 return redirect()->route('auctions.show', $auction)
-                    ->with('success', 'Аукцион успешно создан и активирован! Номер: ' . $auction->number);
+                    ->with('success', 'Аукцион успешно создан и активирован! Номер: '.$auction->number);
             } else {
                 return redirect()->route('auctions.show', $auction)
-                    ->with('success', 'Аукцион сохранён как черновик. Номер: ' . $auction->number);
+                    ->with('success', 'Аукцион сохранён как черновик. Номер: '.$auction->number);
             }
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()->withInput()
-                ->with('error', 'Ошибка при создании аукциона: ' . $e->getMessage());
+                ->with('error', 'Ошибка при создании аукциона: '.$e->getMessage());
         }
     }
 
     public function show(Auction $auction)
     {
         $this->authorize('view', $auction);
-        
+
         $auction->load([
             'company.industry',
             'creator',
             'bids.company',
-            'invitations.company'
+            'invitations.company',
         ]);
-        
+
         // Сначала получаем компании пользователя
-        $userCompanies = auth()->check() 
+        $userCompanies = auth()->check()
             ? auth()->user()->moderatedCompanies()
                 ->where('companies.id', '!=', $auction->company_id)
                 ->get()
             : collect();
-        
+
         // Проверяем существующую заявку
         $existingBid = null;
         if ($userCompanies->isNotEmpty()) {
@@ -189,7 +189,7 @@ class AuctionController extends Controller
                 }
             }
         }
-        
+
         $currentPrice = $auction->getCurrentPrice();
         $stepRange = $auction->getStepRange();
 
@@ -223,42 +223,42 @@ class AuctionController extends Controller
     public function edit(Auction $auction)
     {
         $this->authorize('update', $auction);
-        
+
         return view('auctions.edit', compact('auction'));
     }
 
     public function update(UpdateAuctionRequest $request, Auction $auction)
     {
         DB::beginTransaction();
-        
+
         try {
             $auction->update($request->validated());
-            
+
             if ($request->hasFile('technical_specification')) {
                 $auction->clearMediaCollection('technical_specification');
                 $auction->addMedia($request->file('technical_specification'))
                     ->toMediaCollection('technical_specification');
             }
-            
+
             DB::commit();
-            
+
             return redirect()->route('auctions.show', $auction)
                 ->with('success', 'Аукцион успешно обновлён.');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()->withInput()
-                ->with('error', 'Ошибка при обновлении аукциона: ' . $e->getMessage());
+                ->with('error', 'Ошибка при обновлении аукциона: '.$e->getMessage());
         }
     }
 
     public function destroy(Auction $auction)
     {
         $this->authorize('delete', $auction);
-        
+
         $auction->delete();
-        
+
         return redirect()->route('auctions.index')
             ->with('success', 'Аукцион успешно удалён.');
     }
@@ -266,218 +266,243 @@ class AuctionController extends Controller
     public function activate(Auction $auction)
     {
         $this->authorize('activate', $auction);
-        
+
         $auction->update(['status' => 'active']);
-        
+
         return redirect()->route('auctions.show', $auction)
             ->with('success', 'Аукцион активирован! Теперь компании могут подавать заявки на участие.');
     }
 
-public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
-{
-    DB::beginTransaction();
-    
-    try {
-        $companyId = $request->company_id;
-        
-        // Проверка существующей заявки
-        $existingBid = $auction->bids()
-            ->where('company_id', $companyId)
-            ->first();
-        
-        // Если заявка уже есть и это НЕ торги — запретить
-        if ($existingBid && !$auction->isTrading()) {
-            DB::rollBack();
-            return back()->with('error', 'Вы уже подали заявку на участие в этом аукционе.');
-        }
+    /**
+     * #148: отмена аукциона организатором (до начала торгов) с указанием причины.
+     */
+    public function cancel(Request $request, Auction $auction)
+    {
+        $this->authorize('cancel', $auction);
 
-        // #119: В режиме торгов — ставку может делать только пользователь, подавший заявку
-        if ($auction->isTrading()) {
-            $initialBid = $auction->bids()
-                ->where('type', 'initial')
-                ->where('company_id', $companyId)
-                ->first();
-
-            if (!$initialBid || $initialBid->user_id !== auth()->id()) {
-                DB::rollBack();
-                return back()->with('error', 'Ставку может делать только сотрудник, подавший заявку на участие.');
-            }
-        }
-        
-        // Определяем тип заявки
-        $isInitialBid = !$auction->isTrading();
-
-        // A6: Запретить две ставки подряд от одного участника (только в режиме торгов)
-        if ($auction->isTrading()) {
-            $lastBid = $auction->tradingBids()->first(); // Последняя ставка (сортировка по desc)
-            if ($lastBid && $lastBid->company_id == $companyId) {
-                DB::rollBack();
-                return back()->with('error', 'Нельзя делать две ставки подряд. Дождитесь ставки другого участника.');
-            }
-        }
-
-        // Генерация анонимного кода для торгов
-        $anonymousCode = null;
-        if ($auction->isTrading()) {
-            // Если это первая ставка от компании — генерируем код
-            // Если компания уже ставила — используем существующий код
-            $firstBid = $auction->bids()
-                ->where('company_id', $companyId)
-                ->first();
-            
-            $anonymousCode = $firstBid 
-                ? $firstBid->anonymous_code 
-                : Auction::generateAnonymousCode();
-        }
-        
-        // Создание заявки/ставки
-        $bid = AuctionBid::create([
-            'auction_id' => $auction->id,
-            'company_id' => $companyId,
-            'user_id' => auth()->id(),
-            'price' => $request->price ?? $auction->starting_price,
-            'anonymous_code' => $anonymousCode,
-            'comment' => $request->comment,
-            'type' => $isInitialBid ? 'initial' : 'bid',
-            'status' => 'pending',
+        $validated = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'cancellation_reason.required' => 'Укажите причину отмены.',
         ]);
-        
-        // #110: При подаче заявки (initial bid) обновляем статус приглашения на accepted
-        if ($isInitialBid) {
-            $auction->invitations()
-                ->where('company_id', $companyId)
-                ->where('status', 'pending')
-                ->update(['status' => 'accepted']);
-        }
 
-        // Обновление времени последней ставки (для торгов)
-        if (!$isInitialBid) {
-            $auction->update(['last_bid_at' => Carbon::now()]);
-        }
-        
-        DB::commit();
-        
-        // Редирект с соответствующим сообщением
-        if ($isInitialBid) {
-            return redirect()
-                ->route('auctions.show', $auction)
-                ->with('success', 'Заявка на участие успешно подана!');
-        } else {
-            return redirect()
-                ->route('auctions.show', $auction)
-                ->with('success', 'Ставка принята! Ваш код участника: ' . $anonymousCode);
-        }
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        
-        \Log::error('Ошибка при подаче заявки/ставки', [
-            'auction_id' => $auction->id,
-            'user_id' => auth()->id(),
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+        $auction->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $validated['cancellation_reason'],
         ]);
-        
-        return back()
-            ->with('error', 'Ошибка при подаче заявки: ' . $e->getMessage())
-            ->withInput();
+
+        return redirect()->route('auctions.show', $auction)
+            ->with('success', 'Аукцион отменён.');
     }
-}
+
+    public function storeBid(StoreAuctionBidRequest $request, Auction $auction)
+    {
+        DB::beginTransaction();
+
+        try {
+            $companyId = $request->company_id;
+
+            // Проверка существующей заявки
+            $existingBid = $auction->bids()
+                ->where('company_id', $companyId)
+                ->first();
+
+            // Если заявка уже есть и это НЕ торги — запретить
+            if ($existingBid && ! $auction->isTrading()) {
+                DB::rollBack();
+
+                return back()->with('error', 'Вы уже подали заявку на участие в этом аукционе.');
+            }
+
+            // #119: В режиме торгов — ставку может делать только пользователь, подавший заявку
+            if ($auction->isTrading()) {
+                $initialBid = $auction->bids()
+                    ->where('type', 'initial')
+                    ->where('company_id', $companyId)
+                    ->first();
+
+                if (! $initialBid || $initialBid->user_id !== auth()->id()) {
+                    DB::rollBack();
+
+                    return back()->with('error', 'Ставку может делать только сотрудник, подавший заявку на участие.');
+                }
+            }
+
+            // Определяем тип заявки
+            $isInitialBid = ! $auction->isTrading();
+
+            // A6: Запретить две ставки подряд от одного участника (только в режиме торгов)
+            if ($auction->isTrading()) {
+                $lastBid = $auction->tradingBids()->first(); // Последняя ставка (сортировка по desc)
+                if ($lastBid && $lastBid->company_id == $companyId) {
+                    DB::rollBack();
+
+                    return back()->with('error', 'Нельзя делать две ставки подряд. Дождитесь ставки другого участника.');
+                }
+            }
+
+            // Генерация анонимного кода для торгов
+            $anonymousCode = null;
+            if ($auction->isTrading()) {
+                // Если это первая ставка от компании — генерируем код
+                // Если компания уже ставила — используем существующий код
+                $firstBid = $auction->bids()
+                    ->where('company_id', $companyId)
+                    ->first();
+
+                $anonymousCode = $firstBid
+                    ? $firstBid->anonymous_code
+                    : Auction::generateAnonymousCode();
+            }
+
+            // Создание заявки/ставки
+            $bid = AuctionBid::create([
+                'auction_id' => $auction->id,
+                'company_id' => $companyId,
+                'user_id' => auth()->id(),
+                'price' => $request->price ?? $auction->starting_price,
+                'anonymous_code' => $anonymousCode,
+                'comment' => $request->comment,
+                'type' => $isInitialBid ? 'initial' : 'bid',
+                'status' => 'pending',
+            ]);
+
+            // #110: При подаче заявки (initial bid) обновляем статус приглашения на accepted
+            if ($isInitialBid) {
+                $auction->invitations()
+                    ->where('company_id', $companyId)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'accepted']);
+            }
+
+            // Обновление времени последней ставки (для торгов)
+            if (! $isInitialBid) {
+                $auction->update(['last_bid_at' => Carbon::now()]);
+            }
+
+            DB::commit();
+
+            // Редирект с соответствующим сообщением
+            if ($isInitialBid) {
+                return redirect()
+                    ->route('auctions.show', $auction)
+                    ->with('success', 'Заявка на участие успешно подана!');
+            } else {
+                return redirect()
+                    ->route('auctions.show', $auction)
+                    ->with('success', 'Ставка принята! Ваш код участника: '.$anonymousCode);
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('Ошибка при подаче заявки/ставки', [
+                'auction_id' => $auction->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->with('error', 'Ошибка при подаче заявки: '.$e->getMessage())
+                ->withInput();
+        }
+    }
 
     public function myAuctions()
-{
-    $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
-    
-    $auctions = Auction::with(['company', 'bids'])
-        ->where(function($query) use ($userCompanies) {
-            $query->whereIn('company_id', $userCompanies)
-                ->orWhere('created_by', auth()->id());
-        })
-        ->orderBy('created_at', 'desc')
-        ->paginate(20);
-    
-    return view('auctions.my-auctions', compact('auctions'));
-}
+    {
+        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
+
+        $auctions = Auction::with(['company', 'bids'])
+            ->where(function ($query) use ($userCompanies) {
+                $query->whereIn('company_id', $userCompanies)
+                    ->orWhere('created_by', auth()->id());
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('auctions.my-auctions', compact('auctions'));
+    }
 
     public function myBids()
-{
-    $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
-    
-    $bids = AuctionBid::with(['auction.company', 'company'])
-        ->whereIn('company_id', $userCompanies)
-        ->orderBy('created_at', 'desc')
-        ->paginate(20);
-    
-    return view('auctions.my-bids', compact('bids'));
-}
+    {
+        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
+
+        $bids = AuctionBid::with(['auction.company', 'company'])
+            ->whereIn('company_id', $userCompanies)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('auctions.my-bids', compact('bids'));
+    }
 
     public function myInvitations()
-{
-    $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
-    
-    $invitations = AuctionInvitation::with(['auction.company', 'company'])
-        ->whereIn('company_id', $userCompanies)
-        ->orderBy('created_at', 'desc')
-        ->paginate(20);
-    
-    return view('auctions.my-invitations', compact('invitations'));
-}
+    {
+        $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id'); // ⚠️ ИСПРАВЛЕНО
 
-public function getState(Auction $auction)
-{
-    $this->authorize('view', $auction);
-    
-    if (!$auction->isTrading()) {
-        return response()->json([
-            'status' => 'not_trading',
-            'message' => 'Аукцион не находится в режиме торгов.',
-        ], 400);
+        $invitations = AuctionInvitation::with(['auction.company', 'company'])
+            ->whereIn('company_id', $userCompanies)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('auctions.my-invitations', compact('invitations'));
     }
-    
-    $userCompanies = auth()->check() 
-        ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray() // ⚠️ ИСПРАВЛЕНО
-        : [];
-    
-    $bids = $auction->tradingBids()
-        ->with('company:id,name')
-        ->get()
-        ->map(function ($bid) use ($auction, $userCompanies) {
-            $canSeeCompany = auth()->check() && $auction->canManage(auth()->user());
-            
-            return [
-                'id' => $bid->id,
-                'anonymous_code' => $bid->anonymous_code,
-                'company_name' => $canSeeCompany ? $bid->company->name : null,
-                'price' => number_format($bid->price, 2, '.', ''),
-                'price_formatted' => number_format($bid->price, 2, '.', ' ') . ' ' . $auction->currency_symbol,
-                'created_at' => $bid->created_at->format('H:i:s'),
-                'is_mine' => in_array($bid->company_id, $userCompanies),
-            ];
-        });
-    
-    $currentPrice = $auction->getCurrentPrice();
-    
-    $timeRemaining = null;
-    if ($auction->last_bid_at) {
-        $closingTime = Carbon::parse($auction->last_bid_at)->addMinutes(20);
-        $timeRemaining = $closingTime->diffInSeconds(Carbon::now(), false);
-        
-        if ($timeRemaining < 0) {
-            $timeRemaining = 0;
+
+    public function getState(Auction $auction)
+    {
+        $this->authorize('view', $auction);
+
+        if (! $auction->isTrading()) {
+            return response()->json([
+                'status' => 'not_trading',
+                'message' => 'Аукцион не находится в режиме торгов.',
+            ], 400);
         }
+
+        $userCompanies = auth()->check()
+            ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray() // ⚠️ ИСПРАВЛЕНО
+            : [];
+
+        $bids = $auction->tradingBids()
+            ->with('company:id,name')
+            ->get()
+            ->map(function ($bid) use ($auction, $userCompanies) {
+                $canSeeCompany = auth()->check() && $auction->canManage(auth()->user());
+
+                return [
+                    'id' => $bid->id,
+                    'anonymous_code' => $bid->anonymous_code,
+                    'company_name' => $canSeeCompany ? $bid->company->name : null,
+                    'price' => number_format($bid->price, 2, '.', ''),
+                    'price_formatted' => number_format($bid->price, 2, '.', ' ').' '.$auction->currency_symbol,
+                    'created_at' => $bid->created_at->format('H:i:s'),
+                    'is_mine' => in_array($bid->company_id, $userCompanies),
+                ];
+            });
+
+        $currentPrice = $auction->getCurrentPrice();
+
+        $timeRemaining = null;
+        if ($auction->last_bid_at) {
+            $closingTime = Carbon::parse($auction->last_bid_at)->addMinutes(20);
+            $timeRemaining = $closingTime->diffInSeconds(Carbon::now(), false);
+
+            if ($timeRemaining < 0) {
+                $timeRemaining = 0;
+            }
+        }
+
+        return response()->json([
+            'status' => 'trading',
+            'auction_status' => $auction->status,
+            'current_price' => number_format($currentPrice, 2, '.', ''),
+            'current_price_formatted' => number_format($currentPrice, 2, '.', ' ').' '.$auction->currency_symbol,
+            'bids_count' => $bids->count(),
+            'bids' => $bids,
+            'time_remaining' => $timeRemaining,
+            'last_updated' => Carbon::now()->toIso8601String(),
+        ]);
     }
-    
-    return response()->json([
-        'status' => 'trading',
-        'auction_status' => $auction->status,
-        'current_price' => number_format($currentPrice, 2, '.', ''),
-        'current_price_formatted' => number_format($currentPrice, 2, '.', ' ') . ' ' . $auction->currency_symbol,
-        'bids_count' => $bids->count(),
-        'bids' => $bids,
-        'time_remaining' => $timeRemaining,
-        'last_updated' => Carbon::now()->toIso8601String(),
-    ]);
-}
 
     /**
      * Генерация протокола аукциона (вручную)
@@ -490,7 +515,7 @@ public function getState(Auction $auction)
         $filename = $protocolService->generate($auction);
 
         if ($filename) {
-            return back()->with('success', 'Протокол успешно сгенерирован: ' . $filename);
+            return back()->with('success', 'Протокол успешно сгенерирован: '.$filename);
         } else {
             return back()->with('error', 'Ошибка при генерации протокола. Проверьте логи.');
         }

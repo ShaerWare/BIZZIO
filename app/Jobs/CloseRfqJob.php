@@ -3,8 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\Rfq;
-use App\Services\RfqScoringService;
 use App\Services\RfqProtocolService;
+use App\Services\RfqScoringService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,6 +17,7 @@ class CloseRfqJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $tries = 3;
+
     public $timeout = 120;
 
     protected Rfq $rfq;
@@ -35,8 +36,7 @@ class CloseRfqJob implements ShouldQueue
     public function handle(
         RfqScoringService $scoringService,
         RfqProtocolService $protocolService
-    ): void
-    {
+    ): void {
         try {
             // 1. Расчёт баллов для всех заявок
             $scoringService->calculateScores($this->rfq);
@@ -66,7 +66,7 @@ class CloseRfqJob implements ShouldQueue
                 Log::warning("RFQ #{$this->rfq->number} закрыт без заявок");
             }
         } catch (\Exception $e) {
-            Log::error("Ошибка при закрытии RFQ #{$this->rfq->number}: " . $e->getMessage());
+            Log::error("Ошибка при закрытии RFQ #{$this->rfq->number}: ".$e->getMessage());
             throw $e;
         }
     }

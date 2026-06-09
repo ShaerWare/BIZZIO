@@ -196,8 +196,7 @@
                                         </span>
                                     </div>
                                     <div>
-                                        <div class="text-sm font-medium text-gray-900">{{ $member->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $member->email }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $member->full_name }}</div>
                                     </div>
                                     {{-- Бейдж роли --}}
                                     @php
@@ -264,8 +263,8 @@
                             </span>
                         </div>
                         <div>
-                            <div class="text-sm font-medium text-gray-900">{{ $request->user->name }}</div>
-                            <div class="text-xs text-gray-500">{{ $request->user->email }} &middot; {{ $request->company->name }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $request->user->full_name }}</div>
+                            <div class="text-xs text-gray-500">{{ $request->company->name }}</div>
                             @if($request->message)
                                 <div class="text-xs text-gray-600 mt-1 italic">{{ $request->message }}</div>
                             @endif

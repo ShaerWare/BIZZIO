@@ -51,7 +51,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // Удалить старый аватар, если это локальный файл
-        if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+        if ($user->avatar && ! str_starts_with($user->avatar, 'http')) {
             Storage::disk('public')->delete($user->avatar);
         }
 
@@ -71,7 +71,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // Удалить файл аватара, если это локальный файл
-        if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+        if ($user->avatar && ! str_starts_with($user->avatar, 'http')) {
             Storage::disk('public')->delete($user->avatar);
         }
 
@@ -95,15 +95,15 @@ class ProfileController extends Controller
         $user = $request->user();
 
         Mail::raw(
-            "Обратная связь от пользователя Bizzio.ru\n\n" .
-            "ФИО: {$validated['name']}\n" .
-            "Email: {$user->email}\n" .
-            ($validated['company'] ? "Компания: {$validated['company']}\n" : '') .
+            "Обратная связь от пользователя Bizzio.ru\n\n".
+            "ФИО: {$validated['name']}\n".
+            "Email: {$user->email}\n".
+            ($validated['company'] ? "Компания: {$validated['company']}\n" : '').
             "\nСообщение:\n{$validated['message']}",
             function ($mail) use ($validated, $user) {
                 $mail->to(config('app.admin_email', 'admin@bizzio.ru'))
-                     ->subject('Обратная связь: ' . mb_substr($validated['message'], 0, 50))
-                     ->replyTo($user->email, $validated['name']);
+                    ->subject('Обратная связь: '.mb_substr($validated['message'], 0, 50))
+                    ->replyTo($user->email, $validated['name']);
             }
         );
 

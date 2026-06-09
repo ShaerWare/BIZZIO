@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Comment extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $table = 'project_comments';
 
@@ -65,7 +65,7 @@ class Comment extends Model
         return $this->user_id === $user->id || $user->inRole('admin');
     }
 
-        /**
+    /**
      * Настройки логирования активности
      */
     public function getActivitylogOptions(): LogOptions
@@ -74,7 +74,7 @@ class Comment extends Model
             ->logOnly(['content'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
                 'created' => 'добавил(а) комментарий',
                 'updated' => 'обновил(а) комментарий',
                 'deleted' => 'удалил(а) комментарий',

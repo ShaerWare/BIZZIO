@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -25,6 +25,7 @@ class User extends Orchid
      */
     protected $fillable = [
         'name',
+        'last_name',
         'email',
         'password',
         'provider',
@@ -44,6 +45,8 @@ class User extends Orchid
         'password',
         'remember_token',
         'permissions',
+        // #139: never expose email to other users via JSON (comments/posts/search responses)
+        'email',
     ];
 
     /**
@@ -299,7 +302,7 @@ class User extends Orchid
         $friendIds = $this->friends()->pluck('id')->toArray();
 
         if (empty($friendIds)) {
-            return new \Illuminate\Database\Eloquent\Collection();
+            return new \Illuminate\Database\Eloquent\Collection;
         }
 
         // Находим друзей друзей
@@ -317,7 +320,7 @@ class User extends Orchid
             ->reject(fn ($id) => $id === $this->id);
 
         if ($fofIds->isEmpty()) {
-            return new \Illuminate\Database\Eloquent\Collection();
+            return new \Illuminate\Database\Eloquent\Collection;
         }
 
         return User::whereIn('id', $fofIds)
@@ -361,7 +364,15 @@ class User extends Orchid
         }
 
         // Дефолтный аватар (генерация по инициалам)
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->full_name).'&color=7F9CF5&background=EBF4FF';
+    }
+
+    /**
+     * Полное имя «Имя Фамилия» для отображения рядом с аватаром (#145).
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->name.' '.$this->last_name);
     }
 
     // ========================

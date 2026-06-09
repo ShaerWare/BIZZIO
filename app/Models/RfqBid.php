@@ -11,8 +11,8 @@ use Orchid\Screen\AsSource;
 
 class RfqBid extends Model
 {
-    use HasFactory, SoftDeletes;
     use AsSource, Filterable;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'rfq_id',
@@ -77,7 +77,7 @@ class RfqBid extends Model
     public function canManage(User $user): bool
     {
         // Автор заявки или модератор компании-участника
-        return $this->user_id === $user->id 
+        return $this->user_id === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.rfqs');
     }

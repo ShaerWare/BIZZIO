@@ -2,18 +2,20 @@
 
 namespace App\Notifications;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class TenderClosedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public Model $tender;
+
     public string $tenderType;
+
     public bool $isWinner;
 
     /**
@@ -40,16 +42,16 @@ class TenderClosedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $tenderTypeName = $this->tenderType === 'rfq' ? 'Запрос цен' : 'Аукцион';
-        $route = $this->tenderType === 'rfq' 
-            ? route('rfqs.show', $this->tender) 
+        $route = $this->tenderType === 'rfq'
+            ? route('rfqs.show', $this->tender)
             : route('auctions.show', $this->tender);
 
         $message = (new MailMessage)
-            ->subject("Завершён {$tenderTypeName}: " . $this->tender->title)
+            ->subject("Завершён {$tenderTypeName}: ".$this->tender->title)
             ->greeting('Здравствуйте!')
             ->line("{$tenderTypeName} завершён.")
-            ->line('**Номер:** ' . $this->tender->number)
-            ->line('**Название:** ' . $this->tender->title);
+            ->line('**Номер:** '.$this->tender->number)
+            ->line('**Название:** '.$this->tender->title);
 
         if ($this->isWinner) {
             $message->line('🎉 **Поздравляем! Ваша компания определена победителем!**');
@@ -58,7 +60,7 @@ class TenderClosedNotification extends Notification implements ShouldQueue
         }
 
         $message->action('Просмотреть результаты', $route)
-                ->line('Спасибо за участие!');
+            ->line('Спасибо за участие!');
 
         return $message;
     }
@@ -75,8 +77,8 @@ class TenderClosedNotification extends Notification implements ShouldQueue
             'tender_number' => $this->tender->number,
             'tender_title' => $this->tender->title,
             'is_winner' => $this->isWinner,
-            'url' => $this->tenderType === 'rfq' 
-                ? route('rfqs.show', $this->tender) 
+            'url' => $this->tenderType === 'rfq'
+                ? route('rfqs.show', $this->tender)
                 : route('auctions.show', $this->tender),
         ];
     }

@@ -5,8 +5,8 @@ namespace App\Notifications;
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ProjectInvitationNotification extends Notification implements ShouldQueue
 {
@@ -37,11 +37,11 @@ class ProjectInvitationNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Приглашение в проект: ' . $this->project->name)
+            ->subject('Приглашение в проект: '.$this->project->name)
             ->greeting('Здравствуйте!')
             ->line('Вашу компанию пригласили принять участие в проекте.')
-            ->line('**Проект:** ' . $this->project->name)
-            ->line('**Заказчик:** ' . $this->project->company->name)
+            ->line('**Проект:** '.$this->project->name)
+            ->line('**Заказчик:** '.$this->project->company->name)
             ->action('Просмотреть проект', route('projects.show', $this->project))
             ->line('Спасибо за использование Bizzo.ru!');
     }

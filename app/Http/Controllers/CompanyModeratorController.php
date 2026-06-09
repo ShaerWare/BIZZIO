@@ -77,6 +77,30 @@ class CompanyModeratorController extends Controller
     }
 
     /**
+     * #137: Обновить должность участника в компании.
+     * Редактировать может сам пользователь (свою), менеджер компании или админ.
+     */
+    public function updatePosition(Request $request, Company $company, User $user)
+    {
+        $actor = auth()->user();
+        $canEdit = $actor->id === $user->id || $company->canManageModerators($actor);
+
+        if (! $canEdit || ! $company->isModerator($user)) {
+            abort(403, 'У вас нет прав изменять должность этого участника.');
+        }
+
+        $validated = $request->validate([
+            'position' => 'nullable|string|max:100',
+        ]);
+
+        $company->moderators()->updateExistingPivot($user->id, [
+            'position' => $validated['position'] ?? null,
+        ]);
+
+        return back()->with('success', 'Должность обновлена.');
+    }
+
+    /**
      * Удалить модератора из компании
      */
     public function destroy(Company $company, User $user)

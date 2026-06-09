@@ -30,7 +30,7 @@ class StoreProjectRequest extends FormRequest
             'is_ongoing' => 'boolean',
             'status' => 'required|in:active,completed,cancelled',
             'company_id' => 'required|exists:companies,id',
-            
+
             // Участники проекта (массив компаний с их ролями)
             'participants' => 'nullable|array',
             'participants.*.company_id' => 'required|exists:companies,id',
@@ -65,10 +65,10 @@ class StoreProjectRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         // Если чекбокс is_ongoing не отправлен, устанавливаем false
-        if (!$this->has('is_ongoing')) {
+        if (! $this->has('is_ongoing')) {
             $this->merge(['is_ongoing' => false]);
         }
-        
+
         // Если проект продолжается, убираем end_date
         if ($this->is_ongoing) {
             $this->merge(['end_date' => null]);
@@ -84,12 +84,12 @@ class StoreProjectRequest extends FormRequest
             // Проверка прав: пользователь должен быть модератором выбранной компании
             $companyId = $this->input('company_id');
             $user = auth()->user();
-            
+
             if ($companyId) {
                 $company = \App\Models\Company::find($companyId);
-                
+
                 // ИСПРАВЛЕНО: hasRole() → inRole()
-                if ($company && !$company->isModerator($user) && !$user->inRole('admin')) {
+                if ($company && ! $company->isModerator($user) && ! $user->inRole('admin')) {
                     $validator->errors()->add(
                         'company_id',
                         'Вы не являетесь модератором этой компании и не можете создать проект от её имени.'

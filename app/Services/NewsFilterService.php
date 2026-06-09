@@ -9,14 +9,14 @@ class NewsFilterService
 {
     /**
      * Фильтрация новостей по ключевым словам пользователя
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param bool $applyKeywords Применять ли фильтрацию по ключевым словам
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  bool  $applyKeywords  Применять ли фильтрацию по ключевым словам
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function applyUserKeywords($query, bool $applyKeywords = false)
     {
-        if (!$applyKeywords || !Auth::check()) {
+        if (! $applyKeywords || ! Auth::check()) {
             return $query;
         }
 
@@ -32,9 +32,9 @@ class NewsFilterService
 
     /**
      * Получить отфильтрованные новости
-     * 
-     * @param array $filters Массив фильтров (source_id, date, apply_keywords)
-     * @param int $perPage Количество новостей на страницу
+     *
+     * @param  array  $filters  Массив фильтров (source_id, date, apply_keywords)
+     * @param  int  $perPage  Количество новостей на страницу
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function getFilteredNews(array $filters = [], int $perPage = 20)
@@ -43,17 +43,17 @@ class NewsFilterService
             ->orderBy('published_at', 'desc');
 
         // Фильтр по источнику
-        if (!empty($filters['source_id'])) {
+        if (! empty($filters['source_id'])) {
             $query->bySource($filters['source_id']);
         }
 
         // Фильтр по дате
-        if (!empty($filters['date'])) {
+        if (! empty($filters['date'])) {
             $query->byDate($filters['date']);
         }
 
         // Фильтр по ключевым словам пользователя
-        if (!empty($filters['apply_keywords'])) {
+        if (! empty($filters['apply_keywords'])) {
             $query = $this->applyUserKeywords($query, true);
         }
 

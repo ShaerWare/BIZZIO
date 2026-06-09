@@ -17,10 +17,10 @@ trait HandlesTempUploads
     protected function addFileToModel(HasMedia $model, Request $request, string $fieldName, string $collection): void
     {
         // Сначала проверяем temp-файл
-        $tempKey = $fieldName . '_temp';
+        $tempKey = $fieldName.'_temp';
         if ($request->filled($tempKey)) {
             $tempCollection = $request->input($tempKey);
-            $tempFile = session('temp_uploads.' . $tempCollection);
+            $tempFile = session('temp_uploads.'.$tempCollection);
 
             if ($tempFile && Storage::disk('local')->exists($tempFile['path'])) {
                 $fullPath = Storage::disk('local')->path($tempFile['path']);

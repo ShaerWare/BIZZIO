@@ -49,7 +49,7 @@ class StoreRfqRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             // Проверка: техническое задание обязательно (файл или temp-upload)
-            if (!$this->hasFile('technical_specification') && !$this->filled('technical_specification_temp')) {
+            if (! $this->hasFile('technical_specification') && ! $this->filled('technical_specification_temp')) {
                 $validator->errors()->add('technical_specification', 'Загрузите техническое задание (PDF)');
             }
 
@@ -58,14 +58,14 @@ class StoreRfqRequest extends FormRequest
             if (abs($totalWeight - 100) > 0.01) {
                 $validator->errors()->add('weights', 'Сумма весов критериев должна быть равна 100%');
             }
-            
+
             // Проверка: пользователь является модератором выбранной компании
-            if ($this->company_id && !$this->user()->isModeratorOf(\App\Models\Company::find($this->company_id))) {
+            if ($this->company_id && ! $this->user()->isModeratorOf(\App\Models\Company::find($this->company_id))) {
                 $validator->errors()->add('company_id', 'Вы не являетесь модератором этой компании');
             }
-            
+
             // Проверка статуса (дополнительная защита)
-            if ($this->status && !in_array($this->status, ['draft', 'active'])) {
+            if ($this->status && ! in_array($this->status, ['draft', 'active'])) {
                 $validator->errors()->add('status', 'Недопустимое значение статуса');
             }
         });

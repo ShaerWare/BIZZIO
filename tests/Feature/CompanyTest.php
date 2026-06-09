@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Company;
-use App\Models\Industry;
 use App\Models\CompanyJoinRequest;
+use App\Models\Industry;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +16,7 @@ class CompanyTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Industry $industry;
 
     protected function setUp(): void
@@ -427,6 +428,13 @@ class CompanyTest extends TestCase
 
         // Проверяем, что пользователь стал модератором
         $this->assertTrue($company->fresh()->isModerator($applicant));
+
+        // #144: без явной роли пользователь добавляется как «Участник» (member)
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'role' => 'member',
+        ]);
     }
 
     public function test_moderator_can_reject_join_request(): void
@@ -522,8 +530,107 @@ class CompanyTest extends TestCase
             'is_verified' => true,
         ]);
 
-        $response = $this->get('/companies/' . $company->slug);
+        $response = $this->get('/companies/'.$company->slug);
 
         $response->assertStatus(200);
+    }
+
+    // #137: должность участника в компании
+
+    public function test_member_can_update_own_company_position(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $member = User::factory()->create();
+        $company->assignModerator($member, 'member', $this->user);
+
+        $this->actingAs($member)
+            ->put(route('companies.members.position', [$company, $member]), ['position' => 'Прораб'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $member->id,
+            'position' => 'Прораб',
+        ]);
+    }
+
+    public function test_member_cannot_edit_another_members_position(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $m1 = User::factory()->create();
+        $m2 = User::factory()->create();
+        $company->assignModerator($m1, 'member', $this->user);
+        $company->assignModerator($m2, 'member', $this->user);
+
+        $this->actingAs($m1)
+            ->put(route('companies.members.position', [$company, $m2]), ['position' => 'Хакер'])
+            ->assertStatus(403);
+    }
+
+    public function test_company_manager_can_set_member_position(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $member = User::factory()->create();
+        $company->assignModerator($member, 'member', $this->user);
+
+        $this->actingAs($this->user)
+            ->put(route('companies.members.position', [$company, $member]), ['position' => 'Главный инженер'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $member->id,
+            'position' => 'Главный инженер',
+        ]);
+    }
+
+    // #144 (правка): роль при одобрении заявки ограничена допустимыми; мусор → «Участник»
+    public function test_144_join_approval_clamps_invalid_role_to_member(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $applicant = User::factory()->create();
+        $joinRequest = CompanyJoinRequest::create([
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'status' => 'pending',
+        ]);
+        $joinRequest->load('company');
+
+        $this->actingAs($this->user)
+            ->post(route('join-requests.approve', $joinRequest->id), ['role' => 'не-настоящая-роль'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'role' => 'member',
+        ]);
+    }
+
+    public function test_144_owner_can_approve_with_explicit_admin_role(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $applicant = User::factory()->create();
+        $joinRequest = CompanyJoinRequest::create([
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'status' => 'pending',
+        ]);
+        $joinRequest->load('company');
+
+        $this->actingAs($this->user)
+            ->post(route('join-requests.approve', $joinRequest->id), ['role' => 'admin'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'role' => 'admin',
+        ]);
     }
 }

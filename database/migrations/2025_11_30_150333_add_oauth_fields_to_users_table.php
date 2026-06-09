@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('phone')->nullable()->after('avatar');
             $table->string('position')->nullable()->after('phone'); // Должность
             $table->text('bio')->nullable()->after('position'); // Краткое описание
-            
+
             // Индексы для быстрого поиска
             $table->index(['provider', 'provider_id']);
         });

@@ -5,8 +5,8 @@ namespace App\Notifications;
 use App\Models\CompanyJoinRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class JoinRequestNotification extends Notification implements ShouldQueue
 {
@@ -27,14 +27,14 @@ class JoinRequestNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Запрос на присоединение к компании ' . $this->joinRequest->company->name)
-            ->greeting('Здравствуйте, ' . $notifiable->name . '!')
-            ->line('Пользователь **' . $this->joinRequest->user->name . '** отправил запрос на присоединение к компании **' . $this->joinRequest->company->name . '**.')
+            ->subject('Запрос на присоединение к компании '.$this->joinRequest->company->name)
+            ->greeting('Здравствуйте, '.$notifiable->name.'!')
+            ->line('Пользователь **'.$this->joinRequest->user->name.'** отправил запрос на присоединение к компании **'.$this->joinRequest->company->name.'**.')
             ->when($this->joinRequest->desired_role, function ($message) {
-                return $message->line('Желаемая роль: ' . $this->joinRequest->desired_role);
+                return $message->line('Желаемая роль: '.$this->joinRequest->desired_role);
             })
             ->when($this->joinRequest->message, function ($message) {
-                return $message->line('Сообщение: ' . $this->joinRequest->message);
+                return $message->line('Сообщение: '.$this->joinRequest->message);
             })
             ->action('Рассмотреть запрос', route('companies.show', $this->joinRequest->company))
             ->line('Перейдите на вкладку «Люди» для одобрения или отклонения запроса.');

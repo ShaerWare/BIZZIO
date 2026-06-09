@@ -24,22 +24,22 @@ class AuctionPolicy
         if ($auction->type === 'open') {
             return true;
         }
-        
+
         // Закрытые аукционы видят только:
         // - Организатор
         // - Приглашённые компании
         // - Админы
-        if (!$user) {
+        if (! $user) {
             return false;
         }
-        
+
         if ($auction->canManage($user)) {
             return true;
         }
-        
+
         // Проверка приглашения
         $userCompanies = $user->moderatedCompanies()->pluck('id');
-        
+
         return $auction->invitations()
             ->whereIn('company_id', $userCompanies)
             ->exists();
@@ -81,6 +81,14 @@ class AuctionPolicy
     }
 
     /**
+     * #148: отменить аукцион может организатор до начала торгов.
+     */
+    public function cancel(User $user, Auction $auction): bool
+    {
+        return $auction->canBeCancelled() && $auction->canManage($user);
+    }
+
+    /**
      * Determine if the user can generate/download protocol.
      */
     public function generateProtocol(User $user, Auction $auction): bool
@@ -96,24 +104,24 @@ class AuctionPolicy
     public function placeBid(User $user, Auction $auction): bool
     {
         // Проверка: идёт ли приём заявок или торги
-        if (!$auction->isAcceptingApplications() && !$auction->isTrading()) {
+        if (! $auction->isAcceptingApplications() && ! $auction->isTrading()) {
             return false;
         }
-        
+
         // Пользователь должен быть модератором хотя бы одной компании
-        if (!$user->isModeratorOfAnyCompany()) {
+        if (! $user->isModeratorOfAnyCompany()) {
             return false;
         }
-        
+
         // Для закрытых процедур — проверка приглашения
         if ($auction->type === 'closed') {
             $userCompanies = $user->moderatedCompanies()->pluck('id');
-            
+
             return $auction->invitations()
                 ->whereIn('company_id', $userCompanies)
                 ->exists();
         }
-        
+
         return true;
     }
 }

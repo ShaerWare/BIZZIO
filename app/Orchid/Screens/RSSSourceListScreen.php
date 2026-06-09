@@ -3,11 +3,11 @@
 namespace App\Orchid\Screens;
 
 use App\Models\RSSSource;
+use Illuminate\Support\Str;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
 use Orchid\Support\Facades\Layout;
-use Illuminate\Support\Str; 
 
 class RSSSourceListScreen extends Screen
 {
@@ -18,8 +18,8 @@ class RSSSourceListScreen extends Screen
     {
         return [
             'sources' => RSSSource::withCount('news')
-            ->orderBy('name')
-            ->paginate(20),
+                ->orderBy('name')
+                ->paginate(20),
         ];
     }
 
@@ -65,17 +65,15 @@ class RSSSourceListScreen extends Screen
                         ->route('platform.systems.rss-sources.edit', $source)),
 
                 TD::make('url', 'URL')
-                    ->render(fn (RSSSource $source) => 
-                        '<a href="' . e($source->url) . '" target="_blank" class="text-blue-600 hover:text-blue-500">' 
-                        . e(Str::limit($source->url, 50)) 
-                        . '</a>'
+                    ->render(fn (RSSSource $source) => '<a href="'.e($source->url).'" target="_blank" class="text-blue-600 hover:text-blue-500">'
+                        .e(Str::limit($source->url, 50))
+                        .'</a>'
                     ),
 
                 TD::make('enabled', 'Статус')
                     ->sort()
-                    ->render(fn (RSSSource $source) => 
-                        $source->enabled 
-                            ? '<span class="badge bg-success">Включён</span>' 
+                    ->render(fn (RSSSource $source) => $source->enabled
+                            ? '<span class="badge bg-success">Включён</span>'
                             : '<span class="badge bg-secondary">Выключен</span>'
                     ),
 
@@ -85,9 +83,8 @@ class RSSSourceListScreen extends Screen
 
                 TD::make('last_parsed_at', 'Последний парсинг')
                     ->sort()
-                    ->render(fn (RSSSource $source) => 
-                        $source->last_parsed_at 
-                            ? $source->last_parsed_at->format('d.m.Y H:i') 
+                    ->render(fn (RSSSource $source) => $source->last_parsed_at
+                            ? $source->last_parsed_at->format('d.m.Y H:i')
                             : '<span class="text-muted">Никогда</span>'
                     ),
 
@@ -98,10 +95,9 @@ class RSSSourceListScreen extends Screen
                 TD::make('actions', 'Действия')
                     ->align(TD::ALIGN_CENTER)
                     ->width('100px')
-                    ->render(fn (RSSSource $source) => 
-                        Link::make('Редактировать')
-                            ->icon('pencil')
-                            ->route('platform.systems.rss-sources.edit', $source)
+                    ->render(fn (RSSSource $source) => Link::make('Редактировать')
+                        ->icon('pencil')
+                        ->route('platform.systems.rss-sources.edit', $source)
                     ),
             ]),
         ];

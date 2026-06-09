@@ -5,8 +5,8 @@ namespace App\Notifications;
 use App\Models\Auction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class AuctionTradingStartedNotification extends Notification implements ShouldQueue
 {
@@ -36,12 +36,12 @@ class AuctionTradingStartedNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Начались торги: ' . $this->auction->title)
+            ->subject('Начались торги: '.$this->auction->title)
             ->greeting('Здравствуйте!')
             ->line('Торги в аукционе начались!')
-            ->line('**Номер:** ' . $this->auction->number)
-            ->line('**Название:** ' . $this->auction->title)
-            ->line('**Ваш анонимный код:** ' . $this->getAnonymousCode($notifiable))
+            ->line('**Номер:** '.$this->auction->number)
+            ->line('**Название:** '.$this->auction->title)
+            ->line('**Ваш анонимный код:** '.$this->getAnonymousCode($notifiable))
             ->action('Перейти к торгам', route('auctions.show', $this->auction))
             ->line('Удачи в торгах!');
     }

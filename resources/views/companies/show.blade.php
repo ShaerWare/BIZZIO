@@ -404,8 +404,20 @@
                                             </span>
                                         </div>
                                         <div>
-                                            <div class="text-sm font-medium text-gray-900">{{ $moderator->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $moderator->email }}</div>
+                                            <div class="text-sm font-medium text-gray-900">{{ $moderator->full_name }}</div>
+                                            {{-- #137: должность в компании --}}
+                                            @php $canEditPosition = auth()->check() && (auth()->id() === $moderator->id || $canManagePeople); @endphp
+                                            @if($canEditPosition)
+                                                <form method="POST" action="{{ route('companies.members.position', [$company, $moderator]) }}" class="mt-1 flex items-center gap-1">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="text" name="position" value="{{ $moderator->pivot->position }}" placeholder="Должность"
+                                                           class="text-xs rounded border-gray-300 py-0.5 px-1 w-40">
+                                                    <button type="submit" class="text-xs text-emerald-600 hover:text-emerald-800">Сохранить</button>
+                                                </form>
+                                            @elseif($moderator->pivot->position)
+                                                <div class="text-xs text-gray-500">{{ $moderator->pivot->position }}</div>
+                                            @endif
                                         </div>
                                         @php $role = $moderator->pivot->role ?? 'member'; @endphp
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $roleBadgeColors[$role] ?? 'bg-gray-100 text-gray-800' }}">
@@ -477,9 +489,8 @@
                                                         </div>
                                                         <div class="flex-1">
                                                             <h4 class="text-base font-semibold text-gray-900">
-                                                                {{ $joinRequest->user->name }}
+                                                                {{ $joinRequest->user->full_name }}
                                                             </h4>
-                                                            <p class="text-sm text-gray-600">{{ $joinRequest->user->email }}</p>
 
                                                             @if($joinRequest->desired_role)
                                                                 <div class="mt-2">
@@ -611,12 +622,15 @@
                     <label for="approve_role" class="block text-sm font-medium text-gray-700 mb-2">
                         Назначить роль
                     </label>
-                    <input type="text"
-                           name="role"
-                           id="approve_role"
-                           placeholder="Например: Менеджер"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="text-xs text-gray-500 mt-1">Оставьте пустым, чтобы использовать роль из запроса</p>
+                    @php $approveRoles = auth()->check() ? $company->getAssignableMemberRoles(auth()->user()) : ['member' => 'Участник']; @endphp
+                    <select name="role"
+                            id="approve_role"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        @foreach($approveRoles as $value => $label)
+                            <option value="{{ $value }}" {{ $value === 'member' ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">По умолчанию — «Участник».</p>
                 </div>
 
                 <div class="flex justify-end space-x-2">
@@ -716,18 +730,19 @@ function closeJoinModal() {
 }
 
 // Модальное окно одобрения
+// #144: роль выбирается из выпадающего списка и по умолчанию «Участник».
+// Желаемую роль из заявки НЕ подставляем автоматически (иначе пользователь
+// мог сам себе запросить «Админ»).
 function showApproveModal(requestId, userName, desiredRole) {
     document.getElementById('approve-form').action = '/join-requests/' + requestId + '/approve';
     document.getElementById('approve-user-name').textContent = userName;
-    if (desiredRole) {
-        document.getElementById('approve_role').value = desiredRole;
-    }
+    document.getElementById('approve_role').value = 'member';
     document.getElementById('approve-modal').classList.remove('hidden');
 }
 
 function closeApproveModal() {
     document.getElementById('approve-modal').classList.add('hidden');
-    document.getElementById('approve_role').value = '';
+    document.getElementById('approve_role').value = 'member';
 }
 
 // Модальное окно отклонения

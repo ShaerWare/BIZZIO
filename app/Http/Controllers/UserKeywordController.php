@@ -16,7 +16,7 @@ class UserKeywordController extends Controller
     public function index()
     {
         $keywords = Auth::user()->keywords()->orderBy('keyword')->get();
-        
+
         return view('profile.keywords', compact('keywords'));
     }
 
@@ -28,7 +28,7 @@ class UserKeywordController extends Controller
         // Проверка лимита
         if (Auth::user()->keywords()->count() >= self::MAX_KEYWORDS) {
             return back()->withErrors([
-                'keyword' => "Максимальное количество ключевых слов — " . self::MAX_KEYWORDS
+                'keyword' => 'Максимальное количество ключевых слов — '.self::MAX_KEYWORDS,
             ]);
         }
 
@@ -38,7 +38,7 @@ class UserKeywordController extends Controller
                 'required',
                 'string',
                 'max:50',
-                'unique:user_keywords,keyword,NULL,id,user_id,' . Auth::id(),
+                'unique:user_keywords,keyword,NULL,id,user_id,'.Auth::id(),
             ],
         ], [
             'keyword.required' => 'Введите ключевое слово',

@@ -2,38 +2,11 @@
 
 namespace App\Providers;
 
-use App\Events\AuctionTradingStarted;
-use App\Events\CommentCreated;
-use App\Events\CompanyCreated;
-use App\Events\FriendRequestAccepted;
-use App\Events\FriendRequestSent;
-use App\Events\ProjectInvitationSent;
-use App\Events\ProjectJoinRequestCreated;
-use App\Events\ProjectJoinRequestReviewed;
-use App\Events\ProjectUserInvited;
-use App\Events\TenderClosed;
-use App\Events\TenderInvitationSent;
-use App\Events\UserSubscribed;
-use App\Listeners\SendAuctionTradingStartedNotification;
-use App\Listeners\SendCommentNotification;
-use App\Listeners\SendCompanyCreatedNotification;
-use App\Listeners\SendFriendRequestAcceptedNotification;
-use App\Listeners\SendFriendRequestNotification;
-use App\Listeners\SendProjectInvitationNotification;
-use App\Listeners\SendProjectJoinRequestNotification;
-use App\Listeners\SendProjectJoinRequestReviewedNotification;
-use App\Listeners\SendProjectUserInvitedNotification;
-use App\Listeners\SendTenderClosedNotification;
-use App\Listeners\SendTenderInvitationNotification;
-use App\Listeners\SendUserSubscribedNotification;
-// Events
 use App\Models\Auction;
 use App\Models\Company;
 use App\Models\Rfq;
 use App\Policies\AuctionPolicy;
-// Listeners
 use App\Policies\RfqPolicy;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -57,7 +30,6 @@ class AppServiceProvider extends ServiceProvider
         $this->configureSocialite();
         $this->configureHttps();
         $this->registerPolicies();
-        $this->registerEventListeners();
         $this->registerRouteBindings();
     }
 
@@ -98,25 +70,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Rfq::class, RfqPolicy::class);
         Gate::policy(Auction::class, AuctionPolicy::class);
-    }
-
-    /**
-     * Register event listeners.
-     */
-    protected function registerEventListeners(): void
-    {
-        Event::listen(ProjectInvitationSent::class, SendProjectInvitationNotification::class);
-        Event::listen(TenderInvitationSent::class, SendTenderInvitationNotification::class);
-        Event::listen(CommentCreated::class, SendCommentNotification::class);
-        Event::listen(TenderClosed::class, SendTenderClosedNotification::class);
-        Event::listen(AuctionTradingStarted::class, SendAuctionTradingStartedNotification::class);
-        Event::listen(CompanyCreated::class, SendCompanyCreatedNotification::class);
-        Event::listen(ProjectUserInvited::class, SendProjectUserInvitedNotification::class);
-        Event::listen(ProjectJoinRequestCreated::class, SendProjectJoinRequestNotification::class);
-        Event::listen(ProjectJoinRequestReviewed::class, SendProjectJoinRequestReviewedNotification::class);
-        Event::listen(UserSubscribed::class, SendUserSubscribedNotification::class);
-        Event::listen(FriendRequestSent::class, SendFriendRequestNotification::class);
-        Event::listen(FriendRequestAccepted::class, SendFriendRequestAcceptedNotification::class);
     }
 
     /**

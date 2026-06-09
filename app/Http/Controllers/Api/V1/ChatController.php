@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Gemini\Client;
 use Gemini\Data\Content;
 use Gemini\Enums\Role;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ChatController extends Controller
 {
@@ -22,7 +22,6 @@ class ChatController extends Controller
     /**
      * Handle user chat request with history and proxy it to Gemini API.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function handle(Request $request)
@@ -47,27 +46,24 @@ class ChatController extends Controller
 
             // Start a chat session with the existing history
             $chat = $this->geminiClient->geminiPro()->startChat($historyForGemini);
-            
+
             // Send the new message
             $response = $chat->sendMessage($userMessage);
 
             return response()->json([
-                'reply' => $response->text()
+                'reply' => $response->text(),
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'An error occurred while communicating with the AI service.',
-                'details' => $e->getMessage()
+                'details' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Converts the history from the client-side format to the Gemini PHP client format.
-     *
-     * @param array $history
-     * @return array
      */
     private function buildHistoryForGemini(array $history): array
     {
@@ -77,6 +73,7 @@ class ChatController extends Controller
             $role = $message['role'] === 'bot' ? Role::MODEL : Role::USER;
             $geminiHistory[] = Content::parse(['role' => $role->value, 'parts' => [['text' => $message['text']]]]);
         }
+
         return $geminiHistory;
     }
 }

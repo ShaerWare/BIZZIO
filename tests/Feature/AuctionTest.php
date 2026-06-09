@@ -2,24 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Company;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
+use App\Models\Company;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\CloseAuctionJob;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class AuctionTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
+
     protected Company $company;
 
     protected function setUp(): void
@@ -380,7 +378,7 @@ class AuctionTest extends TestCase
         // На странице не должна отображаться форма подачи заявки для организатора
         // Проверяем что компания организатора не в списке доступных компаний
         $response->assertViewHas('userCompanies', function ($companies) {
-            return $companies->isEmpty() || !$companies->contains('id', $this->company->id);
+            return $companies->isEmpty() || ! $companies->contains('id', $this->company->id);
         });
     }
 
@@ -736,5 +734,50 @@ class AuctionTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertEquals($auction->id, $results->first()->id);
+    }
+
+    // #148: отмена аукциона организатором
+
+    public function test_organizer_can_cancel_auction_before_trading(): void
+    {
+        $auction = $this->createAuction(['status' => 'active']);
+
+        $response = $this->actingAs($this->user)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Изменились условия']);
+
+        $response->assertRedirect();
+        $auction->refresh();
+        $this->assertSame('cancelled', $auction->status);
+        $this->assertSame('Изменились условия', $auction->cancellation_reason);
+    }
+
+    public function test_cancellation_requires_reason(): void
+    {
+        $auction = $this->createAuction(['status' => 'active']);
+
+        $this->actingAs($this->user)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => ''])
+            ->assertSessionHasErrors('cancellation_reason');
+
+        $this->assertSame('active', $auction->fresh()->status);
+    }
+
+    public function test_cannot_cancel_auction_in_trading(): void
+    {
+        $auction = $this->createAuction(['status' => 'trading']);
+
+        $this->actingAs($this->user)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Поздно'])
+            ->assertStatus(403);
+    }
+
+    public function test_non_organizer_cannot_cancel_auction(): void
+    {
+        $auction = $this->createAuction(['status' => 'active']);
+        $stranger = User::factory()->create();
+
+        $this->actingAs($stranger)
+            ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Хочу'])
+            ->assertStatus(403);
     }
 }

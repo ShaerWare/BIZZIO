@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Comment;
 use App\Models\Company;
 use App\Models\Project;
-use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -16,6 +15,7 @@ class ProjectTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Company $company;
 
     protected function setUp(): void
@@ -333,6 +333,8 @@ class ProjectTest extends TestCase
         $project = Project::factory()->create([
             'company_id' => $this->company->id,
         ]);
+        // Real project creation adds the creator as a member; the factory does not.
+        $project->addMember($this->user, $this->company, 'admin', $this->user);
 
         $response = $this->actingAs($this->user)
             ->post(route('projects.comments.store', $project->slug), [
@@ -374,6 +376,8 @@ class ProjectTest extends TestCase
         ]);
 
         $otherUser = User::factory()->create();
+        // Only project members may comment.
+        $project->addMember($otherUser, $this->company, 'member', $this->user);
 
         $response = $this->actingAs($otherUser)
             ->post(route('projects.comments.store', $project->slug), [

@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Project;
 use App\Models\Company;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -18,7 +18,7 @@ class ProjectFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . fake()->unique()->randomNumber(4),
+            'slug' => Str::slug($name).'-'.fake()->unique()->randomNumber(4),
             'description' => fake()->sentence(15),
             'full_description' => fake()->paragraphs(3, true),
             'start_date' => fake()->dateTimeBetween('-1 month', 'now'),

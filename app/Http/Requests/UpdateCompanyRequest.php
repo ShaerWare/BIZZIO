@@ -10,7 +10,7 @@ class UpdateCompanyRequest extends FormRequest
     public function authorize(): bool
     {
         $company = $this->route('company');
-        
+
         // Только создатель или модератор компании может её редактировать
         return auth()->check() && (
             $company->created_by === auth()->id() ||
