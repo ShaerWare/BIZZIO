@@ -65,31 +65,52 @@
 
                     {{-- Friends Tab --}}
                     <div x-show="tab === 'friends'" class="p-6">
-                        {{-- Search friends --}}
-                        <form action="{{ route('friends.index') }}" method="GET" class="mb-4">
-                            <input type="hidden" name="tab" value="friends">
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    name="search"
-                                    value="{{ $search }}"
-                                    placeholder="Поиск по всем пользователям сайта..."
-                                    class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                                >
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                    </svg>
-                                </div>
-                                @if($search)
-                                    <a href="{{ route('friends.index', ['tab' => 'friends']) }}" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        {{-- #142: живой поиск с выпадающим списком (как в шапке) + Enter — полный список --}}
+                        <div class="relative mb-4" x-data="{ open: false, query: @js($search ?? ''), results: [], loading: false }">
+                            <form action="{{ route('friends.index') }}" method="GET">
+                                <input type="hidden" name="tab" value="friends">
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        name="search"
+                                        x-model="query"
+                                        autocomplete="off"
+                                        @input.debounce.300ms="if(query.length >= 2){ loading=true; fetch('{{ route('friends.search') }}?q=' + encodeURIComponent(query)).then(r=>r.json()).then(d=>{ results = Array.isArray(d)?d:[]; loading=false; open=true; }).catch(()=>loading=false); } else { results=[]; open=false; }"
+                                        @focus="if(results.length>0) open=true"
+                                        @keydown.escape="open=false"
+                                        placeholder="Поиск по всем пользователям сайта..."
+                                        class="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                                    >
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
-                                    </a>
-                                @endif
+                                    </div>
+                                    <div x-show="loading" style="display:none" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </form>
+
+                            {{-- Выпадающий список вариантов --}}
+                            <div x-show="open && results.length > 0" @click.away="open=false" style="display:none"
+                                 class="absolute left-0 right-0 mt-1 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                                <div class="py-2 max-h-80 overflow-y-auto">
+                                    <template x-for="u in results" :key="u.id">
+                                        <a :href="u.url" class="flex items-center px-4 py-2 hover:bg-gray-100">
+                                            <img :src="u.avatar" alt="" class="w-8 h-8 rounded-full object-cover mr-3 flex-shrink-0">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate" x-text="u.title"></p>
+                                                <p class="text-xs text-gray-500 truncate" x-text="u.subtitle || ''"></p>
+                                            </div>
+                                        </a>
+                                    </template>
+                                </div>
                             </div>
-                        </form>
+                        </div>
 
                         @if($friends->isNotEmpty())
                             <div class="space-y-3">

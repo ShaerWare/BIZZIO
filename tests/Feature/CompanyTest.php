@@ -586,4 +586,51 @@ class CompanyTest extends TestCase
             'position' => 'Главный инженер',
         ]);
     }
+
+    // #144 (правка): роль при одобрении заявки ограничена допустимыми; мусор → «Участник»
+    public function test_144_join_approval_clamps_invalid_role_to_member(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $applicant = User::factory()->create();
+        $joinRequest = CompanyJoinRequest::create([
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'status' => 'pending',
+        ]);
+        $joinRequest->load('company');
+
+        $this->actingAs($this->user)
+            ->post(route('join-requests.approve', $joinRequest->id), ['role' => 'не-настоящая-роль'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'role' => 'member',
+        ]);
+    }
+
+    public function test_144_owner_can_approve_with_explicit_admin_role(): void
+    {
+        $company = Company::factory()->create(['created_by' => $this->user->id]);
+        $company->assignModerator($this->user, 'owner', $this->user, true);
+        $applicant = User::factory()->create();
+        $joinRequest = CompanyJoinRequest::create([
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'status' => 'pending',
+        ]);
+        $joinRequest->load('company');
+
+        $this->actingAs($this->user)
+            ->post(route('join-requests.approve', $joinRequest->id), ['role' => 'admin'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('company_user', [
+            'company_id' => $company->id,
+            'user_id' => $applicant->id,
+            'role' => 'admin',
+        ]);
+    }
 }
