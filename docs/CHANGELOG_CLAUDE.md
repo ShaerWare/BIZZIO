@@ -1562,3 +1562,15 @@ SESSION_SECURE_COOKIE=true
 - #146: Cropper.js через npm+Vite, переиспользуемый компонент x-avatar-cropper.
 - #152: partials/seo.blade.php (meta/OG/Twitter/canonical + Schema.org JSON-LD), robots.txt, динамический /sitemap.xml, llms.txt.
 - CI: проверка свежести public/build заменена на сборку (хэши Vite/Tailwind отличаются между машинами).
+
+---
+
+## 2026-06-19 — fix: регистрация на проде + только Яндекс OAuth
+
+**Проблема (регистрация на проде):** Пользователи не могли зарегистрироваться. Причина — правило валидации email `email:rfc,dns`: правило `dns` делает живой DNS/MX-запрос (`checkdnsrr()`), который внутри прод-контейнера падает/таймаутится, из-за чего валидные email отклонялись у всех.
+
+**Что сделано:**
+- `app/Http/Controllers/Auth/RegisteredUserController.php` — `email:rfc,dns` → `email:rfc` (убрана проверка MX-записи).
+- Со страниц авторизации/регистрации убрана кнопка входа через Google — оставлен только Яндекс:
+  - `resources/views/welcome.blade.php` (основная форма) — удалена кнопка Google.
+  - `resources/views/auth/login.blade.php`, `resources/views/auth/register.blade.php` (Breeze-вьюхи, не используются напрямую, но почищены) — удалены Google и VK, остался только Яндекс.
