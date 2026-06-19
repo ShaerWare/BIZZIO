@@ -35,7 +35,7 @@ class RegisteredUserController extends Controller
         $rules = [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'last_name' => ['required', 'string', 'min:2', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->numbers()],
         ];
 
