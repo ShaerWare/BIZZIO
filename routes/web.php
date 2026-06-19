@@ -288,6 +288,7 @@ Route::get('/users/{user}', [UserProfileController::class, 'show'])->name('users
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/friends', [FriendshipController::class, 'index'])->name('friends.index');
+    Route::get('/friends/search', [FriendshipController::class, 'searchUsers'])->name('friends.search');
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
     Route::post('/friends/{user}/accept', [FriendshipController::class, 'accept'])->name('friends.accept');
     Route::delete('/friends/{user}', [FriendshipController::class, 'remove'])->name('friends.remove');

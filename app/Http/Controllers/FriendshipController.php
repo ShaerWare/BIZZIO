@@ -15,6 +15,36 @@ class FriendshipController extends Controller
     /**
      * Страница «Друзья» с вкладками
      */
+    public function searchUsers(Request $request)
+    {
+        // #142: живой поиск пользователей для выпадающего списка на /friends.
+        $q = trim((string) $request->get('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        $users = User::where('id', '!=', auth()->id())
+            ->where(function ($query) use ($op, $q) {
+                $query->where('name', $op, "%{$q}%")
+                    ->orWhere('last_name', $op, "%{$q}%")
+                    ->orWhere('position', $op, "%{$q}%");
+            })
+            ->orderBy('name')
+            ->limit(8)
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'title' => $u->full_name,
+                'subtitle' => $u->position,
+                'avatar' => $u->avatar_url,
+                'url' => route('users.show', $u),
+            ]);
+
+        return response()->json($users);
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
