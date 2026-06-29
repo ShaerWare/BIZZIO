@@ -538,7 +538,17 @@
                     @endif
 
                     <!-- Список заявок -->
-                    @if(!$canSeeResults && $rfq->status === 'closed')
+                    @if($rfq->status !== 'closed')
+                        {{-- #177: На этапе подачи заявок предложения скрыты от ВСЕХ (включая организатора).
+                             Показываем только количество поданных заявок. Сами заявки доступны только в протоколе. --}}
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                            <svg class="w-10 h-10 text-blue-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-blue-800 font-medium">Подано заявок: {{ $rfq->bids->count() }}</p>
+                            <p class="text-blue-600 text-sm mt-1">Предложения участников скрыты на этапе подачи и будут доступны в протоколе после завершения процедуры</p>
+                        </div>
+                    @elseif(!$canSeeResults)
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                             <svg class="w-10 h-10 text-yellow-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.05 6.05m3.828 3.828l4.242 4.242M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -551,8 +561,8 @@
                         @php
                             // T2: Определяем компании текущего пользователя для подсветки его заявок
                             $userCompanyIds = auth()->check() && isset($availableCompanies) ? $availableCompanies->pluck('id')->toArray() : [];
-                            // A15: Обезличиваем заявки на активном этапе для ВСЕХ (включая организатора)
-                            $canSeeNames = $rfq->status === 'closed';
+                            // Процедура завершена — раскрываем названия компаний
+                            $canSeeNames = true;
                         @endphp
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -634,12 +644,7 @@
 
                     <!-- Протокол (если завершён) — A16: доступ только организатору и участникам -->
                     @if($canSeeResults && $rfq->status === 'closed' && $rfq->hasMedia('protocol'))
-                        @php
-                            $rfqIsParticipant = auth()->check() && isset($availableCompanies) && $rfq->bids->pluck('company_id')->intersect($availableCompanies->pluck('id'))->isNotEmpty();
-                            $rfqIsManager = auth()->check() && $rfq->canManage(auth()->user());
-                            $rfqCanViewProtocol = $rfqIsManager || $rfqIsParticipant;
-                        @endphp
-                        @if($rfqCanViewProtocol)
+                        @if($canDownloadProtocol)
                             <div class="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Процедура завершена</h3>
                                 @if($rfq->winnerBid)

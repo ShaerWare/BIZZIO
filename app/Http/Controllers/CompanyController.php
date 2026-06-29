@@ -222,4 +222,30 @@ class CompanyController extends Controller
         return redirect()->route('companies.show', $company)
             ->with('success', 'Фото успешно удалено!');
     }
+
+    /**
+     * #176: Удаление ранее загруженного документа компании.
+     */
+    public function deleteDocument(Request $request, Company $company, int $mediaId)
+    {
+        // Проверка прав доступа
+        if (! $company->isModerator(auth()->user())) {
+            abort(403, 'У вас нет прав для удаления документа');
+        }
+
+        $media = $company->getMedia('documents')->firstWhere('id', $mediaId);
+
+        if (! $media) {
+            abort(404, 'Документ не найден');
+        }
+
+        $media->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('companies.edit', $company)
+            ->with('success', 'Документ успешно удалён!');
+    }
 }

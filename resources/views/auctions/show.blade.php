@@ -604,12 +604,17 @@
                             </form>
                         </div>
                     @elseif($existingBid)
+                        {{-- #175: позитивное подтверждение вместо «вы уже подали заявку»,
+                             чтобы первая подача не воспринималась как повторная/ошибочная --}}
                         <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
                             <div class="flex items-center">
-                                <svg class="w-6 h-6 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-emerald-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <p class="text-emerald-800 font-medium">Вы уже подали заявку на этот аукцион</p>
+                                <div>
+                                    <p class="text-emerald-800 font-medium">Ваша заявка на участие принята</p>
+                                    <p class="text-emerald-700 text-sm mt-1">Ожидайте начала торгов — вы получите уведомление.</p>
+                                </div>
                             </div>
                         </div>
                     @elseif($auction->status === 'draft')

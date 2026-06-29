@@ -38,6 +38,15 @@ class CloseRfqJob implements ShouldQueue
         RfqProtocolService $protocolService
     ): void {
         try {
+            // 0. Идемпотентность: RFQ мог быть уже закрыт (отложенная задача + команда
+            // rfqs:check-expired могут попасть на один и тот же запрос). Свежее состояние из БД.
+            $this->rfq->refresh();
+            if ($this->rfq->status === 'closed') {
+                Log::info("RFQ #{$this->rfq->number} уже закрыт — пропускаем повторное закрытие");
+
+                return;
+            }
+
             // 1. Расчёт баллов для всех заявок
             $scoringService->calculateScores($this->rfq);
 

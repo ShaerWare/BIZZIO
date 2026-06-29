@@ -239,7 +239,13 @@ class RfqController extends Controller
             $canSeeResults = $isManager || $isParticipant;
         }
 
-        return view('rfqs.show', compact('rfq', 'canBid', 'alreadyBid', 'availableCompanies', 'canSeeResults'));
+        // #174: Скачивание протокола доступно организатору и участникам (подавшим заявку).
+        // Считаем по реальным компаниям пользователя, т.к. $availableCompanies пуст у закрытого RFQ.
+        $isProtocolParticipant = auth()->check() && $rfq->bids->pluck('company_id')
+            ->intersect($userCompanies->pluck('id'))->isNotEmpty();
+        $canDownloadProtocol = (auth()->check() && $rfq->canManage(auth()->user())) || $isProtocolParticipant;
+
+        return view('rfqs.show', compact('rfq', 'canBid', 'alreadyBid', 'availableCompanies', 'canSeeResults', 'canDownloadProtocol'));
     }
 
     /**
@@ -313,6 +319,12 @@ class RfqController extends Controller
                 'comment' => $request->comment,
                 'status' => 'pending',
             ]);
+
+            // #174: При подаче заявки обновляем статус приглашения на accepted
+            $rfq->invitations()
+                ->where('company_id', $request->company_id)
+                ->where('status', 'pending')
+                ->update(['status' => 'accepted']);
 
             DB::commit();
 

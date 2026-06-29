@@ -176,21 +176,29 @@
                             </label>
                             <div class="space-y-2">
                                 @foreach($company->getMedia('documents') as $document)
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div class="flex items-center">
-                                            <svg class="w-6 h-6 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg" id="document-{{ $document->id }}">
+                                        <div class="flex items-center min-w-0">
+                                            <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
                                             </svg>
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">{{ $document->name }}</p>
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate">{{ $document->name }}</p>
                                                 <p class="text-xs text-gray-500">{{ number_format($document->size / 1024, 2) }} KB</p>
                                             </div>
                                         </div>
-                                        <a href="{{ $document->getUrl() }}" 
-                                           target="_blank"
-                                           class="text-emerald-600 hover:text-emerald-900 text-sm">
-                                            Скачать
-                                        </a>
+                                        <div class="flex items-center gap-3 ml-3 flex-shrink-0">
+                                            <a href="{{ $document->getUrl() }}"
+                                               target="_blank"
+                                               class="text-emerald-600 hover:text-emerald-900 text-sm">
+                                                Скачать
+                                            </a>
+                                            <button type="button"
+                                                    data-url="{{ route('companies.documents.delete', ['company' => $company, 'media' => $document->id]) }}"
+                                                    onclick="deleteCompanyDocument(this)"
+                                                    class="text-red-600 hover:text-red-900 text-sm">
+                                                Удалить
+                                            </button>
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -199,19 +207,9 @@
 
                     <!-- Новые документы -->
                     <div>
-                        <label for="documents" class="block text-sm font-medium text-gray-700">
-                            Добавить документы (PDF)
-                        </label>
-                        <input type="file" 
-                               name="documents[]" 
-                               id="documents" 
-                               accept=".pdf"
-                               multiple
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p class="mt-1 text-xs text-gray-500">Максимум 10 файлов по 10MB</p>
-                        @error('documents.*')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <x-pdf-documents-input
+                            label="Добавить документы (PDF)"
+                            hint="Максимум 10 файлов по 10MB" />
                     </div>
 
                     <!-- Кнопки -->
@@ -230,4 +228,33 @@
         </div>
     </div>
 </div>
+
+<script>
+// #176: Удаление ранее загруженного документа компании без перезагрузки формы.
+function deleteCompanyDocument(button) {
+    if (! confirm('Удалить документ? Действие необратимо.')) {
+        return;
+    }
+
+    fetch(button.dataset.url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+        },
+    })
+        .then(response => {
+            if (! response.ok) {
+                throw new Error('delete failed');
+            }
+            return response.json();
+        })
+        .then(() => {
+            button.closest('[id^="document-"]').remove();
+        })
+        .catch(() => {
+            alert('Не удалось удалить документ. Попробуйте ещё раз.');
+        });
+}
+</script>
 @endsection

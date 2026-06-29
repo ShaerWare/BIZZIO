@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
     Route::post('companies/{company}/photos', [CompanyController::class, 'uploadPhotos'])->name('companies.photos.upload');
     Route::delete('companies/{company}/photos/{media}', [CompanyController::class, 'deletePhoto'])->name('companies.photos.delete');
+    Route::delete('companies/{company}/documents/{media}', [CompanyController::class, 'deleteDocument'])->name('companies.documents.delete');
 
     // Запросы на присоединение к компании
     Route::get('/my-join-requests', [CompanyJoinRequestController::class, 'index'])

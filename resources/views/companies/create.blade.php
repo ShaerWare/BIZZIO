@@ -147,19 +147,9 @@
 
                     <!-- Документы -->
                     <div>
-                        <label for="documents" class="block text-sm font-medium text-gray-700">
-                            Документы (PDF)
-                        </label>
-                        <input type="file" 
-                               name="documents[]" 
-                               id="documents" 
-                               accept=".pdf"
-                               multiple
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p class="mt-1 text-xs text-gray-500">Устав, ИНН, ОГРН и другие документы. Максимум 10 файлов по 10MB</p>
-                        @error('documents.*')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <x-pdf-documents-input
+                            label="Документы (PDF)"
+                            hint="Устав, ИНН, ОГРН и другие документы. Максимум 10 файлов по 10MB" />
                     </div>
 
                     <!-- Кнопки -->

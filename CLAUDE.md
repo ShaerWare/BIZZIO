@@ -56,6 +56,7 @@ php artisan config:clear && php artisan cache:clear && php artisan route:clear &
 ```bash
 php artisan auctions:check-expired   # Close expired auctions (manual or one-off use)
 php artisan auctions:update-statuses # Update auction statuses (scheduled every minute)
+php artisan rfqs:check-expired       # Close expired RFQs (scheduled every minute; fallback to delayed CloseRfqJob)
 php artisan rss:parse                # Parse RSS news sources (scheduled every 5 min)
 php artisan news:clean-old           # Clean old news articles (scheduled daily at 02:00)
 php artisan cleanup:test-data        # Interactive deletion of test companies (cascade soft-delete)
@@ -65,6 +66,7 @@ php artisan cleanup:test-data        # Interactive deletion of test companies (c
 Configured in `bootstrap/app.php` via `withSchedule()`:
 - `rss:parse` — every 5 minutes (with `withoutOverlapping`)
 - `auctions:update-statuses` — every minute (with `withoutOverlapping`)
+- `rfqs:check-expired` — every minute (with `withoutOverlapping`) — closes RFQs whose `end_date` passed (fallback to the delayed `CloseRfqJob`)
 - `news:clean-old` — daily at 02:00
 
 ### Testing PDF Generation

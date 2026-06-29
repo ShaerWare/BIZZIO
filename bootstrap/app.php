@@ -34,6 +34,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->runInBackground();
 
+        // Закрытие истёкших запросов цен (каждую минуту) — подстраховка к отложенной CloseRfqJob
+        $schedule->command('rfqs:check-expired')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground();
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // 419 CSRF token expired → redirect to login instead of error page
