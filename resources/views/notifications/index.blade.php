@@ -97,7 +97,8 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="text-sm font-medium text-gray-900">
                                             @if(isset($notification->data['url']))
-                                                <a href="{{ $notification->data['url'] }}" class="hover:text-emerald-600">
+                                                {{-- #143: переход через notifications.open помечает уведомление прочитанным --}}
+                                                <a href="{{ route('notifications.open', $notification->id) }}" class="hover:text-emerald-600">
                                                     @include('partials.notification-text', ['notification' => $notification])
                                                 </a>
                                             @else
