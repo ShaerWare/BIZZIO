@@ -123,6 +123,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
     Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/{notification}/go', [NotificationController::class, 'open'])->name('open'); // #143
     Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
     Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('read-all');
     Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');

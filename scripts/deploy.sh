@@ -21,8 +21,14 @@ docker compose exec -T app php artisan config:cache
 docker compose exec -T app php artisan route:cache
 docker compose exec -T app php artisan view:cache
 
-echo "==> restart queue workers"
-docker compose exec -T app php artisan queue:restart
+echo "==> restart queue worker"
+# queue:restart лишь сигналит РАБОТАЮЩЕМУ воркеру. Во время `composer install` выше
+# каталог vendor кратковременно отсутствует — воркер падает и supervisor помечает его
+# FATAL (перестаёт перезапускать). Поэтому принудительно поднимаем процесс через
+# supervisor (восстанавливает воркер из FATAL); иначе очередь копится и тендеры
+# не закрываются (#178).
+docker compose exec -T app php artisan queue:restart || true
+docker compose exec -T app supervisorctl restart laravel-worker
 
 echo "==> fix storage / cache permissions"
 docker compose exec -T app sh -c 'chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache'

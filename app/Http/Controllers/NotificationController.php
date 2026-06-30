@@ -3,10 +3,32 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    /**
+     * #143: Открыть уведомление — отметить прочитанным и перейти к связанной странице.
+     * Так счётчик-колокольчик сбрасывается уже при прочтении (открытии) уведомления,
+     * а не только после «пометить все прочитанными».
+     */
+    public function open(Request $request, string $notification): RedirectResponse
+    {
+        $model = $request->user()
+            ->notifications()
+            ->where('id', $notification)
+            ->first();
+
+        if ($model) {
+            $model->markAsRead();
+        }
+
+        $url = $model->data['url'] ?? null;
+
+        return redirect($url ?: route('notifications.index'));
+    }
+
     /**
      * Список уведомлений пользователя.
      */

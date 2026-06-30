@@ -233,8 +233,9 @@
                                         </div>
                                     </template>
                                     <template x-for="notification in notifications.slice(0, 5)" :key="notification.id">
+                                        {{-- #143: переход через notifications.open помечает уведомление прочитанным --}}
                                         <a
-                                            :href="notification.data?.url || '#'"
+                                            :href="'{{ url('notifications') }}/' + notification.id + '/go'"
                                             class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
                                             :class="{ 'bg-emerald-50': !notification.read_at }"
                                         >

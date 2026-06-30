@@ -22,8 +22,15 @@ class UserEditLayout extends Rows
                 ->type('text')
                 ->max(255)
                 ->required()
-                ->title(__('Name'))
-                ->placeholder(__('Name')),
+                ->title(__('Имя'))
+                ->placeholder(__('Имя')),
+
+            // #145: фамилия пользователя в админке
+            Input::make('user.last_name')
+                ->type('text')
+                ->max(255)
+                ->title(__('Фамилия'))
+                ->placeholder(__('Фамилия')),
 
             Input::make('user.email')
                 ->type('email')
