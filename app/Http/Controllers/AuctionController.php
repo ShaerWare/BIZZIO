@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateAuctionRequest;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
+use App\Models\Company;
 use App\Services\AuctionProtocolService;
 use App\Traits\HandlesTempUploads;
 use Carbon\Carbon;
@@ -157,7 +158,10 @@ class AuctionController extends Controller
         // Вычисляем $canBid на основе всех условий
         $canBid = false;
 
-        if (auth()->check() && $userCompanies->isNotEmpty()) {
+        // #182: Подавать заявки/ставки могут только верифицированные компании
+        $biddableCompanies = $userCompanies->where('is_verified', true);
+
+        if (auth()->check() && $biddableCompanies->isNotEmpty()) {
             // 1. Проверка статуса аукциона
             $isAcceptingOrTrading = $auction->isAcceptingApplications() || $auction->isTrading();
 
@@ -165,7 +169,7 @@ class AuctionController extends Controller
                 // 2. Для закрытых аукционов проверяем приглашение
                 if ($auction->type === 'closed') {
                     $isInvited = $auction->invitations()
-                        ->whereIn('company_id', $userCompanies->pluck('id'))
+                        ->whereIn('company_id', $biddableCompanies->pluck('id'))
                         ->exists();
 
                     $canBid = $isInvited;
@@ -180,7 +184,7 @@ class AuctionController extends Controller
                     $initialBid = $auction->bids()
                         ->where('type', 'initial')
                         ->where('user_id', auth()->id())
-                        ->whereIn('company_id', $userCompanies->pluck('id'))
+                        ->whereIn('company_id', $biddableCompanies->pluck('id'))
                         ->first();
                     $canBid = (bool) $initialBid;
                     $existingBid = $initialBid;
@@ -203,9 +207,10 @@ class AuctionController extends Controller
         }
 
         // #119: При торгах показываем только компанию, от которой подана заявка текущим пользователем
-        $bidCompanies = $userCompanies;
+        // #182: в форме заявки — только верифицированные компании
+        $bidCompanies = $biddableCompanies;
         if ($auction->isTrading() && $canBid && $existingBid) {
-            $bidCompanies = $userCompanies->where('id', $existingBid->company_id)->values();
+            $bidCompanies = $biddableCompanies->where('id', $existingBid->company_id)->values();
         }
 
         return view('auctions.show', compact(
@@ -301,6 +306,41 @@ class AuctionController extends Controller
 
         try {
             $companyId = $request->company_id;
+            $company = Company::find($companyId);
+
+            // #182: Заявку/ставку можно подать только от своей верифицированной компании
+            if (! $company || ! $company->isModerator(auth()->user())) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Вы не можете участвовать от имени этой компании.');
+            }
+
+            if (! $company->is_verified) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Участвовать в аукционе могут только верифицированные компании. Пройдите верификацию компании.');
+            }
+
+            if ($company->id === $auction->company_id) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Организатор не может участвовать в собственном аукционе.');
+            }
+
+            // Аукцион должен принимать заявки или идти торги
+            if (! $auction->isAcceptingApplications() && ! $auction->isTrading()) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Аукцион не принимает заявки.');
+            }
+
+            // Для закрытого аукциона компания должна быть приглашена
+            if ($auction->type === 'closed'
+                && ! $auction->invitations()->where('company_id', $companyId)->exists()) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Ваша компания не приглашена к участию в этом аукционе.');
+            }
 
             // Проверка существующей заявки
             $existingBid = $auction->bids()

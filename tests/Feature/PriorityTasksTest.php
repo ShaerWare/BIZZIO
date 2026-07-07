@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Auction;
 use App\Models\Company;
 use App\Models\News;
+use App\Models\Rfq;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -101,6 +103,138 @@ class PriorityTasksTest extends TestCase
             ->assertSee('og:title', false)
             ->assertSee('application/ld+json', false)
             ->assertSee('rel="canonical"', false);
+    }
+
+    // ==========================================
+    // #182 — участвовать в закупках могут только верифицированные компании
+    // ==========================================
+
+    /** Создаёт организатора с верифицированной компанией и открытый RFQ. */
+    private function openRfq(): Rfq
+    {
+        $owner = $this->verifiedUser();
+        $company = Company::factory()->create(['created_by' => $owner->id, 'is_verified' => true]);
+        $company->assignModerator($owner, 'owner');
+
+        return Rfq::create([
+            'number' => Rfq::generateNumber(),
+            'title' => 'Тестовый RFQ',
+            'description' => 'Описание',
+            'company_id' => $company->id,
+            'created_by' => $owner->id,
+            'type' => 'open',
+            'start_date' => now(),
+            'end_date' => now()->addDays(7),
+            'weight_price' => 40,
+            'weight_deadline' => 30,
+            'weight_advance' => 30,
+            'status' => 'active',
+        ]);
+    }
+
+    /** Создаёт организатора с верифицированной компанией и открытый аукцион (приём заявок). */
+    private function openAuction(): Auction
+    {
+        $owner = $this->verifiedUser();
+        $company = Company::factory()->create(['created_by' => $owner->id, 'is_verified' => true]);
+        $company->assignModerator($owner, 'owner');
+
+        return Auction::create([
+            'number' => Auction::generateNumber(),
+            'title' => 'Тестовый аукцион',
+            'description' => 'Описание',
+            'company_id' => $company->id,
+            'created_by' => $owner->id,
+            'type' => 'open',
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDays(7),
+            'trading_start' => now()->addDays(8),
+            'starting_price' => 1000000,
+            'step_percent' => 2.5,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_182_unverified_company_cannot_submit_rfq_bid(): void
+    {
+        $rfq = $this->openRfq();
+
+        $bidder = $this->verifiedUser();
+        $unverified = Company::factory()->create(['created_by' => $bidder->id, 'is_verified' => false]);
+        $unverified->assignModerator($bidder, 'owner');
+
+        $this->actingAs($bidder)
+            ->post(route('rfqs.bids.store', $rfq), [
+                'company_id' => $unverified->id,
+                'price' => 100000,
+                'deadline' => 30,
+                'advance_percent' => 20,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('rfq_bids', [
+            'rfq_id' => $rfq->id,
+            'company_id' => $unverified->id,
+        ]);
+    }
+
+    public function test_182_unverified_company_not_offered_in_rfq_form(): void
+    {
+        $rfq = $this->openRfq();
+
+        $bidder = $this->verifiedUser();
+        $unverified = Company::factory()->create(['created_by' => $bidder->id, 'is_verified' => false]);
+        $unverified->assignModerator($bidder, 'owner');
+
+        $this->actingAs($bidder)
+            ->get(route('rfqs.show', $rfq))
+            ->assertViewHas('availableCompanies', fn ($companies) => $companies->isEmpty());
+    }
+
+    public function test_182_unverified_company_cannot_submit_auction_bid(): void
+    {
+        $auction = $this->openAuction();
+
+        $bidder = $this->verifiedUser();
+        $unverified = Company::factory()->create(['created_by' => $bidder->id, 'is_verified' => false]);
+        $unverified->assignModerator($bidder, 'owner');
+
+        $this->actingAs($bidder)
+            ->post(route('auctions.bids.store', $auction), [
+                'company_id' => $unverified->id,
+                'acknowledgement' => true,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('auction_bids', [
+            'auction_id' => $auction->id,
+            'company_id' => $unverified->id,
+        ]);
+    }
+
+    public function test_182_verified_company_can_still_submit_rfq_bid(): void
+    {
+        $rfq = $this->openRfq();
+
+        $bidder = $this->verifiedUser();
+        $verified = Company::factory()->create(['created_by' => $bidder->id, 'is_verified' => true]);
+        $verified->assignModerator($bidder, 'owner');
+
+        $this->actingAs($bidder)
+            ->post(route('rfqs.bids.store', $rfq), [
+                'company_id' => $verified->id,
+                'price' => 100000,
+                'deadline' => 30,
+                'advance_percent' => 20,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('rfq_bids', [
+            'rfq_id' => $rfq->id,
+            'company_id' => $verified->id,
+        ]);
     }
 
     // #145 (правка): в составе компании показывается имя + фамилия

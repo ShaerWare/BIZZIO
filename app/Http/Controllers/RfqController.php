@@ -172,12 +172,14 @@ class RfqController extends Controller
         // Проверка: может ли пользователь подать заявку
         $canBid = false;
         $userCompanies = auth()->check() ? auth()->user()->moderatedCompanies : collect();
+        // #182: Подавать заявки могут только верифицированные компании
+        $biddableCompanies = $userCompanies->where('is_verified', true);
         $alreadyBid = false;
 
         if ($rfq->isActive() && ! $rfq->isExpired()) {
             if ($rfq->type === 'open') {
                 // Открытая процедура: любая компания пользователя (кроме организатора)
-                foreach ($userCompanies as $company) {
+                foreach ($biddableCompanies as $company) {
                     if ($company->id !== $rfq->company_id) {
                         // Проверяем, не подана ли уже заявка от этой компании
                         $bidExists = $rfq->bids()->where('company_id', $company->id)->exists();
@@ -192,7 +194,7 @@ class RfqController extends Controller
             } else {
                 // Закрытая процедура: только приглашённые компании
                 $invitedCompanyIds = $rfq->invitations()
-                    ->whereIn('company_id', $userCompanies->pluck('id'))
+                    ->whereIn('company_id', $biddableCompanies->pluck('id'))
                     ->pluck('company_id')
                     ->toArray();
 
@@ -213,17 +215,17 @@ class RfqController extends Controller
         $availableCompanies = collect();
         if ($canBid) {
             if ($rfq->type === 'open') {
-                $availableCompanies = $userCompanies->filter(function ($company) use ($rfq) {
+                $availableCompanies = $biddableCompanies->filter(function ($company) use ($rfq) {
                     return $company->id !== $rfq->company_id &&
                            ! $rfq->bids()->where('company_id', $company->id)->exists();
                 });
             } else {
                 $invitedIds = $rfq->invitations()
-                    ->whereIn('company_id', $userCompanies->pluck('id'))
+                    ->whereIn('company_id', $biddableCompanies->pluck('id'))
                     ->pluck('company_id')
                     ->toArray();
 
-                $availableCompanies = $userCompanies->filter(function ($company) use ($invitedIds, $rfq) {
+                $availableCompanies = $biddableCompanies->filter(function ($company) use ($invitedIds, $rfq) {
                     return in_array($company->id, $invitedIds) &&
                            ! $rfq->bids()->where('company_id', $company->id)->exists();
                 });
@@ -306,6 +308,48 @@ class RfqController extends Controller
      */
     public function storeBid(Request $request, Rfq $rfq)
     {
+        $request->validate([
+            'company_id' => 'required|exists:companies,id',
+            'price' => 'required|numeric|min:0',
+            'deadline' => 'required|integer|min:1',
+            'advance_percent' => 'required|numeric|min:0|max:100',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        // RFQ должен быть активным и не просроченным
+        if (! $rfq->isActive() || $rfq->isExpired()) {
+            return back()->withInput()->with('error', 'Приём заявок по этому запросу цен завершён.');
+        }
+
+        $company = Company::find($request->company_id);
+
+        // #182: Заявку может подать только модератор компании — и только от верифицированной компании
+        if (! $company || ! $company->isModerator(auth()->user())) {
+            return back()->withInput()->with('error', 'Вы не можете подать заявку от имени этой компании.');
+        }
+
+        if (! $company->is_verified) {
+            return back()->withInput()->with('error', 'Подавать заявки на участие могут только верифицированные компании. Пройдите верификацию компании.');
+        }
+
+        // Нельзя подавать заявку от компании-организатора
+        if ($company->id === $rfq->company_id) {
+            return back()->withInput()->with('error', 'Организатор не может подать заявку на собственный запрос цен.');
+        }
+
+        // Для закрытого RFQ компания должна быть приглашена
+        if ($rfq->type !== 'open') {
+            $isInvited = $rfq->invitations()->where('company_id', $company->id)->exists();
+            if (! $isInvited) {
+                return back()->withInput()->with('error', 'Ваша компания не приглашена к участию в этом запросе цен.');
+            }
+        }
+
+        // Запрет повторной заявки от одной компании
+        if ($rfq->bids()->where('company_id', $company->id)->exists()) {
+            return back()->withInput()->with('error', 'Ваша компания уже подала заявку на этот запрос цен.');
+        }
+
         DB::beginTransaction();
 
         try {
