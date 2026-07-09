@@ -28,26 +28,43 @@ class Rfq extends Model implements HasMedia
         'company_id',
         'created_by',
         'type',
+        'procedure',
         'currency',
         'start_date',
         'end_date',
+        'trading_start',
+        'trading_end',
         'weight_price',
         'weight_deadline',
         'weight_advance',
+        'step_price',
+        'step_deadline',
+        'step_advance',
+        'max_deadline',
+        'max_advance',
         'status',
         'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
+        'linked_auction_id',
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'trading_start' => 'datetime',
+        'trading_end' => 'datetime',
         'weight_price' => 'decimal:2',
         'weight_deadline' => 'decimal:2',
         'weight_advance' => 'decimal:2',
+        'step_price' => 'decimal:2',
+        'step_advance' => 'decimal:2',
         'is_results_hidden' => 'boolean',
     ];
+
+    public const PROCEDURE_STANDARD = 'standard';
+
+    public const PROCEDURE_COMMERCIAL = 'commercial';
 
     public const CURRENCIES = [
         'RUB' => '₽',
@@ -102,6 +119,22 @@ class Rfq extends Model implements HasMedia
     public function winnerBid(): BelongsTo
     {
         return $this->belongsTo(RfqBid::class, 'winner_bid_id');
+    }
+
+    /**
+     * #179 Порождённый аукцион этапа 2 (Коммерческий аукцион)
+     */
+    public function linkedAuction(): BelongsTo
+    {
+        return $this->belongsTo(Auction::class, 'linked_auction_id');
+    }
+
+    /**
+     * #179 Это коммерческий аукцион (двухэтапная процедура)
+     */
+    public function isCommercial(): bool
+    {
+        return $this->procedure === self::PROCEDURE_COMMERCIAL;
     }
 
     // ========================

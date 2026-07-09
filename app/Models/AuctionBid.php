@@ -16,14 +16,29 @@ class AuctionBid extends Model
         'company_id',
         'user_id',
         'price',
+        'deadline',
+        'advance_percent',
         'anonymous_code',
         'comment',
         'type',
         'status',
+        'score_price',
+        'score_deadline',
+        'score_advance',
+        'total_score',
+        'is_base',
+        'became_best_at',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'advance_percent' => 'decimal:2',
+        'score_price' => 'decimal:4',
+        'score_deadline' => 'decimal:4',
+        'score_advance' => 'decimal:4',
+        'total_score' => 'decimal:4',
+        'is_base' => 'boolean',
+        'became_best_at' => 'datetime',
     ];
 
     // ========================
@@ -83,5 +98,13 @@ class AuctionBid extends Model
     public function isTradingBid(): bool
     {
         return $this->type === 'bid';
+    }
+
+    /**
+     * #179 Проверка: это коммерческое предложение (этап 2)
+     */
+    public function isOffer(): bool
+    {
+        return $this->type === 'offer';
     }
 }
