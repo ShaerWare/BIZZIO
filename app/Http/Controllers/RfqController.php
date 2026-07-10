@@ -88,14 +88,18 @@ class RfqController extends Controller
         DB::beginTransaction();
 
         try {
-            // Создание RFQ
-            $rfq = Rfq::create([
+            $procedure = $request->input('procedure', 'standard') === 'commercial'
+                ? Rfq::PROCEDURE_COMMERCIAL
+                : Rfq::PROCEDURE_STANDARD;
+
+            $attributes = [
                 'number' => Rfq::generateNumber(),
                 'title' => $request->title,
                 'description' => $request->description,
                 'company_id' => $request->company_id,
                 'created_by' => auth()->id(),
                 'type' => $request->type,
+                'procedure' => $procedure,
                 'currency' => $request->currency ?? 'RUB',
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
@@ -104,7 +108,23 @@ class RfqController extends Controller
                 'weight_advance' => $request->weight_advance,
                 'status' => $request->status ?? 'draft', // ✅ ИСПОЛЬЗУЕМ СТАТУС ИЗ ФОРМЫ
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
-            ]);
+            ];
+
+            // #179 Параметры этапа 2 для коммерческого аукциона
+            if ($procedure === Rfq::PROCEDURE_COMMERCIAL) {
+                $attributes += [
+                    'trading_start' => $request->trading_start,
+                    'trading_end' => $request->trading_end,
+                    'step_price' => $request->step_price,
+                    'step_deadline' => $request->step_deadline,
+                    'step_advance' => $request->step_advance,
+                    'max_deadline' => $request->max_deadline,
+                    'max_advance' => $request->max_advance,
+                ];
+            }
+
+            // Создание RFQ
+            $rfq = Rfq::create($attributes);
 
             // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
             $this->addFileToModel($rfq, $request, 'technical_specification', 'technical_specification');
@@ -308,13 +328,19 @@ class RfqController extends Controller
      */
     public function storeBid(Request $request, Rfq $rfq)
     {
-        $request->validate([
+        // #179 На этапе 1 коммерческого аукциона оценивается ТОЛЬКО цена
+        $rules = [
             'company_id' => 'required|exists:companies,id',
             'price' => 'required|numeric|min:0',
-            'deadline' => 'required|integer|min:1',
-            'advance_percent' => 'required|numeric|min:0|max:100',
             'comment' => 'nullable|string|max:1000',
-        ]);
+        ];
+
+        if (! $rfq->isCommercial()) {
+            $rules['deadline'] = 'required|integer|min:1';
+            $rules['advance_percent'] = 'required|numeric|min:0|max:100';
+        }
+
+        $request->validate($rules);
 
         // RFQ должен быть активным и не просроченным
         if (! $rfq->isActive() || $rfq->isExpired()) {
@@ -358,8 +384,8 @@ class RfqController extends Controller
                 'company_id' => $request->company_id,
                 'user_id' => auth()->id(),
                 'price' => $request->price,
-                'deadline' => $request->deadline,
-                'advance_percent' => $request->advance_percent,
+                'deadline' => $rfq->isCommercial() ? null : $request->deadline,
+                'advance_percent' => $rfq->isCommercial() ? null : $request->advance_percent,
                 'comment' => $request->comment,
                 'status' => 'pending',
             ]);

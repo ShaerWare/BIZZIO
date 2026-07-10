@@ -15,7 +15,8 @@
         <!-- Форма -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
-                <form method="POST" action="{{ route('rfqs.store') }}" enctype="multipart/form-data" id="rfq-create-form">
+                <form method="POST" action="{{ route('rfqs.store') }}" enctype="multipart/form-data" id="rfq-create-form"
+                      x-data="{ procedure: '{{ old('procedure', 'standard') }}' }">
                     @csrf
 
                     <!-- Компания-организатор -->
@@ -97,6 +98,42 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- #179 Вид процедуры оценки -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Вид процедуры <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="procedure" value="standard"
+                                       x-model="procedure"
+                                       class="mt-1 rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <div class="ml-3">
+                                    <span class="text-sm font-semibold text-gray-900">Запрос цен</span>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Классический запрос цен: оценка по цене, сроку и авансу, один протокол.
+                                    </p>
+                                </div>
+                            </label>
+                            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <input type="radio" name="procedure" value="commercial"
+                                       x-model="procedure"
+                                       class="mt-1 rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <div class="ml-3">
+                                    <span class="text-sm font-semibold text-gray-900">Коммерческий аукцион</span>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Двухэтапная процедура: этап 1 — запрос цен (только цена), затем автоматически
+                                        этап 2 — коммерческий аукцион в реальном времени по трём критериям.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                        @error('procedure')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Валюта -->
                     <div class="mb-6">
                         <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
@@ -263,7 +300,9 @@
                     <!-- Критерии оценки -->
                     <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Критерии оценки (веса в %)</h3>
-                        <p class="text-sm text-gray-600 mb-4">Сумма весов должна быть равна 100%</p>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Сумма весов должна быть равна 100%<span x-show="procedure === 'commercial'"> — применяются на этапе 2 (коммерческий аукцион)</span>
+                        </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -324,6 +363,81 @@
                                 {{ $message }}
                             </div>
                         @enderror
+                    </div>
+
+                    <!-- #179 Параметры этапа 2 (Коммерческий аукцион) -->
+                    <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg" x-show="procedure === 'commercial'" x-cloak>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Параметры коммерческого аукциона (Этап 2)</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            После окончания приёма заявок (этап 1) система автоматически запустит торги.
+                            Начальная максимальная цена этапа 2 = максимальная цена этапа 1.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Начало торгов (этап 2)</label>
+                                <x-datetime-input name="trading_start"
+                                                  :value="old('trading_start', '')"
+                                                  :error="$errors->has('trading_start')" />
+                                <p class="mt-1 text-xs text-gray-500">По умолчанию — через 1 час после окончания приёма заявок. UTC +3</p>
+                                @error('trading_start')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Окончание торгов</label>
+                                <x-datetime-input name="trading_end"
+                                                  :value="old('trading_end', '')"
+                                                  :error="$errors->has('trading_end')" />
+                                <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
+                                @error('trading_end')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Шаги изменения критериев</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Шаг цены (%)</label>
+                                <input type="number" name="step_price" value="{{ old('step_price', '0.5') }}"
+                                       min="0.01" max="100" step="0.01"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_price') border-red-500 @enderror">
+                                @error('step_price')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Шаг срока (дни)</label>
+                                <input type="number" name="step_deadline" value="{{ old('step_deadline', '1') }}"
+                                       min="1" step="1"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_deadline') border-red-500 @enderror">
+                                @error('step_deadline')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Шаг аванса (%)</label>
+                                <input type="number" name="step_advance" value="{{ old('step_advance', '5') }}"
+                                       min="0.01" max="100" step="0.01"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_advance') border-red-500 @enderror">
+                                @error('step_advance')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Максимальные допустимые значения (для нормировки баллов)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Макс. срок выполнения (дни)</label>
+                                <input type="number" name="max_deadline" value="{{ old('max_deadline') }}"
+                                       min="1" step="1"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('max_deadline') border-red-500 @enderror">
+                                @error('max_deadline')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Макс. размер аванса (%)</label>
+                                <input type="number" name="max_advance" value="{{ old('max_advance') }}"
+                                       min="0.01" max="100" step="0.01"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('max_advance') border-red-500 @enderror">
+                                @error('max_advance')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Техническое задание (PDF) - F3: с сохранением при ошибке валидации -->
