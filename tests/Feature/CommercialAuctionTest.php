@@ -315,6 +315,142 @@ class CommercialAuctionTest extends TestCase
         $this->assertSame($best->id, (int) $auction->fresh()->winner_bid_id);
     }
 
+    // =========================================================
+    // Слайс 5 — подача предложений (реал-тайм)
+    // =========================================================
+
+    public function test_first_offer_becomes_best_and_is_base(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->post(route('auctions.offers.store', $auction), [
+                'company_id' => $company->id,
+                'price' => 1_000_000,
+                'deadline' => 60,
+                'advance_percent' => 30,
+            ])
+            ->assertRedirect();
+
+        $offer = AuctionBid::where('auction_id', $auction->id)->where('company_id', $company->id)->first();
+        $this->assertNotNull($offer);
+        $this->assertTrue((bool) $offer->is_base);
+        $this->assertNotNull($offer->became_best_at);
+        $this->assertNotNull($offer->total_score);
+        $this->assertSame($offer->id, (int) $auction->fresh()->best_bid_id);
+    }
+
+    public function test_worse_offer_is_rejected(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$u1, $c1] = $this->participant($auction);
+        [$u2, $c2] = $this->participant($auction);
+
+        // Сильное лидирующее предложение.
+        $this->actingAs($u1)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c1->id, 'price' => 800_000, 'deadline' => 40, 'advance_percent' => 10,
+        ])->assertRedirect();
+
+        $bestId = $auction->fresh()->best_bid_id;
+
+        // Заведомо худшее предложение другого участника — отклоняется.
+        $this->actingAs($u2)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c2->id, 'price' => 1_150_000, 'deadline' => 90, 'advance_percent' => 45,
+        ])->assertSessionHas('error');
+
+        $this->assertSame($bestId, $auction->fresh()->best_bid_id, 'Лидер не должен смениться на худшее предложение');
+        $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->where('company_id', $c2->id)->count());
+    }
+
+    public function test_strictly_better_offer_takes_lead(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$u1, $c1] = $this->participant($auction);
+        [$u2, $c2] = $this->participant($auction);
+
+        $this->actingAs($u1)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c1->id, 'price' => 1_000_000, 'deadline' => 60, 'advance_percent' => 30,
+        ])->assertRedirect();
+
+        $this->actingAs($u2)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c2->id, 'price' => 850_000, 'deadline' => 45, 'advance_percent' => 15,
+        ])->assertRedirect();
+
+        $best = $auction->fresh()->bestBid;
+        $this->assertSame($c2->id, $best->company_id);
+    }
+
+    public function test_non_participant_cannot_submit_offer(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        // Верифицированная компания, но НЕ приглашена (не участник этапа 1).
+        [$user, $company] = $this->verifiedBidder();
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 500_000, 'deadline' => 10, 'advance_percent' => 0,
+        ])->assertSessionHas('error');
+
+        $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->count());
+    }
+
+    public function test_offer_exceeding_max_deadline_rejected(): void
+    {
+        $auction = $this->tradingCommercialAuction(); // max_deadline = 100
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 150, 'advance_percent' => 10,
+        ])->assertSessionHas('error');
+
+        $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->count());
+    }
+
+    public function test_commercial_show_page_renders_offer_block(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Коммерческий аукцион — торги')
+            ->assertSee('История лучших предложений', false)
+            ->assertSee('commercialAuction(', false);
+    }
+
+    public function test_get_state_returns_commercial_payload(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$user, $company] = $this->participant($auction);
+
+        // Одно принятое предложение → становится лучшим.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 50, 'advance_percent' => 20,
+        ])->assertRedirect();
+
+        $this->actingAs($user)
+            ->getJson(route('auctions.state', $auction))
+            ->assertOk()
+            ->assertJsonPath('procedure', 'commercial')
+            ->assertJsonPath('best_offer.price', 900000)
+            ->assertJsonPath('weights.p', 70)
+            ->assertJsonPath('refs.max_deadline', 100);
+    }
+
+    /**
+     * Верифицированный участник аукциона (создаёт приглашение).
+     *
+     * @return array{0: User, 1: Company}
+     */
+    private function participant(Auction $auction): array
+    {
+        [$user, $company] = $this->verifiedBidder();
+        $auction->invitations()->create(['company_id' => $company->id, 'status' => 'accepted']);
+
+        return [$user, $company];
+    }
+
     /** Коммерческий аукцион в статусе trading. */
     private function tradingCommercialAuction(array $overrides = []): Auction
     {
