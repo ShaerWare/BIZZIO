@@ -174,6 +174,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <span>Создатель: <strong>{{ $rfq->creator->name }}</strong></span>
+                            <x-user-badges :user="$rfq->creator" class="ml-2" />
                         </div>
                     </div>
 
@@ -613,6 +614,7 @@
                                                     <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                         {{ $bid->company->name }}
                                                     </a>
+                                                    <x-user-badges :user="$bid->user" class="ml-2" />
                                                 @else
                                                     {{-- T2: На активном этапе показываем анонимный номер --}}
                                                     <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">

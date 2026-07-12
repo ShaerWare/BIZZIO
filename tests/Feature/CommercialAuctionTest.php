@@ -451,6 +451,30 @@ class CommercialAuctionTest extends TestCase
         return [$user, $company];
     }
 
+    // =========================================================
+    // Слайс 6 — протокол
+    // =========================================================
+
+    public function test_commercial_close_generates_protocol_with_winner(): void
+    {
+        $auction = $this->tradingCommercialAuction(['trading_end' => now()->subMinute()]);
+        [$user, $company] = $this->participant($auction);
+
+        $offer = AuctionBid::create([
+            'auction_id' => $auction->id, 'company_id' => $company->id, 'user_id' => $user->id,
+            'type' => 'offer', 'price' => 850_000, 'deadline' => 40, 'advance_percent' => 15,
+            'total_score' => 55, 'became_best_at' => now(), 'anonymous_code' => 'CC33',
+        ]);
+        $auction->update(['best_bid_id' => $offer->id]);
+
+        app()->call([new CloseAuctionJob($auction->id), 'handle']);
+
+        $auction->refresh();
+        $this->assertSame('closed', $auction->status);
+        $this->assertSame($offer->id, (int) $auction->winner_bid_id);
+        $this->assertNotNull($auction->getFirstMedia('protocol'), 'Протокол коммерческого аукциона должен быть сгенерирован');
+    }
+
     /** Коммерческий аукцион в статусе trading. */
     private function tradingCommercialAuction(array $overrides = []): Auction
     {

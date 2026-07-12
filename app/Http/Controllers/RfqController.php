@@ -23,7 +23,7 @@ class RfqController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Rfq::with(['company', 'creator', 'bids'])
+        $query = Rfq::with(['company', 'creator.badges', 'bids'])
             ->orderBy('created_at', 'desc');
 
         // Скрываем черновики от посторонних (C3)
@@ -174,7 +174,9 @@ class RfqController extends Controller
         // Eager loading
         $rfq->load([
             'company.industry',
+            'creator.badges',
             'bids.company',
+            'bids.user.badges',
             'invitations.company',
         ]);
 

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Orchid\Screens\User;
 
 use App\Models\User;
+use App\Models\UserBadge;
 use App\Orchid\Layouts\Role\RolePermissionLayout;
+use App\Orchid\Layouts\User\BadgeFormLayout;
+use App\Orchid\Layouts\User\UserBadgeListLayout;
 use App\Orchid\Layouts\User\UserEditLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
 use App\Orchid\Layouts\User\UserRoleLayout;
@@ -40,6 +43,7 @@ class UserEditScreen extends Screen
         return [
             'user' => $user,
             'permission' => $user->statusOfPermissions(),
+            'badges' => $user->exists ? $user->badges()->latest()->get() : collect(),
         ];
     }
 
@@ -143,6 +147,22 @@ class UserEditScreen extends Screen
                         ->method('save')
                 ),
 
+            Layout::block(UserBadgeListLayout::class)
+                ->title(__('Бейджи пользователя'))
+                ->description(__('Цветные рамки и подписи, отображаемые на профиле, тендерах и аукционах пользователя.'))
+                ->canSee($this->user->exists),
+
+            Layout::block(BadgeFormLayout::class)
+                ->title(__('Выдать бейдж'))
+                ->description(__('Выберите цвет рамки и подпись. Пользователь может иметь несколько бейджей.'))
+                ->canSee($this->user->exists)
+                ->commands(
+                    Button::make(__('Выдать'))
+                        ->type(Color::BASIC)
+                        ->icon('bs.award')
+                        ->method('addBadge')
+                ),
+
         ];
     }
 
@@ -191,6 +211,38 @@ class UserEditScreen extends Screen
         Toast::info(__('User was removed'));
 
         return redirect()->route('platform.systems.users');
+    }
+
+    /**
+     * Выдать пользователю новый бейдж.
+     */
+    public function addBadge(User $user, Request $request): void
+    {
+        $data = $request->validate([
+            'badge.color_preset' => ['required', 'string'],
+            'badge.color_custom' => ['nullable', 'string', 'max:20'],
+            'badge.label_preset' => ['required', 'string'],
+            'badge.label_custom' => ['nullable', 'string', 'max:255'],
+        ])['badge'];
+
+        UserBadge::create([
+            'user_id' => $user->id,
+            'color' => UserBadge::resolveColor($data['color_preset'], $data['color_custom'] ?? null),
+            'label' => UserBadge::resolveLabel($data['label_preset'], $data['label_custom'] ?? null),
+            'created_by' => $request->user()->id,
+        ]);
+
+        Toast::info(__('Бейдж выдан.'));
+    }
+
+    /**
+     * Удалить бейдж пользователя.
+     */
+    public function removeBadge(Request $request): void
+    {
+        UserBadge::whereKey($request->get('badge'))->delete();
+
+        Toast::info(__('Бейдж удалён.'));
     }
 
     /**
