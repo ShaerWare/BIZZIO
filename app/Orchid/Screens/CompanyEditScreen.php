@@ -123,7 +123,7 @@ class CompanyEditScreen extends Screen
                     ->title('Документы (PDF)')
                     ->acceptedFiles('.pdf')
                     ->maxFiles(10)
-                    ->help('Устав, ИНН, ОГРН и другие документы. Макс. 10 файлов по 10MB')
+                    ->help('Устав, ИНН, ОГРН и другие документы. Макс. 10 файлов по 20MB')
                     ->target('documents'),
 
                 CheckBox::make('company.is_verified')
