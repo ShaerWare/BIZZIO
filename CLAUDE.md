@@ -90,6 +90,7 @@ php artisan tinker
 - **Projects** — Company invitations, user members (roles: admin/moderator/member), join requests, comments. Routes use `{project:slug}` (not ID)
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
+- **Commercial Auction (Коммерческий аукцион)** — Two-stage procedure (#179): `Rfq`/`Auction` with `procedure='commercial'`. Stage 1 = price-only RFQ that auto-launches Stage 2 (`CommercialAuctionLauncherService`, НМЦ = max stage-1 price) — a multi-criteria (price/deadline/advance) real-time auction with continuous-leadership scoring (`CommercialAuctionScoringService`), offers via `AuctionController::storeOffer` (route `auctions.offers.store`, lockForUpdate), UI partial `auctions/partials/commercial-trading`, own protocol (`CommercialAuctionProtocolService`). Standard RFQs/auctions use `procedure='standard'` and are unaffected.
 - **News** — RSS aggregator with keyword filtering, personalized feed. `RSSSource` managed via Orchid admin
 - **Posts** — Social-media-style posts on dashboard feed (create/delete)
 - **Search** — Search via model `scopeSearch()` with `ilike`/`like` queries (Scout uses `collection` driver; search is not index-based)
