@@ -452,6 +452,52 @@ class CommercialAuctionTest extends TestCase
     }
 
     // =========================================================
+    // Слайс 7 — каталог/навигация
+    // =========================================================
+
+    public function test_tenders_catalog_filters_by_procedure(): void
+    {
+        // Один коммерческий и один обычный активный RFQ.
+        $commercial = $this->closeableCommercialRfq([500_000]);
+        $commercial->update(['status' => 'active', 'end_date' => now()->addDay(), 'title' => 'КА в каталоге']);
+
+        $standard = Rfq::create([
+            'number' => Rfq::generateNumber(),
+            'title' => 'Обычный RFQ в каталоге',
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'type' => 'open',
+            'procedure' => Rfq::PROCEDURE_STANDARD,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'weight_price' => 50, 'weight_deadline' => 30, 'weight_advance' => 20,
+            'status' => 'active',
+        ]);
+
+        // Фильтр commercial показывает только коммерческий.
+        $this->get(route('tenders.index', ['procedure' => 'commercial']))
+            ->assertOk()
+            ->assertSee('КА в каталоге')
+            ->assertDontSee('Обычный RFQ в каталоге');
+
+        // Карточка коммерческого RFQ несёт метку этапа 1.
+        $this->get(route('tenders.index', ['procedure' => 'commercial']))
+            ->assertSee('Коммерческий аукцион · Этап 1');
+    }
+
+    public function test_stage_1_page_links_to_launched_auction(): void
+    {
+        $rfq = $this->closeableCommercialRfq([700_000, 900_000]);
+        $this->runCloseRfqJob($rfq);
+        $rfq->refresh();
+
+        $this->get(route('rfqs.show', $rfq))
+            ->assertOk()
+            ->assertSee('Перейти к аукциону')
+            ->assertSee(route('auctions.show', $rfq->linked_auction_id), false);
+    }
+
+    // =========================================================
     // Слайс 6 — протокол
     // =========================================================
 

@@ -36,9 +36,15 @@
         @endphp
 
         <div class="flex items-center flex-wrap gap-2 mb-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                Аукцион
-            </span>
+            @if($auction->isCommercial())
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Коммерческий аукцион · Этап 2
+                </span>
+            @else
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Аукцион
+                </span>
+            @endif
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
                 {{ $statusLabel }}
             </span>

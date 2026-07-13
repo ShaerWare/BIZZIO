@@ -97,6 +97,25 @@
             </div>
         @endif
 
+        {{-- #179 Коммерческий аукцион: переход к запущенному этапу 2 --}}
+        @if($rfq->isCommercial() && $rfq->linked_auction_id)
+            <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 mb-6 flex items-center justify-between gap-4">
+                <div>
+                    <strong>Этап 1 завершён.</strong> Запущен коммерческий аукцион (этап 2) — торги по цене, сроку и авансу.
+                </div>
+                <a href="{{ route('auctions.show', $rfq->linked_auction_id) }}"
+                   class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition whitespace-nowrap">
+                    Перейти к аукциону
+                </a>
+            </div>
+        @elseif($rfq->isCommercial())
+            <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 mb-6">
+                <strong>Коммерческий аукцион — этап 1 (Запрос цен).</strong>
+                На этом этапе оценивается только цена. После окончания приёма заявок автоматически начнётся этап 2 —
+                торги по цене, сроку и авансу.
+            </div>
+        @endif
+
         <!-- Главная информация -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">

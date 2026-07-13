@@ -1715,3 +1715,43 @@ Pint чист. Ассеты не пересобирались (стили — и
 **Примечание об окружении:** локальный прогон делался в контейнере `php:8.2-cli` без расширения
 `gd`, из-за чего 2 теста генерации PDF-протоколов (`CommercialAuctionTest`, `AuctionTest`) падают —
 это не связано с бейджами и воспроизводится на чистом коде; на образе приложения (с `gd`) и в CI они зелёные.
+
+---
+
+## 2026-07-13 — Коммерческий аукцион (#179), двухэтапная процедура
+
+Новый вид тендера: этап 1 — Запрос цен (только цена, обезличенно, без промежуточного
+протокола) → автоматически этап 2 — коммерческий аукцион в реальном времени по трём
+критериям (цена, срок, аванс) с принципом непрерывного лидерства. Ветка
+`feat/commercial-auction`, 7 слайсов. Архитектура — расширение существующих `Rfq`/`Auction`
+(дискриминатор `procedure`), связанная пара RFQ↔Auction.
+
+**Данные:** миграции добавляют `procedure` + параметры этапа 2 в `rfqs`
+(`trading_start/end`, `step_*`, `max_deadline/advance`, `linked_auction_id`), в `auctions`
+(`rfq_id`, веса/шаги/референсы, `best_bid_id`) и критерии/`total_score`/`is_base`/
+`became_best_at` в `auction_bids`; `rfq_bids.deadline/advance_percent` → nullable.
+
+**Движок:** `CommercialAuctionScoringService` — фиксированная нормировка от референсов,
+итоговый балл по весам, приём «строго лучше», пороги «Уменьшите до X» (замкнутая форма).
+
+**Backend:** `CommercialAuctionLauncherService` (авто-запуск этапа 2, НМЦ = макс. цена
+этапа 1); ветки в `CloseRfqJob`, `UpdateAuctionStatuses` (закрытие по `trading_end`),
+`AuctionWinnerService` (победитель = лучшее предложение); `AuctionController::storeOffer`
+(lockForUpdate, приём/отклонение) + расширенный `getState`; `StoreCommercialOfferRequest`;
+маршрут `auctions.offers.store`.
+
+**Frontend:** переключатель процедуры + параметры этапа 2 в `rfqs/create`; форма заявки
+этапа 1 «только цена»; партиал `auctions/partials/commercial-trading` («Настройка
+предложения»: 3 критерия, слайдеры, диапазоны, подсказки, зеркало скоринга в Alpine,
+long-poll, гейтинг кнопки, история лучших); метки в карточках + фильтр `procedure` в
+каталоге; баннер этап 1→2.
+
+**Протокол:** `CommercialAuctionProtocolService` + `pdfs/commercial-auction-protocol`
+(победитель с ИНН, итоговые значения, рейтинг, история лучших).
+
+**Тесты:** `tests/Feature/CommercialAuctionTest.php` (19) + `tests/Unit/CommercialAuctionScoringServiceTest.php` (8).
+Полный прогон: 308 тестов зелёные. Pint чист.
+
+**Примечание о git:** из-за параллельной работы над репозиторием слайс 6 (`73d58a2`) случайно
+захватил в тот же коммит фичу «Бейджи пользователей» (UserBadge). Историю не переписывал —
+UserBadge оставлен как есть. Слайс 7 сделан в изолированном git worktree.
