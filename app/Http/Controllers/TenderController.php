@@ -223,6 +223,11 @@ class TenderController extends Controller
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
+
+        // #179 Фильтр по виду процедуры (standard / commercial)
+        if ($request->filled('procedure')) {
+            $query->where('procedure', $request->procedure);
+        }
     }
 
     /**
