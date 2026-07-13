@@ -40,7 +40,7 @@ class StoreAuctionRequest extends FormRequest
             'trading_start' => ['required', 'date', 'after:end_date'],
             'starting_price' => ['required', 'numeric', 'min:1'],
             'status' => ['required', Rule::in(['draft', 'active'])],
-            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             'invited_companies' => ['nullable', 'array'],
             'invited_companies.*' => ['exists:companies,id'],
             'notification_agreement' => ['required', 'accepted'],
@@ -67,7 +67,7 @@ class StoreAuctionRequest extends FormRequest
             'starting_price.required' => 'Укажите начальную (максимальную) цену.',
             'starting_price.min' => 'Начальная цена должна быть больше нуля.',
             'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
-            'technical_specification.max' => 'Размер файла не должен превышать 10 МБ.',
+            'technical_specification.max' => 'Размер файла не должен превышать 20 МБ.',
             'notification_agreement.accepted' => 'Необходимо подтвердить согласие с условиями.',
         ];
     }

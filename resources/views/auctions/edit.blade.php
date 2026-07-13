@@ -149,7 +149,7 @@
                                id="technical_specification" 
                                accept="application/pdf"
                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 @error('technical_specification') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Оставьте пустым, если не хотите заменять файл. Максимальный размер: 10 МБ</p>
+                        <p class="mt-1 text-sm text-gray-500">Оставьте пустым, если не хотите заменять файл. Максимальный размер: 20 МБ</p>
                         @error('technical_specification')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

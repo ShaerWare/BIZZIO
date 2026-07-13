@@ -31,7 +31,7 @@ class UpdateAuctionRequest extends FormRequest
             'trading_start' => ['required', 'date', 'after:end_date'],
             'currency' => ['required', 'string', Rule::in(array_keys(\App\Models\Auction::CURRENCIES))],
             'starting_price' => ['required', 'numeric', 'min:1'],
-            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             'is_results_hidden' => ['nullable', 'boolean'],
         ];
     }
@@ -57,7 +57,7 @@ class UpdateAuctionRequest extends FormRequest
             'starting_price.required' => 'Укажите начальную (максимальную) цену.',
             'starting_price.min' => 'Начальная цена должна быть больше нуля.',
             'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
-            'technical_specification.max' => 'Размер файла не должен превышать 10 МБ.',
+            'technical_specification.max' => 'Размер файла не должен превышать 20 МБ.',
         ];
     }
 }

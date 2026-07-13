@@ -34,7 +34,7 @@ class StoreRfqRequest extends FormRequest
             'weight_price' => 'required|numeric|min:0|max:100',
             'weight_deadline' => 'required|numeric|min:0|max:100',
             'weight_advance' => 'required|numeric|min:0|max:100',
-            'technical_specification' => 'nullable|file|mimes:pdf|max:10240', // 10MB
+            'technical_specification' => 'nullable|file|mimes:pdf|max:20480', // 20MB
             'technical_specification_temp' => 'nullable|string',
             'invited_companies' => 'nullable|array',
             'invited_companies.*' => 'exists:companies,id',
@@ -106,7 +106,7 @@ class StoreRfqRequest extends FormRequest
             'technical_specification.required' => 'Загрузите техническое задание (PDF)',
             'technical_specification.file' => 'Техническое задание должно быть файлом',
             'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF',
-            'technical_specification.max' => 'Размер файла не должен превышать 10 МБ',
+            'technical_specification.max' => 'Размер файла не должен превышать 20 МБ',
             'invited_companies.array' => 'Неверный формат списка приглашённых компаний',
             'invited_companies.*.exists' => 'Одна из приглашённых компаний не найдена',
         ];
