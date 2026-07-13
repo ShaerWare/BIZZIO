@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Auction;
 use App\Services\AuctionProtocolService;
 use App\Services\AuctionWinnerService;
+use App\Services\CommercialAuctionProtocolService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -31,7 +32,8 @@ class CloseAuctionJob implements ShouldQueue
      */
     public function handle(
         AuctionWinnerService $winnerService,
-        AuctionProtocolService $protocolService
+        AuctionProtocolService $protocolService,
+        CommercialAuctionProtocolService $commercialProtocolService
     ): void {
         $auction = Auction::find($this->auctionId);
 
@@ -61,8 +63,12 @@ class CloseAuctionJob implements ShouldQueue
         // Обновляем модель из БД (winner_bid_id, status обновились в determineWinner)
         $auction->refresh();
 
-        // Шаг 2: Генерируем PDF-протокол
-        $protocolService->generate($auction);
+        // Шаг 2: Генерируем PDF-протокол (#179 — свой шаблон для коммерческого аукциона)
+        if ($auction->isCommercial()) {
+            $commercialProtocolService->generate($auction);
+        } else {
+            $protocolService->generate($auction);
+        }
 
         // Шаг 3: Отправляем уведомления (будет реализовано в Спринте 7)
         // TODO: Отправка уведомлений организатору и участникам

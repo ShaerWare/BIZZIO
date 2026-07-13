@@ -22,7 +22,7 @@ class AuctionController extends Controller
 
     public function index(Request $request)
     {
-        $query = Auction::with(['company.industry', 'creator', 'bids']);
+        $query = Auction::with(['company.industry', 'creator.badges', 'bids']);
 
         // Скрываем черновики от посторонних (C3) и закрытые аукционы от неприглашённых (#38)
         if (auth()->check()) {
@@ -135,8 +135,9 @@ class AuctionController extends Controller
 
         $auction->load([
             'company.industry',
-            'creator',
+            'creator.badges',
             'bids.company',
+            'bids.user.badges',
             'invitations.company',
         ]);
 
@@ -499,6 +500,11 @@ class AuctionController extends Controller
             ], 400);
         }
 
+        // #179 Коммерческий аукцион отдаёт расширенное состояние (3 критерия).
+        if ($auction->isCommercial()) {
+            return response()->json($this->commercialState($auction));
+        }
+
         $userCompanies = auth()->check()
             ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray() // ⚠️ ИСПРАВЛЕНО
             : [];
@@ -542,6 +548,170 @@ class AuctionController extends Controller
             'time_remaining' => $timeRemaining,
             'last_updated' => Carbon::now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * #179 Состояние коммерческого аукциона для long-polling (3 критерия).
+     *
+     * @return array<string, mixed>
+     */
+    private function commercialState(Auction $auction): array
+    {
+        $scoring = app(\App\Services\CommercialAuctionScoringService::class);
+
+        $userCompanies = auth()->check()
+            ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray()
+            : [];
+
+        $canSeeCompany = auth()->check() && $auction->canManage(auth()->user());
+
+        $mapOffer = function (AuctionBid $offer) use ($auction, $userCompanies, $canSeeCompany) {
+            return [
+                'id' => $offer->id,
+                'anonymous_code' => $offer->anonymous_code,
+                'company_name' => $canSeeCompany ? $offer->company->name : null,
+                'price' => (float) $offer->price,
+                'price_formatted' => number_format((float) $offer->price, 2, '.', ' ').' '.$auction->currency_symbol,
+                'deadline' => (int) $offer->deadline,
+                'advance' => (float) $offer->advance_percent,
+                'total_score' => (float) $offer->total_score,
+                'time' => optional($offer->became_best_at ?? $offer->created_at)->format('H:i:s'),
+                'is_mine' => in_array($offer->company_id, $userCompanies),
+            ];
+        };
+
+        $history = $auction->offerBids()->with('company:id,name')->get()->map($mapOffer)->values();
+
+        $best = $auction->bestBid;
+
+        $timeRemaining = null;
+        if ($auction->trading_end) {
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds(Carbon::parse($auction->trading_end), false));
+        }
+
+        return [
+            'status' => 'trading',
+            'auction_status' => $auction->status,
+            'procedure' => 'commercial',
+            'currency_symbol' => $auction->currency_symbol,
+            'nmc' => (float) $auction->starting_price,
+            'weights' => $scoring->weights($auction),
+            'refs' => [
+                'max_deadline' => (int) $auction->max_deadline,
+                'max_advance' => (float) $auction->max_advance,
+            ],
+            'steps' => [
+                'price' => (float) $auction->step_price,
+                'deadline' => (int) $auction->step_deadline,
+                'advance' => (float) $auction->step_advance,
+            ],
+            'best_offer' => $best ? $mapOffer($best->loadMissing('company:id,name')) : null,
+            'best_offer_history' => $history,
+            'offers_count' => $history->count(),
+            'time_remaining' => $timeRemaining,
+            'last_updated' => Carbon::now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * #179 Подача предложения в коммерческом аукционе (этап 2).
+     */
+    public function storeOffer(
+        \App\Http\Requests\StoreCommercialOfferRequest $request,
+        Auction $auction,
+        \App\Services\CommercialAuctionScoringService $scoring
+    ) {
+        if (! $auction->isCommercial() || ! $auction->isTrading()) {
+            return back()->withInput()->with('error', 'Коммерческий аукцион не находится в режиме торгов.');
+        }
+
+        $company = Company::find($request->company_id);
+
+        // Право участия: модератор своей верифицированной компании, не организатор, приглашён.
+        if (! $company || ! $company->isModerator(auth()->user())) {
+            return back()->withInput()->with('error', 'Вы не можете участвовать от имени этой компании.');
+        }
+        if (! $company->is_verified) {
+            return back()->withInput()->with('error', 'Участвовать могут только верифицированные компании.');
+        }
+        if ($company->id === $auction->company_id) {
+            return back()->withInput()->with('error', 'Организатор не может участвовать в собственном аукционе.');
+        }
+        if (! $auction->invitations()->where('company_id', $company->id)->exists()) {
+            return back()->withInput()->with('error', 'Ваша компания не является участником этого аукциона.');
+        }
+
+        $price = (float) $request->price;
+        $deadline = (int) $request->deadline;
+        $advance = (float) $request->advance_percent;
+
+        // Значения в пределах, заданных организатором.
+        if ($deadline > (int) $auction->max_deadline) {
+            return back()->withInput()->with('error', 'Срок не может превышать '.$auction->max_deadline.' дн.');
+        }
+        if ($advance > (float) $auction->max_advance) {
+            return back()->withInput()->with('error', 'Аванс не может превышать '.$auction->max_advance.'%.');
+        }
+        if ($price > (float) $auction->starting_price) {
+            return back()->withInput()->with('error', 'Цена не может превышать начальную максимальную цену.');
+        }
+
+        try {
+            $result = DB::transaction(function () use ($auction, $company, $price, $deadline, $advance, $scoring) {
+                // Блокируем строку аукциона — сериализуем одновременные предложения.
+                $locked = Auction::whereKey($auction->id)->lockForUpdate()->first();
+
+                // Строгое превосходство над текущим лидером (перечитан под локом).
+                if (! $scoring->wouldBeat($locked, $price, $deadline, $advance)) {
+                    $analysis = $scoring->analyze($locked, $price, $deadline, $advance);
+
+                    return ['ok' => false, 'deficit' => $analysis['deficit']];
+                }
+
+                // Код участника: переиспользуем существующий код компании либо генерируем.
+                $prior = $locked->bids()->where('company_id', $company->id)->first();
+                $code = $prior?->anonymous_code ?? Auction::generateAnonymousCode();
+                $isBase = $prior === null;
+
+                $offer = new AuctionBid([
+                    'auction_id' => $locked->id,
+                    'company_id' => $company->id,
+                    'user_id' => auth()->id(),
+                    'price' => $price,
+                    'deadline' => $deadline,
+                    'advance_percent' => $advance,
+                    'anonymous_code' => $code,
+                    'type' => 'offer',
+                    'status' => 'pending',
+                    'is_base' => $isBase,
+                    'became_best_at' => now(),
+                ]);
+                $scoring->fillScores($locked, $offer);
+                $offer->save();
+
+                $locked->update([
+                    'best_bid_id' => $offer->id,
+                    'last_bid_at' => now(),
+                ]);
+
+                return ['ok' => true, 'code' => $code];
+            });
+        } catch (\Throwable $e) {
+            \Log::error('Ошибка подачи коммерческого предложения', [
+                'auction_id' => $auction->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withInput()->with('error', 'Ошибка при подаче предложения: '.$e->getMessage());
+        }
+
+        if (! $result['ok']) {
+            return back()->withInput()->with('error',
+                'Предложение не принято: до лучшего предложения не хватает '.number_format($result['deficit'], 2, '.', ' ').' баллов.');
+        }
+
+        return redirect()->route('auctions.show', $auction)
+            ->with('success', 'Предложение принято! Ваш код участника: '.$result['code']);
     }
 
     /**

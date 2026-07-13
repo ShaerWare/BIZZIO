@@ -1677,3 +1677,41 @@ SESSION_SECURE_COOKIE=true
 - `AuctionController::show()` — `canBid` и список компаний в форме заявки (`bidCompanies`) считаются из `biddableCompanies`. Просмотр результатов/протоколов оставлен на `userCompanies` (участник мог быть верифицирован ранее).
 
 **Тесты:** `tests/Feature/PriorityTasksTest.php` — 4 новых теста #182 (неверифицированная не подаёт заявку в RFQ и аукцион, не видна в форме RFQ; верифицированная по-прежнему подаёт). Полные RfqTest+AuctionTest (87) зелёные, Pint чистый.
+
+---
+
+## 2026-07-12 — feat: Бейджи (ачивки) пользователей
+
+**Задача:** Админ из админки выдаёт выбранным пользователям бейджи — цветная рамка + подпись.
+Бейдж виден на созданных пользователем тендерах (RFQ) и аукционах, на его ответах/ставках
+(только после раскрытия анонимности) и на публичном профиле. У пользователя может быть несколько
+бейджей. Цвет: пресеты красный/бордовый/зелёный + произвольный из палитры. Подпись: пресеты
+«Подозрительная личность»/без подписи/«Подтверждён» + произвольный текст.
+
+**Модель данных:**
+- `database/migrations/2026_07_12_120000_create_user_badges_table.php` — таблица `user_badges`
+  (`user_id`, `color`, `label` nullable, `created_by` nullable).
+- `app/Models/UserBadge.php` — модель + пресеты `COLOR_PRESETS`/`LABEL_PRESETS` и хелперы
+  `resolveColor()`/`resolveLabel()` (пресет/кастом → итоговый HEX/подпись).
+- `app/Models/User.php` — связь `badges(): HasMany`.
+
+**Админка (Orchid):**
+- `app/Orchid/Layouts/User/BadgeFormLayout.php` — общая форма (цвет: Select + `input[type=color]`; подпись: Select + текст).
+- `app/Orchid/Layouts/User/BadgeAssignLayout.php` — модал массовой выдачи (Relation-выбор пользователей + форма).
+- `app/Orchid/Layouts/User/UserBadgeListLayout.php` — таблица текущих бейджей с предпросмотром и удалением.
+- `UserEditScreen` — блоки «Бейджи пользователя» и «Выдать бейдж» + методы `addBadge`/`removeBadge`.
+- `UserListScreen` — команда «Выдать бейдж» (модал) + метод `assignBadge` (массовая выдача выбранным).
+
+**Отображение (Blade):**
+- `resources/views/components/user-badges.blade.php` — компонент-чипы `<x-user-badges :user="…">`.
+- Внедрение: профиль (`users/show` — рамка карточки + чипы), `rfqs/show` и `auctions/show`
+  (чипы у «Создатель»), карточки `rfq-card`/`auction-card` (рамка по создателю),
+  таблицы результатов ставок — чипы `$bid->user` только в раскрытых ветках (анонимность сохранена).
+- Eager-load `creator.badges`/`bids.user.badges` в `RfqController`, `AuctionController`, `TenderController`.
+
+**Тесты:** `tests/Unit/UserBadgeTest.php` (5) + `tests/Feature/UserBadgeDisplayTest.php` (3) — все зелёные.
+Pint чист. Ассеты не пересобирались (стили — инлайн Tailwind, `app.css` не менялся).
+
+**Примечание об окружении:** локальный прогон делался в контейнере `php:8.2-cli` без расширения
+`gd`, из-за чего 2 теста генерации PDF-протоколов (`CommercialAuctionTest`, `AuctionTest`) падают —
+это не связано с бейджами и воспроизводится на чистом коде; на образе приложения (с `gd`) и в CI они зелёные.

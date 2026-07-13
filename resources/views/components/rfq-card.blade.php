@@ -1,6 +1,8 @@
 @props(['rfq'])
 
-<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-lg transition-shadow duration-300">
+@php $creatorBadge = optional(optional($rfq->creator)->badges)->first(); @endphp
+<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-lg transition-shadow duration-300"
+     @if($creatorBadge) style="border: 3px solid {{ $creatorBadge->color }};" @endif>
     <div class="p-6">
         <!-- Заголовок -->
         <div class="flex justify-between items-start mb-3">

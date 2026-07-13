@@ -212,6 +212,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <span>Создатель: <strong>{{ $auction->creator->name }}</strong></span>
+                            <x-user-badges :user="$auction->creator" class="ml-2" />
                         </div>
                     </div>
 
@@ -330,8 +331,13 @@
             </div>
         @endif
 
+        {{-- #179 Коммерческий аукцион: блок «Настройка предложения» --}}
+        @if($auction->isCommercial() && $auction->isTrading())
+            @include('auctions.partials.commercial-trading')
+        @endif
+
         {{-- A8: Панель торгов на главном экране (только для статуса trading) --}}
-        @if($auction->isTrading())
+        @if($auction->isTrading() && ! $auction->isCommercial())
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <div class="flex flex-col lg:flex-row gap-6">
@@ -801,11 +807,13 @@
                                                         <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                             {{ $bid->company->name }}
                                                         </a>
+                                                        <x-user-badges :user="$bid->user" class="ml-2" />
                                                     @elseif($auction->status === 'closed' && $auction->type === 'closed' && $auction->canManage(auth()->user()))
                                                         {{-- #38: В закрытом аукционе после завершения — имена видны только организатору --}}
                                                         <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                             {{ $bid->company->name }}
                                                         </a>
+                                                        <x-user-badges :user="$bid->user" class="ml-2" />
                                                     @else
                                                         {{-- A15: На этапе приёма заявок скрываем названия от ВСЕХ (включая организатора) --}}
                                                         <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">

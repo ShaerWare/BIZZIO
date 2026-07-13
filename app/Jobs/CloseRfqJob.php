@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Rfq;
+use App\Services\CommercialAuctionLauncherService;
 use App\Services\RfqProtocolService;
 use App\Services\RfqScoringService;
 use Illuminate\Bus\Queueable;
@@ -35,7 +36,8 @@ class CloseRfqJob implements ShouldQueue
      */
     public function handle(
         RfqScoringService $scoringService,
-        RfqProtocolService $protocolService
+        RfqProtocolService $protocolService,
+        CommercialAuctionLauncherService $launcherService
     ): void {
         try {
             // 0. Идемпотентность: RFQ мог быть уже закрыт (отложенная задача + команда
@@ -43,6 +45,19 @@ class CloseRfqJob implements ShouldQueue
             $this->rfq->refresh();
             if ($this->rfq->status === 'closed') {
                 Log::info("RFQ #{$this->rfq->number} уже закрыт — пропускаем повторное закрытие");
+
+                return;
+            }
+
+            // #179 Коммерческий аукцион: на этапе 1 не считаем баллы/победителя и не
+            // формируем протокол — вместо этого автоматически запускаем этап 2 (торги).
+            if ($this->rfq->isCommercial()) {
+                $auction = $launcherService->launch($this->rfq);
+                $this->rfq->update(['status' => 'closed']);
+
+                Log::info($auction
+                    ? "RFQ #{$this->rfq->number} (этап 1) закрыт, запущен аукцион {$auction->number}"
+                    : "RFQ #{$this->rfq->number} (этап 1) закрыт без участников — процедура несостоялась");
 
                 return;
             }

@@ -99,6 +99,14 @@ class User extends Orchid
     }
 
     /**
+     * Бейджи (ачивки), назначенные пользователю администратором
+     */
+    public function badges(): HasMany
+    {
+        return $this->hasMany(UserBadge::class);
+    }
+
+    /**
      * Компании, где пользователь является модератором (через pivot-таблицу)
      */
     public function moderatedCompanies(): BelongsToMany

@@ -253,6 +253,9 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::post('/{auction}/cancel', [AuctionController::class, 'cancel'])->name('cancel');
         Route::post('/{auction}/bids', [AuctionController::class, 'storeBid'])->name('bids.store');
 
+        // #179 Подача предложения в коммерческом аукционе (этап 2)
+        Route::post('/{auction}/offers', [AuctionController::class, 'storeOffer'])->name('offers.store');
+
         // Генерация протокола (для организатора)
         Route::post('/{auction}/protocol', [AuctionController::class, 'generateProtocol'])->name('protocol.generate');
 

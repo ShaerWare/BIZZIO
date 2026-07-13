@@ -14,8 +14,11 @@ class AuctionWinnerService
      */
     public function determineWinner(Auction $auction): ?AuctionBid
     {
-        // Проверка: есть ли ставки в торгах
-        $winnerBid = $auction->tradingBids()->first(); // Первая = последняя = минимальная цена
+        // #179 Коммерческий аукцион: победитель — текущее «Лучшее предложение»
+        // (лидер по совокупной оценке), а не последняя ставка.
+        $winnerBid = $auction->isCommercial()
+            ? $auction->bestBid
+            : $auction->tradingBids()->first(); // Первая = последняя = минимальная цена
 
         if (! $winnerBid) {
             Log::warning("Аукцион {$auction->number}: нет ставок в торгах.");

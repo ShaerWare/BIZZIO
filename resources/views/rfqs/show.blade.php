@@ -174,6 +174,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <span>Создатель: <strong>{{ $rfq->creator->name }}</strong></span>
+                            <x-user-badges :user="$rfq->creator" class="ml-2" />
                         </div>
                     </div>
 
@@ -426,14 +427,15 @@
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
                 </div>
 
+                @unless($rfq->isCommercial())
                 <!-- Срок выполнения -->
                 <div class="mb-4">
                     <label for="delivery_time" class="block text-sm font-medium text-gray-700 mb-2">
                         Срок выполнения (календарных дней) <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" 
-                           name="deadline" 
-                           id="deadline" 
+                    <input type="number"
+                           name="deadline"
+                           id="deadline"
                            min="1"
                            required
                            placeholder="Введите срок"
@@ -445,9 +447,9 @@
                     <label for="advance_percentage" class="block text-sm font-medium text-gray-700 mb-2">
                         Размер аванса (%) <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" 
-                           name="advance_percent" 
-                           id="advance_percent" 
+                    <input type="number"
+                           name="advance_percent"
+                           id="advance_percent"
                            step="0.01"
                            min="0"
                            max="100"
@@ -455,6 +457,7 @@
                            placeholder="Введите процент аванса"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
                 </div>
+                @endunless
 
                 <!-- Комментарий -->
                 <div class="mb-4">
@@ -469,12 +472,21 @@
                 </div>
 
                 {{-- T5: Информация о формуле расчёта в форме заявки --}}
+                @if($rfq->isCommercial())
+                <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">
+                    <p class="font-medium mb-1">Коммерческий аукцион — этап 1 (Запрос цен):</p>
+                    <p>• На этом этапе оценивается только цена.</p>
+                    <p>• После окончания приёма заявок автоматически начнётся этап 2 —
+                        торги по цене, сроку и авансу.</p>
+                </div>
+                @else
                 <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">
                     <p class="font-medium mb-1">Как оценивается ваша заявка:</p>
                     <p>• Чем ниже цена — тем больше баллов (вес {{ $rfq->weight_price }}%)</p>
                     <p>• Чем короче срок — тем больше баллов (вес {{ $rfq->weight_deadline }}%)</p>
                     <p>• Чем меньше аванс — тем больше баллов (вес {{ $rfq->weight_advance }}%)</p>
                 </div>
+                @endif
 
                 <!-- Подтверждение соответствия ТЗ -->
                 <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
@@ -602,6 +614,7 @@
                                                     <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                         {{ $bid->company->name }}
                                                     </a>
+                                                    <x-user-badges :user="$bid->user" class="ml-2" />
                                                 @else
                                                     {{-- T2: На активном этапе показываем анонимный номер --}}
                                                     <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">
