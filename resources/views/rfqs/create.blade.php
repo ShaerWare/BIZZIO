@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@php($isCommercial = old('procedure', request('procedure', 'standard')) === 'commercial')
+@php
+    $isCommercial = old('procedure', request('procedure', 'standard')) === 'commercial';
+@endphp
 
 @section('title', $isCommercial ? 'Создать коммерческий аукцион' : 'Разместить Запрос цен')
 
