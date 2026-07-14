@@ -67,11 +67,14 @@
                                             <a href="{{ route('tenders.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 {{ __('Мои закупки') }}
                                             </a>
-                                            <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                {{ __('Создать запрос цен') }}
+                                            <a href="{{ route('rfqs.create', ['procedure' => 'commercial']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                {{ __('Создать коммерческий аукцион') }}
                                             </a>
                                             <a href="{{ route('auctions.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 {{ __('Создать аукцион') }}
+                                            </a>
+                                            <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                {{ __('Создать запрос цен') }}
                                             </a>
                                         @endif
                                     @endauth
@@ -419,12 +422,16 @@
                                 {{ __('Мои закупки') }}
                             </x-responsive-nav-link>
 
-                            <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create')">
-                                {{ __('Создать запрос цен') }}
+                            <x-responsive-nav-link :href="route('rfqs.create', ['procedure' => 'commercial'])" :active="request()->routeIs('rfqs.create') && request('procedure') === 'commercial'">
+                                {{ __('Создать коммерческий аукцион') }}
                             </x-responsive-nav-link>
 
                             <x-responsive-nav-link :href="route('auctions.create')" :active="request()->routeIs('auctions.create')">
                                 {{ __('Создать аукцион') }}
+                            </x-responsive-nav-link>
+
+                            <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create') && request('procedure') !== 'commercial'">
+                                {{ __('Создать запрос цен') }}
                             </x-responsive-nav-link>
                         @endif
                     @endauth

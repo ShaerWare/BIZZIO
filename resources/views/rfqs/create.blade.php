@@ -1,22 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Разместить Запрос цен')
+@php($isCommercial = old('procedure', request('procedure', 'standard')) === 'commercial')
+
+@section('title', $isCommercial ? 'Создать коммерческий аукцион' : 'Разместить Запрос цен')
 
 @section('content')
 <div class="py-12">
     <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-        
+
         <!-- Заголовок -->
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Разместить Запрос цен</h1>
-            <p class="mt-2 text-sm text-gray-600">Заполните форму для размещения запроса цен</p>
+            <h1 class="text-3xl font-bold text-gray-900">{{ $isCommercial ? 'Создать коммерческий аукцион' : 'Разместить Запрос цен' }}</h1>
+            <p class="mt-2 text-sm text-gray-600">{{ $isCommercial ? 'Двухэтапная процедура: запрос цен → коммерческий аукцион в реальном времени' : 'Заполните форму для размещения запроса цен' }}</p>
         </div>
 
         <!-- Форма -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <form method="POST" action="{{ route('rfqs.store') }}" enctype="multipart/form-data" id="rfq-create-form"
-                      x-data="{ procedure: '{{ old('procedure', 'standard') }}' }">
+                      x-data="{ procedure: '{{ old('procedure', request('procedure', 'standard')) }}' }">
                     @csrf
 
                     <!-- Компания-организатор -->
