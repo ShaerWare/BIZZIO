@@ -83,10 +83,9 @@ class CompanyEditScreen extends Screen
 
                 Input::make('company.inn')
                     ->title('ИНН')
-                    // ->mask('9999999999')
                     ->placeholder('1234567890')
                     ->required()
-                    ->help('ИНН должен содержать 10 цифр'),
+                    ->help('10 цифр (юрлицо) или 12 цифр (ИП/физлицо)'),
 
                 Input::make('company.legal_form')
                     ->title('Организационно-правовая форма')
@@ -158,9 +157,9 @@ class CompanyEditScreen extends Screen
         if (isset($data['inn'])) {
             $data['inn'] = preg_replace('/\D/', '', $data['inn']);
 
-            // Если после очистки длина != 10 — возвращаем ошибку
-            if (strlen($data['inn']) !== 10) {
-                Alert::error('ИНН должен содержать ровно 10 цифр.');
+            // ИНН: 10 цифр (юрлицо) или 12 цифр (ИП/физлицо)
+            if (! in_array(strlen($data['inn']), [10, 12], true)) {
+                Alert::error('ИНН должен содержать 10 цифр (юрлицо) или 12 цифр (ИП/физлицо).');
 
                 return redirect()->back()->withInput();
             }
