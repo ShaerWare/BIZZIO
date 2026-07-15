@@ -58,7 +58,7 @@ class CommercialAuctionLauncherService
                 'start_date' => $rfq->end_date,
                 'end_date' => $rfq->end_date,
                 'trading_start' => $rfq->trading_start,
-                'trading_end' => $rfq->trading_end,
+                // trading_end не задаётся: торги закрываются через 20 мин после последнего предложения.
                 'starting_price' => $startingPrice,
                 'weight_price' => $rfq->weight_price,
                 'weight_deadline' => $rfq->weight_deadline,
@@ -66,8 +66,7 @@ class CommercialAuctionLauncherService
                 'step_price' => $rfq->step_price,
                 'step_deadline' => $rfq->step_deadline,
                 'step_advance' => $rfq->step_advance,
-                'max_deadline' => $rfq->max_deadline,
-                'max_advance' => $rfq->max_advance,
+                // max_deadline/max_advance (референсы нормировки) выставляются первым предложением этапа 2.
                 'is_results_hidden' => $rfq->is_results_hidden,
                 'status' => 'trading',
             ]);

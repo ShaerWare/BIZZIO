@@ -391,9 +391,8 @@
 
                 <!-- Вкладка: Заявки -->
                 <div id="content-bids" class="tab-content hidden">
-                    @if($canBid)
+                    @auth
                         <!-- Форма подачи заявки -->
-@auth
     @if($canBid && $rfq->isActive() && !$rfq->isExpired())
         <div id="bid-form" class="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -552,21 +551,40 @@
                 <svg class="w-6 h-6 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <p class="text-emerald-800 font-medium">Вы уже подали заявку на этот запрос цен</p>
+                <p class="text-emerald-800 font-medium">Вы уже подали {{ $rfq->isCommercial() ? 'предложение' : 'заявку' }} на этот {{ $rfq->isCommercial() ? 'коммерческий аукцион' : 'запрос цен' }}</p>
             </div>
         </div>
+    {{-- #179 Пояснение, почему пользователь не может подать заявку/предложение (устраняет «нет кнопки») --}}
+    @elseif($rfq->status === 'draft')
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-center">
+            <p class="text-yellow-800">Приём {{ $rfq->isCommercial() ? 'предложений' : 'заявок' }} ещё не начат — процедура находится в статусе «Черновик».</p>
+        </div>
+    @elseif($rfq->isActive() && !$rfq->isExpired() && auth()->user()->moderatedCompanies->contains('id', $rfq->company_id))
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-center">
+            <p class="text-gray-700">Вы организатор этой процедуры — подавать {{ $rfq->isCommercial() ? 'предложения' : 'заявки' }} может только компания-участник.</p>
+        </div>
+    @elseif($rfq->isActive() && !$rfq->isExpired())
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-center">
+            <p class="text-gray-700">
+                Подавать {{ $rfq->isCommercial() ? 'предложения' : 'заявки' }} могут верифицированные компании@if($rfq->type === 'closed'), приглашённые организатором@endif.
+                Убедитесь, что ваша компания верифицирована@if($rfq->type === 'closed') и приглашена@endif.
+            </p>
+        </div>
+    @elseif($rfq->isExpired() && $rfq->status !== 'closed')
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-center">
+            <p class="text-gray-700">Приём {{ $rfq->isCommercial() ? 'предложений' : 'заявок' }} завершён.</p>
+        </div>
     @endif
-@endauth
-                    @elseif(!auth()->check())
+@else
                         <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6 text-center">
                             <p class="text-gray-700">
-                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a> 
-                                или 
-                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>, 
-                                чтобы подать заявку
+                                <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">Войдите</a>
+                                или
+                                <a href="{{ route('register') }}" class="text-emerald-600 hover:text-emerald-500 font-semibold">зарегистрируйтесь</a>,
+                                чтобы подать {{ $rfq->isCommercial() ? 'предложение' : 'заявку' }}
                             </p>
                         </div>
-                    @endif
+                    @endauth
 
                     <!-- Список заявок -->
                     @if($rfq->status !== 'closed')

@@ -110,16 +110,15 @@ class RfqController extends Controller
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
             ];
 
-            // #179 Параметры этапа 2 для коммерческого аукциона
+            // #179 Параметры этапа 2 для коммерческого аукциона.
+            // trading_end не задаётся (торги закрываются через 20 мин после последнего предложения);
+            // max_deadline/max_advance определяются первым предложением этапа 2.
             if ($procedure === Rfq::PROCEDURE_COMMERCIAL) {
                 $attributes += [
                     'trading_start' => $request->trading_start,
-                    'trading_end' => $request->trading_end,
                     'step_price' => $request->step_price,
                     'step_deadline' => $request->step_deadline,
                     'step_advance' => $request->step_advance,
-                    'max_deadline' => $request->max_deadline,
-                    'max_advance' => $request->max_advance,
                 ];
             }
 

@@ -584,9 +584,11 @@ class AuctionController extends Controller
 
         $best = $auction->bestBid;
 
+        // #179 Торги закрываются через 20 мин после последнего предложения (как в обычном аукционе).
         $timeRemaining = null;
-        if ($auction->trading_end) {
-            $timeRemaining = max(0, Carbon::now()->diffInSeconds(Carbon::parse($auction->trading_end), false));
+        if ($auction->last_bid_at) {
+            $closingTime = Carbon::parse($auction->last_bid_at)->addMinutes(20);
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds($closingTime, false));
         }
 
         return [
@@ -645,13 +647,8 @@ class AuctionController extends Controller
         $deadline = (int) $request->deadline;
         $advance = (float) $request->advance_percent;
 
-        // Значения в пределах, заданных организатором.
-        if ($deadline > (int) $auction->max_deadline) {
-            return back()->withInput()->with('error', 'Срок не может превышать '.$auction->max_deadline.' дн.');
-        }
-        if ($advance > (float) $auction->max_advance) {
-            return back()->withInput()->with('error', 'Аванс не может превышать '.$auction->max_advance.'%.');
-        }
+        // Цена не может превышать НМЦ (максимальную цену этапа 1).
+        // Срок и аванс участники задают свободно — референсы нормировки определяет первое предложение.
         if ($price > (float) $auction->starting_price) {
             return back()->withInput()->with('error', 'Цена не может превышать начальную максимальную цену.');
         }
@@ -660,6 +657,13 @@ class AuctionController extends Controller
             $result = DB::transaction(function () use ($auction, $company, $price, $deadline, $advance, $scoring) {
                 // Блокируем строку аукциона — сериализуем одновременные предложения.
                 $locked = Auction::whereKey($auction->id)->lockForUpdate()->first();
+
+                // #179 Первое предложение этапа 2 фиксирует референсы нормировки срока/аванса.
+                $isFirstOffer = ! $locked->bids()->exists();
+                if ($isFirstOffer) {
+                    $locked->max_deadline = $deadline;
+                    $locked->max_advance = $advance;
+                }
 
                 // Строгое превосходство над текущим лидером (перечитан под локом).
                 if (! $scoring->wouldBeat($locked, $price, $deadline, $advance)) {
@@ -692,6 +696,9 @@ class AuctionController extends Controller
                 $locked->update([
                     'best_bid_id' => $offer->id,
                     'last_bid_at' => now(),
+                    // Персистим референсы (для первого предложения — только что выставлены).
+                    'max_deadline' => $locked->max_deadline,
+                    'max_advance' => $locked->max_advance,
                 ]);
 
                 return ['ok' => true, 'code' => $code];

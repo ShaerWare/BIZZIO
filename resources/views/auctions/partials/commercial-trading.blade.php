@@ -88,10 +88,10 @@
                                 <span class="text-xs" :class="criteria.deadline.is_best ? 'text-emerald-600' : 'text-gray-400'"
                                       x-text="hintText('deadline')"></span>
                             </div>
-                            <input type="number" name="deadline" x-model.number="d" @input="recalc()" min="1" :max="refs.d" :step="steps.d"
+                            <input type="number" name="deadline" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d"
                                    class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="refs.d" :step="steps.d" class="w-full mt-1">
-                            <p class="text-xs text-gray-400">Допустимо: 1…<span x-text="refs.d"></span> дн.</p>
+                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d" class="w-full mt-1">
+                            <p class="text-xs text-gray-400">Допустимо: 1…<span x-text="maxDeadline"></span> дн.</p>
                         </div>
 
                         {{-- Аванс --}}
@@ -101,10 +101,10 @@
                                 <span class="text-xs" :class="criteria.advance.is_best ? 'text-emerald-600' : 'text-gray-400'"
                                       x-text="hintText('advance')"></span>
                             </div>
-                            <input type="number" name="advance_percent" x-model.number="a" @input="recalc()" min="0" :max="refs.a" :step="steps.a"
+                            <input type="number" name="advance_percent" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a"
                                    class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="refs.a" :step="steps.a" class="w-full mt-1">
-                            <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="refs.a"></span>%</p>
+                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a" class="w-full mt-1">
+                            <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="maxAdvance"></span>%</p>
                         </div>
 
                         {{-- Общий вердикт --}}
@@ -184,10 +184,11 @@ function commercialAuction(cfg) {
         steps: cfg.steps,
         canOffer: cfg.canOffer,
 
-        // Ввод участника (стартовые значения — от референсов, чтобы форма была валидной).
+        // Ввод участника. До первого предложения этапа 2 референсов ещё нет —
+        // используем разумные значения по умолчанию, чтобы форма была валидной.
         p: cfg.nmc,
-        d: cfg.refs.d,
-        a: cfg.refs.a,
+        d: cfg.refs.d > 0 ? cfg.refs.d : 30,
+        a: cfg.refs.a > 0 ? cfg.refs.a : 10,
 
         best: null,
         history: [],
@@ -204,6 +205,10 @@ function commercialAuction(cfg) {
             // Шаг цены задан в процентах от НМЦ.
             return Math.max(0.01, +(this.nmc * this.steps.p / 100).toFixed(2));
         },
+
+        // Верхние границы полей. До первого предложения референсов нет — даём свободный ввод.
+        get maxDeadline() { return this.refs.d > 0 ? this.refs.d : 730; },
+        get maxAdvance() { return this.refs.a > 0 ? this.refs.a : 100; },
 
         init() {
             this.fetchState();
@@ -222,6 +227,13 @@ function commercialAuction(cfg) {
                 }
                 const s = await res.json();
                 if (s.status !== 'trading') { location.reload(); return; }
+                // #179 Референсы нормировки выставляются первым предложением — подхватываем из состояния.
+                if (s.refs) {
+                    this.refs = {
+                        d: s.refs.max_deadline > 0 ? s.refs.max_deadline : this.refs.d,
+                        a: s.refs.max_advance > 0 ? s.refs.max_advance : this.refs.a,
+                    };
+                }
                 this.best = s.best_offer;
                 this.history = s.best_offer_history || [];
                 this.recalc();

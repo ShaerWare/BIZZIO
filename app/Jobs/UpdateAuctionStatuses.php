@@ -60,9 +60,9 @@ class UpdateAuctionStatuses implements ShouldQueue
             }
         }
 
-        // 2. Обычные торги, у которых прошло 20 минут с последней ставки
+        // 2. Торги (в т.ч. коммерческие), у которых прошло 20 минут с последнего предложения.
+        // #179 Коммерческие аукционы закрываются по тому же правилу, что и обычные.
         $expiredTrading = Auction::where('status', 'trading')
-            ->where('procedure', '!=', Auction::PROCEDURE_COMMERCIAL)
             ->whereNotNull('last_bid_at')
             ->where('last_bid_at', '<=', $now->copy()->subMinutes(20))
             ->get();
@@ -74,23 +74,8 @@ class UpdateAuctionStatuses implements ShouldQueue
             Log::info("📋 Аукцион {$auction->number} — запланировано закрытие через CloseAuctionJob");
         }
 
-        // #179 2b. Коммерческие аукционы закрываются по явному времени окончания торгов
-        $expiredCommercial = Auction::where('status', 'trading')
-            ->where('procedure', Auction::PROCEDURE_COMMERCIAL)
-            ->whereNotNull('trading_end')
-            ->where('trading_end', '<=', $now)
-            ->get();
-
-        Log::info('Найдено завершённых коммерческих аукционов: '.$expiredCommercial->count());
-
-        foreach ($expiredCommercial as $auction) {
-            CloseAuctionJob::dispatch($auction->id);
-            Log::info("📋 Коммерческий аукцион {$auction->number} — запланировано закрытие (истекло время торгов)");
-        }
-
-        // 3. Обычные торги без ставок 24 часа
+        // 3. Торги без ставок 24 часа
         $tradingWithoutBids = Auction::where('status', 'trading')
-            ->where('procedure', '!=', Auction::PROCEDURE_COMMERCIAL)
             ->whereNull('last_bid_at')
             ->where('trading_start', '<=', $now->copy()->subHours(24))
             ->get();
