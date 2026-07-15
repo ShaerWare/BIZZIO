@@ -37,8 +37,8 @@ class UpdateCompanyOrchidRequest extends FormRequest
                 'sometimes',
                 'required',
                 'string',
-                'size:10',
-                'regex:/^\d{10}$/',
+                // ИНН: 10 цифр (юрлицо) или 12 цифр (ИП/физлицо) — как на фронте регистрации.
+                'regex:/^\d{10}(\d{2})?$/',
                 Rule::unique('companies', 'inn')->ignore($companyId)->whereNull('deleted_at'),
             ],
             'company.legal_form' => ['nullable', 'string', 'max:255'],
