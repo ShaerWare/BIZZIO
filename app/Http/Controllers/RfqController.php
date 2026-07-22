@@ -272,6 +272,20 @@ class RfqController extends Controller
     }
 
     /**
+     * #205 Лёгкий статус этапа 2: запущен ли связанный коммерческий аукцион.
+     * Используется JS-поллингом на странице этапа 1 для авто-перехода к торгам.
+     */
+    public function stage2Status(Rfq $rfq)
+    {
+        $launched = $rfq->isCommercial() && $rfq->linked_auction_id !== null;
+
+        return response()->json([
+            'launched' => $launched,
+            'url' => $launched ? route('auctions.show', $rfq->linked_auction_id) : null,
+        ]);
+    }
+
+    /**
      * Форма редактирования RFQ
      */
     public function edit(Rfq $rfq)

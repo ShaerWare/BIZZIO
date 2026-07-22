@@ -647,7 +647,7 @@ class AuctionController extends Controller
         $deadline = (int) $request->deadline;
         $advance = (float) $request->advance_percent;
 
-        // Цена не может превышать НМЦ (максимальную цену этапа 1).
+        // Цена не может превышать НМЦ (среднюю цену этапа 1, #202).
         // Срок и аванс участники задают свободно — референсы нормировки определяет первое предложение.
         if ($price > (float) $auction->starting_price) {
             return back()->withInput()->with('error', 'Цена не может превышать начальную максимальную цену.');

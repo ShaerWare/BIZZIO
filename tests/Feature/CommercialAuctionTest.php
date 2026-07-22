@@ -253,8 +253,8 @@ class CommercialAuctionTest extends TestCase
         $this->assertNotNull($auction);
         $this->assertTrue($auction->isCommercial());
         $this->assertSame('trading', $auction->status);
-        // НМЦ = максимальная цена этапа 1.
-        $this->assertEqualsWithDelta(1_200_000, (float) $auction->starting_price, 1e-6);
+        // #202 НМЦ = средняя цена этапа 1: (900k + 1.2M + 1M) / 3 = 1 033 333.33.
+        $this->assertEqualsWithDelta(1_033_333.33, (float) $auction->starting_price, 0.01);
         // Перенос весов/шагов. Референсы (max_deadline/max_advance) НЕ переносятся —
         // они выставляются первым предложением этапа 2.
         $this->assertEqualsWithDelta(70, (float) $auction->weight_price, 1e-6);
@@ -502,7 +502,32 @@ class CommercialAuctionTest extends TestCase
         $this->get(route('rfqs.show', $rfq))
             ->assertOk()
             ->assertSee('Перейти к аукциону')
-            ->assertSee(route('auctions.show', $rfq->linked_auction_id), false);
+            ->assertSee(route('auctions.show', $rfq->linked_auction_id), false)
+            // #204 На этапе 1 у коммерческого аукциона показываем только количество
+            // предложений (count-блок), без таблицы промежуточных результатов.
+            ->assertSee('Подано предложений')
+            ->assertSee('итоги определяются на этапе 2 (торги)');
+    }
+
+    public function test_stage2_status_endpoint_reports_launch(): void
+    {
+        $rfq = $this->closeableCommercialRfq([700_000, 900_000]);
+
+        // #205 До закрытия этап 2 ещё не запущен.
+        $this->getJson(route('rfqs.stage2-status', $rfq))
+            ->assertOk()
+            ->assertJson(['launched' => false, 'url' => null]);
+
+        $this->runCloseRfqJob($rfq);
+        $rfq->refresh();
+
+        // После закрытия — запущен, отдаётся URL аукциона для авто-перехода.
+        $this->getJson(route('rfqs.stage2-status', $rfq))
+            ->assertOk()
+            ->assertJson([
+                'launched' => true,
+                'url' => route('auctions.show', $rfq->linked_auction_id),
+            ]);
     }
 
     // =========================================================
