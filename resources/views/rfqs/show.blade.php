@@ -174,18 +174,31 @@
                         </div>
 
                         <!-- Сроки -->
+                        @php
+                            // #203 Для коммерческого аукциона — подписи «приём предложений» + дата старта этапа 2.
+                            $startLabel = $rfq->isCommercial() ? 'Начало приёма предложений' : 'Начало';
+                            $endLabel = $rfq->isCommercial() ? 'Окончание приёма предложений' : 'Окончание';
+                        @endphp
                         <div class="flex items-center text-gray-600 mb-2">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <span><strong>Начало:</strong> {{ $rfq->start_date->format('d.m.Y H:i') }} (МСК)</span>
+                            <span><strong>{{ $startLabel }}:</strong> {{ $rfq->start_date->format('d.m.Y H:i') }} (МСК)</span>
                         </div>
                         <div class="flex items-center text-gray-600 mb-2">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <span><strong>Окончание:</strong> {{ $rfq->end_date->format('d.m.Y H:i') }} (МСК)</span>
+                            <span><strong>{{ $endLabel }}:</strong> {{ $rfq->end_date->format('d.m.Y H:i') }} (МСК)</span>
                         </div>
+                        @if($rfq->isCommercial() && $rfq->trading_start)
+                            <div class="flex items-center text-gray-600 mb-2">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span><strong>Начало коммерческого аукциона:</strong> {{ $rfq->trading_start->format('d.m.Y H:i') }} (МСК)</span>
+                            </div>
+                        @endif
 
                         <!-- Создатель -->
                         <div class="flex items-center text-gray-600">
@@ -587,15 +600,21 @@
                     @endauth
 
                     <!-- Список заявок -->
-                    @if($rfq->status !== 'closed')
+                    {{-- #204: у коммерческого аукциона промежуточные результаты этапа 1 не раскрываются
+                         (конкуренция идёт на этапе 2) — всегда показываем только количество предложений. --}}
+                    @if($rfq->status !== 'closed' || $rfq->isCommercial())
                         {{-- #177: На этапе подачи заявок предложения скрыты от ВСЕХ (включая организатора).
                              Показываем только количество поданных заявок. Сами заявки доступны только в протоколе. --}}
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
                             <svg class="w-10 h-10 text-blue-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <p class="text-blue-800 font-medium">Подано заявок: {{ $rfq->bids->count() }}</p>
-                            <p class="text-blue-600 text-sm mt-1">Предложения участников скрыты на этапе подачи и будут доступны в протоколе после завершения процедуры</p>
+                            <p class="text-blue-800 font-medium">Подано {{ $rfq->isCommercial() ? 'предложений' : 'заявок' }}: {{ $rfq->bids->count() }}</p>
+                            @if($rfq->isCommercial())
+                                <p class="text-blue-600 text-sm mt-1">Предложения участников на этапе 1 скрыты — итоги определяются на этапе 2 (торги)</p>
+                            @else
+                                <p class="text-blue-600 text-sm mt-1">Предложения участников скрыты на этапе подачи и будут доступны в протоколе после завершения процедуры</p>
+                            @endif
                         </div>
                     @elseif(!$canSeeResults)
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
@@ -898,6 +917,25 @@
             }
         };
     }
+
+    @if($rfq->isCommercial() && $rfq->status !== 'closed' && ! $rfq->linked_auction_id)
+    // #205 Ожидание старта этапа 2: опрашиваем статус и авто-переходим к аукциону,
+    // чтобы участник не пропустил начало торгов из-за кнопки перехода.
+    (function () {
+        const statusUrl = @json(route('rfqs.stage2-status', $rfq));
+        const timer = setInterval(async function () {
+            try {
+                const res = await fetch(statusUrl, { headers: { 'Accept': 'application/json' } });
+                if (! res.ok) return;
+                const data = await res.json();
+                if (data.launched && data.url) {
+                    clearInterval(timer);
+                    window.location.href = data.url;
+                }
+            } catch (e) { /* сеть недоступна — повторим на следующем тике */ }
+        }, 15000);
+    })();
+    @endif
 </script>
 @endpush
 @endsection

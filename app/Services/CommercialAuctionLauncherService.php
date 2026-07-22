@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * #179 Авто-запуск этапа 2 (Коммерческий аукцион) по завершении этапа 1 (Запрос цен).
  *
- * Создаёт связанный аукцион: НМЦ = максимальная цена этапа 1, переносит веса/шаги/
+ * Создаёт связанный аукцион: НМЦ = средняя цена этапа 1 (#202), переносит веса/шаги/
  * референсы, приглашает всех участников этапа 1, стартует сразу в статусе trading.
  */
 class CommercialAuctionLauncherService
@@ -41,7 +41,8 @@ class CommercialAuctionLauncherService
             return null;
         }
 
-        $startingPrice = (float) $bids->max('price'); // НМЦ = максимальная цена этапа 1
+        // #202 НМЦ этапа 2 = среднее по всем предложениям этапа 1 (ранее — максимум).
+        $startingPrice = round((float) $bids->avg('price'), 2);
 
         return DB::transaction(function () use ($rfq, $bids, $startingPrice) {
             $auction = Auction::create([

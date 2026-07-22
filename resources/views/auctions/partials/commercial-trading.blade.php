@@ -68,17 +68,26 @@
                             <input type="hidden" name="company_id" value="{{ $myCompanies->first()->id }}">
                         @endif
 
-                        {{-- Цена --}}
+                        {{-- Цена (#207: крупные шаги −/+ со стабильной шириной, разряды под полем) --}}
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваша цена ({{ $auction->currency_symbol }})</label>
                                 <span class="text-xs" :class="criteria.price.is_best ? 'text-emerald-600' : 'text-gray-400'"
                                       x-text="hintText('price')"></span>
                             </div>
-                            <input type="number" name="price" x-model.number="p" @input="recalc()" min="1" :max="nmc" :step="priceStep"
-                                   class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="range" x-model.number="p" @input="recalc()" min="1" :max="nmc" :step="priceStep" class="w-full mt-1">
-                            <p class="text-xs text-gray-400">Допустимо: до <span x-text="fmt(nmc)"></span></p>
+                            <div class="flex items-stretch gap-2">
+                                <button type="button" @click="stepPrice(-1)" aria-label="Уменьшить цену"
+                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-2xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
+                                <input type="number" name="price" x-model.number="p" @input="recalc()" min="1" :max="nmc" :step="priceStep"
+                                       class="ca-no-spin flex-1 w-full text-center text-lg rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <button type="button" @click="stepPrice(1)" aria-label="Увеличить цену"
+                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-2xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
+                            </div>
+                            <input type="range" x-model.number="p" @input="recalc()" min="1" :max="nmc" :step="priceStep" class="w-full mt-2">
+                            <p class="text-xs text-gray-500 mt-1">
+                                <span class="font-semibold text-gray-700" x-text="fmt(p)"></span> {{ $auction->currency_symbol }}
+                                · допустимо до <span x-text="fmt(nmc)"></span>
+                            </p>
                         </div>
 
                         {{-- Срок --}}
@@ -171,6 +180,15 @@
     </div>
 </div>
 
+@push('styles')
+<style>
+    /* #207 Скрываем нативные мелкие стрелки number-инпута цены — управление крупными кнопками −/+ */
+    .ca-no-spin::-webkit-outer-spin-button,
+    .ca-no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ca-no-spin { -moz-appearance: textfield; appearance: textfield; }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 function commercialAuction(cfg) {
@@ -234,10 +252,39 @@ function commercialAuction(cfg) {
                         a: s.refs.max_advance > 0 ? s.refs.max_advance : this.refs.a,
                     };
                 }
+                // #206 Поля отталкиваются от текущего лучшего предложения: при смене лидера
+                // пересеиваем значения полей его цифрами, чтобы участник улучшал от текущего лучшего.
+                const prevBestId = this.best ? this.best.id : null;
                 this.best = s.best_offer;
                 this.history = s.best_offer_history || [];
-                this.recalc();
+                const newBestId = this.best ? this.best.id : null;
+                if (newBestId !== prevBestId) {
+                    this.seedFromBest();
+                } else {
+                    this.recalc();
+                }
             } catch (e) { /* временная сетевая ошибка — повторим на следующем тике */ }
+        },
+
+        // #206 Значения полей = текущее лучшее предложение (или НМЦ/дефолты, если предложений нет).
+        seedFromBest() {
+            if (this.best) {
+                this.p = this.best.price;
+                this.d = this.best.deadline;
+                this.a = this.best.advance;
+            } else {
+                this.p = this.nmc;
+                this.d = this.refs.d > 0 ? this.refs.d : 30;
+                this.a = this.refs.a > 0 ? this.refs.a : 10;
+            }
+            this.recalc();
+        },
+
+        // #207 Шаг цены крупными кнопками −/+ (курсор остаётся на месте).
+        stepPrice(dir) {
+            const v = (Number(this.p) || 0) + dir * this.priceStep;
+            this.p = Math.min(this.nmc, Math.max(1, +v.toFixed(2)));
+            this.recalc();
         },
 
         normalize(x, ref) {

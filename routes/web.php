@@ -219,6 +219,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/rfqs/{rfq}/invitations', [RfqController::class, 'storeInvitation'])->name('rfqs.invitations.store');
 });
 
+// #205 Лёгкий статус этапа 2 для авто-перехода к запущенному аукциону (до catch-all show)
+Route::get('/rfqs/{rfq}/stage2-status', [RfqController::class, 'stage2Status'])->name('rfqs.stage2-status');
+
 // Публичный просмотр RFQ (после auth-группы, чтобы create не конфликтовал)
 Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 

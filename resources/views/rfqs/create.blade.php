@@ -298,8 +298,8 @@
                                        required
                                        value="{{ old('weight_price', 50) }}"
                                        min="0" 
-                                       max="100" 
-                                       step="0.01"
+                                       max="100"
+                                       step="1"
                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_price') border-red-500 @enderror">
                                 @error('weight_price')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -315,8 +315,8 @@
                                        required
                                        value="{{ old('weight_deadline', 30) }}"
                                        min="0" 
-                                       max="100" 
-                                       step="0.01"
+                                       max="100"
+                                       step="1"
                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_deadline') border-red-500 @enderror">
                                 @error('weight_deadline')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -332,8 +332,8 @@
                                        required
                                        value="{{ old('weight_advance', 20) }}"
                                        min="0" 
-                                       max="100" 
-                                       step="0.01"
+                                       max="100"
+                                       step="1"
                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_advance') border-red-500 @enderror">
                                 @error('weight_advance')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
