@@ -21,9 +21,15 @@
      x-init="init()">
     <div class="p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-1">Коммерческий аукцион — торги</h3>
-        <p class="text-sm text-gray-500 mb-4">
+        <p class="text-sm text-gray-500 mb-2">
             НМЦ: {{ number_format((float) $auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }} ·
             Веса: цена {{ (float) $auction->weight_price }}% / срок {{ (float) $auction->weight_deadline }}% / аванс {{ (float) $auction->weight_advance }}%
+        </p>
+        {{-- #198 Количество компаний-участников, сделавших ставку --}}
+        <p class="text-sm mb-4">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium">
+                Участников (сделали ставку): <span class="font-semibold" x-text="participants"></span>
+            </span>
         </p>
 
         <div class="flex flex-col lg:flex-row gap-6">
@@ -226,6 +232,7 @@ function commercialAuction(cfg) {
 
         best: null,
         history: [],
+        participants: 0, // #198 количество компаний-участников, сделавших ставку
 
         // Результаты анализа
         total: 0,
@@ -267,6 +274,7 @@ function commercialAuction(cfg) {
                 const prevBestId = this.best ? this.best.id : null;
                 this.best = s.best_offer;
                 this.history = s.best_offer_history || [];
+                this.participants = s.participants_count ?? this.participants; // #198
                 const newBestId = this.best ? this.best.id : null;
                 if (newBestId !== prevBestId) {
                     this.seedFromBest();

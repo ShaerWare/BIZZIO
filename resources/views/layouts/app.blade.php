@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Bizzo') }} - @yield('title', 'B2B бизнес-сеть')</title>
+    {{-- #186 --}}
+    <title>{{ config('app.name', 'Bizzio') }} — @yield('title', 'соединяя бизнес (В2В бизнес-сеть)')</title>
 
     @include('partials.seo')
 
@@ -73,6 +74,9 @@
             {{ $slot ?? '' }}
             @yield('content')
         </main>
+
+        {{-- #184 Версия приложения --}}
+        @include('partials.version-footer')
     </div>
 
     @stack('scripts')

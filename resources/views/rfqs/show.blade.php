@@ -141,9 +141,20 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$rfq->status] }}">
                                 {{ $statusLabels[$rfq->status] }}
                             </span>
+
+                            {{-- #189 Живой таймер до окончания приёма заявок/предложений (между статусом и типом) --}}
+                            @if($rfq->status === 'active' && $rfq->end_date->isFuture())
+                                @include('partials.countdown', ['target' => $rfq->end_date, 'label' => $rfq->isCommercial() ? 'До окончания приёма предложений (этап 1)' : 'До окончания приёма заявок'])
+                            @endif
+
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $rfq->type === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $rfq->type === 'open' ? 'Открытая процедура' : 'Закрытая процедура' }}
                             </span>
+
+                            {{-- #189 Для коммерческого аукциона — таймер до начала торгов (этап 2) --}}
+                            @if($rfq->isCommercial() && $rfq->trading_start && $rfq->trading_start->isFuture() && $rfq->status !== 'closed')
+                                @include('partials.countdown', ['target' => $rfq->trading_start, 'label' => 'До начала аукциона (этап 2)', 'color' => 'bg-blue-100 text-blue-800'])
+                            @endif
                             @if($rfq->is_results_hidden)
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                                     Результаты скрыты
@@ -258,6 +269,9 @@
                                 </div>
                                 <p id="copy-success" class="text-xs text-green-600 mt-1 hidden">Ссылка скопирована!</p>
                             </div>
+
+                            {{-- #193 Приглашение сторонней (незарегистрированной) компании — готовый текст --}}
+                            @include('partials.share-invite', ['model' => $rfq])
                         @endcan
 
                         {{-- T8: Блок приглашения компаний --}}
