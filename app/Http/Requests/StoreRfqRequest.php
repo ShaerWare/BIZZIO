@@ -42,12 +42,14 @@ class StoreRfqRequest extends FormRequest
             'is_results_hidden' => 'nullable|boolean',
 
             // #179 Параметры этапа 2 (Коммерческий аукцион) — обязательны при procedure=commercial.
-            // trading_end и max_deadline/max_advance убраны: торги закрываются через 20 мин после
-            // последнего предложения, а референсы нормировки берутся из первого предложения этапа 2.
+            // trading_end не задаётся: торги закрываются через 20 мин после последнего предложения.
+            // #210 max_deadline/max_advance задаёт организатор — референсы нормировки (100% шкалы) этапа 2.
             'trading_start' => 'nullable|required_if:procedure,commercial|date|after:end_date',
             'step_price' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
             'step_deadline' => 'nullable|required_if:procedure,commercial|integer|min:1',
             'step_advance' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
+            'max_deadline' => 'nullable|required_if:procedure,commercial|integer|min:1',
+            'max_advance' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
         ];
     }
 
@@ -125,6 +127,9 @@ class StoreRfqRequest extends FormRequest
             'step_price.required_if' => 'Укажите шаг изменения цены (%)',
             'step_deadline.required_if' => 'Укажите шаг изменения срока (дни)',
             'step_advance.required_if' => 'Укажите шаг изменения аванса (%)',
+            // #210
+            'max_deadline.required_if' => 'Укажите максимальный срок выполнения (дни)',
+            'max_advance.required_if' => 'Укажите максимальный размер аванса (%)',
         ];
     }
 
