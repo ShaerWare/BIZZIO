@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\HasProcurementDocuments;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 use Orchid\Filters\Filterable;
@@ -18,7 +19,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Auction extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'number',
@@ -320,9 +321,8 @@ class Auction extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('technical_specification')
-            ->singleFile()
-            ->acceptsMimeTypes(['application/pdf']);
+        // #185 Конкурсная документация (notice / technical_specification / contract_draft / other_documents).
+        $this->registerProcurementDocumentMediaCollections();
 
         $this->addMediaCollection('protocol')
             ->singleFile()
