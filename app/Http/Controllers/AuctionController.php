@@ -648,9 +648,16 @@ class AuctionController extends Controller
         $advance = (float) $request->advance_percent;
 
         // Цена не может превышать НМЦ (среднюю цену этапа 1, #202).
-        // Срок и аванс участники задают свободно — референсы нормировки определяет первое предложение.
         if ($price > (float) $auction->starting_price) {
             return back()->withInput()->with('error', 'Цена не может превышать начальную максимальную цену.');
+        }
+
+        // #210 Срок и аванс не могут превышать заданные организатором максимумы (референсы нормировки).
+        if ($auction->max_deadline && $deadline > (int) $auction->max_deadline) {
+            return back()->withInput()->with('error', 'Срок не может превышать максимальный срок ('.(int) $auction->max_deadline.' дн.).');
+        }
+        if ($auction->max_advance && $advance > (float) $auction->max_advance) {
+            return back()->withInput()->with('error', 'Аванс не может превышать максимальный размер ('.rtrim(rtrim(number_format((float) $auction->max_advance, 2, '.', ''), '0'), '.').'%).');
         }
 
         try {
@@ -658,14 +665,8 @@ class AuctionController extends Controller
                 // Блокируем строку аукциона — сериализуем одновременные предложения.
                 $locked = Auction::whereKey($auction->id)->lockForUpdate()->first();
 
-                // #179 Первое предложение этапа 2 фиксирует референсы нормировки срока/аванса.
-                $isFirstOffer = ! $locked->bids()->exists();
-                if ($isFirstOffer) {
-                    $locked->max_deadline = $deadline;
-                    $locked->max_advance = $advance;
-                }
-
-                // Строгое превосходство над текущим лидером (перечитан под локом).
+                // #210 Референсы нормировки (max_deadline/max_advance) заданы организатором на этапе 1 —
+                // не меняются в ходе торгов. Строгое превосходство над текущим лидером (перечитан под локом).
                 if (! $scoring->wouldBeat($locked, $price, $deadline, $advance)) {
                     $analysis = $scoring->analyze($locked, $price, $deadline, $advance);
 
@@ -696,9 +697,6 @@ class AuctionController extends Controller
                 $locked->update([
                     'best_bid_id' => $offer->id,
                     'last_bid_at' => now(),
-                    // Персистим референсы (для первого предложения — только что выставлены).
-                    'max_deadline' => $locked->max_deadline,
-                    'max_advance' => $locked->max_advance,
                 ]);
 
                 return ['ok' => true, 'code' => $code];
