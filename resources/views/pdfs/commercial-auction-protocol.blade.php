@@ -5,7 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Протокол коммерческого аукциона {{ $auction->number }}</title>
     <style>
-        @page { margin: 2cm 2cm 3cm 2cm; }
+        {{-- #211 Поля: левое 2см, остальные (верх/право/низ) 1см --}}
+        @page { margin: 1cm 1cm 1cm 2cm; }
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.4; padding-bottom: 60px; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #28a745; padding-bottom: 10px; }
         .header-logo img { height: 40px; }

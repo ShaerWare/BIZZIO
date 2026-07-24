@@ -1,11 +1,12 @@
 {{-- #152: SEO meta, Open Graph, Twitter Card, canonical и Schema.org JSON-LD --}}
 @php
-    $seoDefaultDescription = 'Bizzio.ru — B2B бизнес-сеть для строительной отрасли: компании, проекты, тендеры и аукционы, закупки и отраслевые новости.';
+    // #186 Title/описание без «для строительной отрасли»
+    $seoDefaultDescription = 'Bizzio.ru — В2В бизнес-сеть: люди, компании, закупки, совместные проекты, отраслевые новости.';
     $seoDescription = trim($__env->yieldContent('meta_description', $seoDefaultDescription));
     $seoTitle = trim($__env->yieldContent('title', config('app.name', 'Bizzio')));
     $seoFullTitle = $__env->yieldContent('title')
         ? $seoTitle.' — '.config('app.name', 'Bizzio')
-        : config('app.name', 'Bizzio').' — B2B бизнес-сеть для строительной отрасли';
+        : 'Bizzio.ru — соединяя бизнес (В2В бизнес-сеть)';
     $seoCanonical = url()->current();
     $seoImage = trim($__env->yieldContent('og_image', asset('images/bizzio_horizontal_logo_color_whitebg.svg')));
 @endphp

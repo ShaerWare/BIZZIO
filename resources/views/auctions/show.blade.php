@@ -141,21 +141,18 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $displayColor }}">
                                 {{ $displayLabel }}
                             </span>
+                            {{-- #189 Живой таймер до окончания приёма заявок — между статусом и типом процедуры --}}
+                            @if($auction->status === 'active' && $auction->end_date->isFuture() && ! $auction->start_date->isFuture())
+                                @include('partials.countdown', ['target' => $auction->end_date, 'label' => 'До окончания приёма заявок'])
+                            @endif
+
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $auction->type === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $auction->type === 'open' ? 'Открытая процедура' : 'Закрытая процедура' }}
                             </span>
-                            
-                            <!-- Дополнительная информация о времени -->
-                            @if($auction->status === 'active')
-                                @if($auction->start_date->isFuture())
-                                    <span class="text-xs text-gray-500">
-                                        Начало через {{ $auction->start_date->diffForHumans() }}
-                                    </span>
-                                @elseif($auction->end_date->isFuture())
-                                    <span class="text-xs text-gray-500">
-                                        Завершится {{ $auction->end_date->diffForHumans() }}
-                                    </span>
-                                @endif
+
+                            {{-- #189 До старта приёма заявок (если ещё не начался) --}}
+                            @if($auction->status === 'active' && $auction->start_date->isFuture())
+                                @include('partials.countdown', ['target' => $auction->start_date, 'label' => 'До начала приёма заявок', 'color' => 'bg-blue-100 text-blue-800'])
                             @endif
                             
                             @if($auction->status === 'trading' && $auction->last_bid_at)
@@ -290,6 +287,11 @@
                                 </a>
                             @endif
                         @endauth
+
+                        {{-- #193 Приглашение сторонней (незарегистрированной) компании — готовый текст (только организатору) --}}
+                        @if(auth()->check() && $auction->canManage(auth()->user()))
+                            @include('partials.share-invite', ['model' => $auction])
+                        @endif
 
                         <!-- Служба поддержки -->
                         <div class="bg-gray-50 rounded-lg p-4">

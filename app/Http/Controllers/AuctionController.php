@@ -588,6 +588,9 @@ class AuctionController extends Controller
             $timeRemaining = max(0, Carbon::now()->diffInSeconds($closingTime, false));
         }
 
+        // #198 Количество компаний-участников, сделавших ставку (уникальные компании среди предложений).
+        $participantsCount = $auction->offerBids()->pluck('company_id')->unique()->count();
+
         return [
             'status' => 'trading',
             'auction_status' => $auction->status,
@@ -607,6 +610,7 @@ class AuctionController extends Controller
             'best_offer' => $best ? $mapOffer($best->loadMissing('company:id,name')) : null,
             'best_offer_history' => $history,
             'offers_count' => $history->count(),
+            'participants_count' => $participantsCount,
             'time_remaining' => $timeRemaining,
             'last_updated' => Carbon::now()->toIso8601String(),
         ];
