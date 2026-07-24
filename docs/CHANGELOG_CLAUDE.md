@@ -1895,3 +1895,30 @@ UserBadge оставлен как есть. Слайс 7 сделан в изо�
 количество, без таблицы) и `stage2Status` (#205). Локально 18 passed, 1 failed (генерация
 PDF-протокола — нехватка `gd` в контейнере php:8.2-cli, не связано; в CI/на образе приложения зелёно).
 Pint чист. Ассеты пересобраны (`npm run build`) — новые Tailwind-классы кнопок.
+
+---
+
+## 2026-07-24 — #196 Возвращаем параметр «Шаг аукциона»
+
+**Задача.** Организатор снова задаёт минимальный шаг снижения цены обычного аукциона
+(поле `step_percent`, 0.5%–5%). Раньше при создании жёстко ставилось `2.5` (комментарий A4),
+а диапазон снижения был захардкожен 0.5%–5% независимо от настроек.
+
+**Изменения:**
+- `StoreAuctionRequest` / `UpdateAuctionRequest` — добавлено правило `step_percent`
+  (`required|numeric|min:0.5|max:5`) + сообщения об ошибках.
+- `AuctionController::store()` — `step_percent` берётся из запроса (было фиксированное `2.5`).
+- `Auction::getStepRange()` — минимум = организаторский `step_percent` (fallback 0.5%),
+  максимум = 5% от текущей цены (потолок снижения).
+- `auctions/create.blade.php`, `auctions/edit.blade.php` — новое поле «Шаг аукциона, %»
+  (обязательное, 0.5–5, шаг 0.01); поправлены подписи к начальной цене.
+- `auctions/show.blade.php` — в параметрах аукциона показывается фактический минимальный шаг;
+  кнопки быстрого снижения строятся от организаторского минимума до 5%.
+
+**Файлы:** `app/Http/Controllers/AuctionController.php`, `app/Http/Requests/StoreAuctionRequest.php`,
+`app/Http/Requests/UpdateAuctionRequest.php`, `app/Models/Auction.php`,
+`resources/views/auctions/{create,edit,show}.blade.php`, `tests/Feature/AuctionTest.php`.
+
+**Тесты:** `AuctionTest` — добавлена проверка сохранения организаторского шага при создании,
+`test_step_range_is_calculated_correctly` → `test_step_range_uses_organizer_step_percent`
+(минимум = 2% при `step_percent=2`, максимум = 5%).

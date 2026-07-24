@@ -94,7 +94,7 @@ class AuctionController extends Controller
                 'end_date' => $request->end_date,
                 'trading_start' => $request->trading_start,
                 'starting_price' => $request->starting_price,
-                'step_percent' => 2.5, // A4: Фиксированный диапазон 0.5-5%, среднее значение для совместимости
+                'step_percent' => $request->step_percent, // #196 Организатор задаёт минимальный шаг снижения цены
                 'status' => $request->status ?? 'draft',
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);

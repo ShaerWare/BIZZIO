@@ -200,6 +200,8 @@ class AuctionTest extends TestCase
 
         $this->assertNotNull($auction->number);
         $this->assertStringStartsWith('А-', $auction->number);
+        // #196 Организаторский шаг сохраняется из формы (раньше жёстко ставилось 2.5).
+        $this->assertEquals(1.5, (float) $auction->step_percent);
     }
 
     // ==========================================
@@ -497,14 +499,15 @@ class AuctionTest extends TestCase
         $this->assertEquals(450000, $auction->getCurrentPrice());
     }
 
-    public function test_step_range_is_calculated_correctly(): void
+    public function test_step_range_uses_organizer_step_percent(): void
     {
-        $auction = $this->createAuction(['starting_price' => 1000000]);
+        // #196 Минимальный шаг задаёт организатор (step_percent), максимум — 5% от текущей цены.
+        $auction = $this->createAuction(['starting_price' => 1000000, 'step_percent' => 2]);
 
         $stepRange = $auction->getStepRange();
 
-        $this->assertEquals(5000, $stepRange['min']); // 0.5% от 1M
-        $this->assertEquals(50000, $stepRange['max']); // 5% от 1M
+        $this->assertEquals(20000, $stepRange['min']); // 2% от 1M — шаг организатора
+        $this->assertEquals(50000, $stepRange['max']); // 5% от 1M — потолок снижения
     }
 
     // ==========================================

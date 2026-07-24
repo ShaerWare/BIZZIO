@@ -113,8 +113,28 @@
                                required
                                value="{{ old('starting_price', $auction->starting_price) }}"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('starting_price') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Участники смогут снижать цену на 0.5% — 5% от текущей</p>
+                        <p class="mt-1 text-sm text-gray-500">Минимальный шаг снижения задаёт организатор ниже; максимум — 5% от текущей цены</p>
                         @error('starting_price')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- #196 Шаг аукциона (минимальный шаг снижения цены) -->
+                    <div class="mb-6">
+                        <label for="step_percent" class="block text-sm font-medium text-gray-700 mb-2">
+                            Шаг аукциона, % (минимальный шаг снижения цены) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number"
+                               name="step_percent"
+                               id="step_percent"
+                               step="0.01"
+                               min="0.5"
+                               max="5"
+                               required
+                               value="{{ old('step_percent', $auction->step_percent) }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_percent') border-red-500 @enderror">
+                        <p class="mt-1 text-sm text-gray-500">Минимальный шаг, на который участники обязаны снижать цену (от 0.5% до 5% от текущей цены)</p>
+                        @error('step_percent')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
