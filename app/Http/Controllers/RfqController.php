@@ -127,8 +127,8 @@ class RfqController extends Controller
             // Создание RFQ
             $rfq = Rfq::create($attributes);
 
-            // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
-            $this->addFileToModel($rfq, $request, 'technical_specification', 'technical_specification');
+            // #185 Загрузка конкурсной документации (Извещение / ТЗ / Проект договора / Прочие) со сжатием.
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($rfq, $request);
 
             // T8: Отправка приглашений (для любого типа процедуры)
             if ($request->filled('invited_companies')) {
@@ -309,12 +309,8 @@ class RfqController extends Controller
         try {
             $rfq->update($request->validated());
 
-            // Обновление технического задания
-            if ($request->hasFile('technical_specification')) {
-                $rfq->clearMediaCollection('technical_specification');
-                $rfq->addMediaFromRequest('technical_specification')
-                    ->toMediaCollection('technical_specification');
-            }
+            // #185 Обновление конкурсной документации (загруженные файлы заменяют/дополняют коллекции).
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($rfq, $request);
 
             DB::commit();
 

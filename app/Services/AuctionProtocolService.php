@@ -22,11 +22,21 @@ class AuctionProtocolService
                 'winnerBid.company',
             ]);
 
+            // #118 Для отменённого аукциона формируем протокол с причиной отмены.
+            $cancellationReason = null;
+            if ($auction->status === 'cancelled') {
+                $cancellationReason = $auction->cancellation_reason
+                    ?: ($auction->initialBids()->exists()
+                        ? 'Аукцион отменён по причине отсутствия ставок в ходе торгов.'
+                        : 'Аукцион отменён по причине отсутствия поданных заявок.');
+            }
+
             // Генерируем PDF
             $pdf = Pdf::loadView('pdf.auction-protocol', [
                 'auction' => $auction,
                 'bids' => $auction->tradingBids, // Все ставки в торгах
                 'winner' => $auction->winnerBid,
+                'cancellationReason' => $cancellationReason,
             ]);
 
             // Настройки PDF

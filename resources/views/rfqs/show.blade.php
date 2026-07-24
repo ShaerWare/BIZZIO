@@ -237,17 +237,8 @@
                             </details>
                         </div>
 
-                        <!-- Техническое задание -->
-                        @if($rfq->hasMedia('technical_specification'))
-                            <a href="{{ $rfq->getFirstMediaUrl('technical_specification') }}" 
-                               target="_blank"
-                               class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition mb-4">
-                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                </svg>
-                                Скачать ТЗ (PDF)
-                            </a>
-                        @endif
+                        {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
+                        @include('partials.procurement-documents-list', ['model' => $rfq])
 
                         {{-- T1: Кнопка копирования ссылки --}}
                         @can('update', $rfq)

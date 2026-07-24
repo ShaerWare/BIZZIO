@@ -7,6 +7,7 @@ use App\Orchid\Screens\AuctionEditScreen;
 use App\Orchid\Screens\AuctionListScreen;
 use App\Orchid\Screens\CompanyEditScreen;
 use App\Orchid\Screens\CompanyListScreen;
+use App\Orchid\Screens\DocumentSettingsScreen;
 use App\Orchid\Screens\Examples\ExampleActionsScreen;
 use App\Orchid\Screens\Examples\ExampleCardsScreen;
 use App\Orchid\Screens\Examples\ExampleChartsScreen;
@@ -198,3 +199,10 @@ Route::screen('news', NewsListScreen::class)
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push('Новости', route('platform.systems.news')));
+
+// #185 Настройки конкурсной документации (срок хранения / автоудаление)
+Route::screen('document-settings', DocumentSettingsScreen::class)
+    ->name('platform.systems.document-settings')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push('Настройки документации', route('platform.systems.document-settings')));

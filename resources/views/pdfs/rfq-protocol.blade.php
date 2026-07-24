@@ -86,7 +86,7 @@
         <div class="header-logo">
             <img src="{{ public_path('images/android-chrome-192x192.png') }}" alt="Bizzio" style="height: 40px;">
         </div>
-        <h1>ПРОТОКОЛ ПОДВЕДЕНИЯ ИТОГОВ</h1>
+        <h1>ПРОТОКОЛ ПОДВЕДЕНИЯ ПРЕДВАРИТЕЛЬНЫХ ИТОГОВ</h1>
         <p>Запрос цен № {{ $rfq->number }}</p>
         <p>Дата формирования: {{ $generatedAt }}</p>
     </div>
@@ -152,10 +152,13 @@
             </tbody>
         </table>
 
+        {{-- #191 Общее количество компаний-участников --}}
+        <p><strong>Общее количество компаний-участников:</strong> {{ $rfq->bids->pluck('company_id')->unique()->count() }}</p>
+
         @if($rfq->winnerBid)
             <div class="info-block">
                 <h3>Победитель:</h3>
-                <p><strong>Компания:</strong> {{ $rfq->winnerBid->company->name }} (ИНН: {{ $rfq->winnerBid->company->inn }})</p>
+                <p><strong>Компания:</strong> {{ $rfq->winnerBid->company->legalNameWithInn() }}</p>
                 <p><strong>Итоговый балл:</strong> {{ number_format($rfq->winnerBid->total_score, 2, ',', ' ') }}</p>
                 <p><strong>Предложение:</strong></p>
                 <ul>
@@ -168,5 +171,12 @@
     @else
         <p><em>Заявок не поступило</em></p>
     @endif
+
+    {{-- #191 Оговорка об информационном характере результатов --}}
+    <div class="info-block" style="margin-top: 25px; font-size: 11px; color: #333; text-align: justify;">
+        Результаты проведения запроса цен являются информационными и не обязывают Заказчика к заключению
+        договора, окончательное решение о выборе поставщика и заключении договора принимается Заказчиком
+        на основе комплексной оценки коммерческих предложений.
+    </div>
 </body>
 </html>

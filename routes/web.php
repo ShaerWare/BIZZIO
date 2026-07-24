@@ -10,6 +10,7 @@ use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProcurementDocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectMemberController;
@@ -222,6 +223,10 @@ Route::middleware(['auth'])->group(function () {
 // #205 Лёгкий статус этапа 2 для авто-перехода к запущенному аукциону (до catch-all show)
 Route::get('/rfqs/{rfq}/stage2-status', [RfqController::class, 'stage2Status'])->name('rfqs.stage2-status');
 
+// #185 Скачивание конкурсной документации (доступ проверяется в контроллере)
+Route::get('/rfqs/{rfq}/documents/download', [ProcurementDocumentController::class, 'downloadRfqArchive'])->name('rfqs.documents.archive');
+Route::get('/rfqs/{rfq}/documents/{media}/download', [ProcurementDocumentController::class, 'downloadRfqFile'])->name('rfqs.documents.file');
+
 // Публичный просмотр RFQ (после auth-группы, чтобы create не конфликтовал)
 Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 
@@ -244,6 +249,10 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::get('/create', [AuctionController::class, 'create'])->name('create');
         Route::post('/', [AuctionController::class, 'store'])->name('store');
     });
+
+    // #185 Скачивание конкурсной документации (доступ проверяется в контроллере)
+    Route::get('/{auction}/documents/download', [ProcurementDocumentController::class, 'downloadAuctionArchive'])->name('documents.archive');
+    Route::get('/{auction}/documents/{media}/download', [ProcurementDocumentController::class, 'downloadAuctionFile'])->name('documents.file');
 
     // Динамические маршруты с {auction} ПОСЛЕ всех фиксированных
     Route::get('/{auction}', [AuctionController::class, 'show'])->name('show');

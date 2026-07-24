@@ -412,22 +412,8 @@
                         </p>
                     </div>
 
-                    <!-- Техническое задание (PDF) - F3: с сохранением при ошибке валидации -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Техническое задание (PDF) <span class="text-red-500">*</span>
-                        </label>
-                        <x-file-upload
-                            name="technical_specification"
-                            collection="technical_specification"
-                            accept="application/pdf"
-                            :required="true"
-                            hint="Максимальный размер: 20 МБ. Файл сохраняется при ошибке валидации."
-                        />
-                        @error('technical_specification')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    {{-- #185 Конкурсная документация: Извещение / ТЗ / Проект договора / Прочие файлы --}}
+                    @include('partials.procurement-documents', ['tzRequired' => true])
 
                     <!-- Уведомление -->
                     <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -477,30 +463,22 @@
 
 @push('scripts')
 <script>
-    // #91: JS-валидация файла ТЗ при submit формы
+    // #91/#185: JS-валидация обязательного файла ТЗ при submit формы
     document.getElementById('rfq-create-form').addEventListener('submit', function(e) {
-        const tempInput = this.querySelector('input[name="technical_specification_temp"]');
         const fileInput = this.querySelector('input[name="technical_specification"]');
-        const hasTempFile = tempInput && tempInput.value;
         const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
 
-        if (!hasTempFile && !hasNewFile) {
+        if (!hasNewFile) {
             e.preventDefault();
-            // Показать ошибку рядом с полем ТЗ
             let errorEl = document.getElementById('ts-error');
-            if (!errorEl) {
+            if (!errorEl && fileInput) {
                 errorEl = document.createElement('p');
                 errorEl.id = 'ts-error';
                 errorEl.className = 'mt-1 text-sm text-red-600';
                 errorEl.textContent = 'Загрузите техническое задание (PDF)';
-                const container = fileInput ? fileInput.closest('.space-y-2').parentElement : null;
-                if (container) {
-                    container.appendChild(errorEl);
-                }
+                fileInput.parentElement.appendChild(errorEl);
             }
-            // Прокрутить к полю ТЗ
-            const tsLabel = document.querySelector('label[for="technical_specification"], .space-y-2');
-            if (tsLabel) tsLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
     });

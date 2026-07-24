@@ -344,6 +344,21 @@ class Company extends Model implements HasMedia
     }
 
     /**
+     * #191 Полное юридическое наименование с ОПФ и ИНН для протоколов:
+     * ООО «Ромашка» (ИНН 1234567890).
+     */
+    public function legalNameWithInn(): string
+    {
+        $base = $this->legal_form
+            ? trim($this->legal_form).' «'.trim($this->name).'»'
+            : trim((string) $this->name);
+
+        return $this->inn
+            ? $base.' (ИНН '.$this->inn.')'
+            : $base;
+    }
+
+    /**
      * Настройки логирования активности
      */
     public function getActivitylogOptions(): LogOptions
