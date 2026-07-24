@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesProcurementDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreAuctionRequest extends FormRequest
 {
+    use ValidatesProcurementDocuments;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -40,12 +43,22 @@ class StoreAuctionRequest extends FormRequest
             'trading_start' => ['required', 'date', 'after:end_date'],
             'starting_price' => ['required', 'numeric', 'min:1'],
             'status' => ['required', Rule::in(['draft', 'active'])],
-            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
             'invited_companies' => ['nullable', 'array'],
             'invited_companies.*' => ['exists:companies,id'],
             'notification_agreement' => ['required', 'accepted'],
             'is_results_hidden' => ['nullable', 'boolean'],
-        ];
+            // #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие файлы).
+        ] + $this->procurementDocumentRules();
+    }
+
+    /**
+     * #185 Общий объём конкурсной документации ≤ 20 МБ.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $this->validateProcurementDocumentsTotalSize($validator);
+        });
     }
 
     /**
@@ -66,10 +79,8 @@ class StoreAuctionRequest extends FormRequest
             'trading_start.after' => 'Дата начала торгов должна быть после окончания приёма заявок.',
             'starting_price.required' => 'Укажите начальную (максимальную) цену.',
             'starting_price.min' => 'Начальная цена должна быть больше нуля.',
-            'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
-            'technical_specification.max' => 'Размер файла не должен превышать 10 МБ.',
             'notification_agreement.accepted' => 'Необходимо подтвердить согласие с условиями.',
-        ];
+        ] + $this->procurementDocumentMessages();
     }
 
     /**

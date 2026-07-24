@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Traits\HasProcurementDocuments;
+use App\Support\ProcurementDocuments;
 use Illuminate\Http\Request;
 use Spatie\MediaLibrary\HasMedia;
 use ZipArchive;
@@ -27,7 +27,7 @@ class ProcurementDocumentsService
      */
     public function attachFromRequest(HasMedia $model, Request $request): void
     {
-        foreach (HasProcurementDocuments::SINGLE_DOCUMENT_COLLECTIONS as $collection) {
+        foreach (ProcurementDocuments::SINGLE_COLLECTIONS as $collection) {
             if ($request->hasFile($collection)) {
                 $file = $request->file($collection);
                 $this->compressor->compressInPlace($file->getRealPath());
@@ -70,7 +70,7 @@ class ProcurementDocumentsService
         }
 
         // Метки коллекций для человекочитаемых имён внутри архива.
-        $labels = HasProcurementDocuments::DOCUMENT_COLLECTIONS;
+        $labels = ProcurementDocuments::COLLECTIONS;
         $used = [];
 
         foreach ($documents as $media) {

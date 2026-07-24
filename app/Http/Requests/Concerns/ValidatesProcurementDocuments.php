@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Concerns;
 
-use App\Traits\HasProcurementDocuments;
+use App\Support\ProcurementDocuments;
 use Illuminate\Contracts\Validation\Validator;
 
 /**
@@ -51,7 +51,7 @@ trait ValidatesProcurementDocuments
     {
         $total = 0;
 
-        foreach (HasProcurementDocuments::SINGLE_DOCUMENT_COLLECTIONS as $field) {
+        foreach (ProcurementDocuments::SINGLE_COLLECTIONS as $field) {
             if ($this->hasFile($field)) {
                 $total += (int) $this->file($field)->getSize();
             }
@@ -63,7 +63,7 @@ trait ValidatesProcurementDocuments
             }
         }
 
-        if ($total > HasProcurementDocuments::DOCUMENTS_MAX_TOTAL_BYTES) {
+        if ($total > ProcurementDocuments::MAX_TOTAL_BYTES) {
             $validator->errors()->add(
                 'other_documents',
                 'Общий объём конкурсной документации не должен превышать 20 МБ.'

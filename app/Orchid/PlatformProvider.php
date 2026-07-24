@@ -64,6 +64,11 @@ class PlatformProvider extends OrchidServiceProvider
                 // ->permission('platform.systems.news')
                 ->title('Контент'),
 
+            Menu::make('Настройки документации')
+                ->icon('bs.folder-symlink')
+                ->route('platform.systems.document-settings')
+                ->title('Настройки'),
+
             Menu::make('RSS-источники')
                 ->icon('globe')
                 ->route('platform.systems.rss-sources')

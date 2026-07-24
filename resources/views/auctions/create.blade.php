@@ -276,22 +276,8 @@
                         @enderror
                     </div>
 
-                    <!-- Техническое задание - F3: с сохранением при ошибке валидации -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Техническое задание (PDF) <span class="text-red-500">*</span>
-                        </label>
-                        <x-file-upload
-                            name="technical_specification"
-                            collection="technical_specification"
-                            accept="application/pdf"
-                            :required="true"
-                            hint="Максимальный размер: 20 МБ. Файл сохраняется при ошибке валидации."
-                        />
-                        @error('technical_specification')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    {{-- #185 Конкурсная документация: Извещение / ТЗ / Проект договора / Прочие файлы --}}
+                    @include('partials.procurement-documents', ['tzRequired' => false])
 
                     <!-- Статус -->
                     <div class="mb-6">

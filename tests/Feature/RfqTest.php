@@ -725,4 +725,89 @@ class RfqTest extends TestCase
             ->post(route('rfqs.cancel', $rfq), ['cancellation_reason' => 'Хочу'])
             ->assertStatus(403);
     }
+
+    // #185: конкурсная документация (Извещение / ТЗ / Проект договора / Прочие файлы)
+
+    public function test_creates_rfq_with_procurement_documents_and_downloads_archive(): void
+    {
+        $pdf = fn (string $name) => UploadedFile::fake()->createWithContent($name, '%PDF-1.4 test content');
+
+        $rfqData = [
+            'title' => 'RFQ с документацией',
+            'company_id' => $this->company->id,
+            'type' => 'open',
+            'currency' => 'RUB',
+            'start_date' => now()->format('Y-m-d H:i:s'),
+            'end_date' => now()->addDays(7)->format('Y-m-d H:i:s'),
+            'weight_price' => 40,
+            'weight_deadline' => 30,
+            'weight_advance' => 30,
+            'status' => 'active',
+            'notice' => $pdf('notice.pdf'),
+            'technical_specification' => $pdf('tz.pdf'),
+            'contract_draft' => $pdf('contract.pdf'),
+            'other_documents' => [$pdf('other1.pdf'), $pdf('other2.pdf')],
+        ];
+
+        $this->actingAs($this->user)->post(route('rfqs.store'), $rfqData)->assertRedirect();
+
+        $rfq = Rfq::where('title', 'RFQ с документацией')->firstOrFail();
+
+        $this->assertTrue($rfq->getFirstMedia('notice') !== null);
+        $this->assertTrue($rfq->getFirstMedia('technical_specification') !== null);
+        $this->assertTrue($rfq->getFirstMedia('contract_draft') !== null);
+        $this->assertSame(2, $rfq->getMedia('other_documents')->count());
+        $this->assertSame(5, $rfq->allProcurementDocuments()->count());
+
+        // Скачивание архивом доступно (процедура активна).
+        $this->actingAs($this->user)
+            ->get(route('rfqs.documents.archive', $rfq))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/zip');
+    }
+
+    public function test_procurement_total_size_over_limit_is_rejected(): void
+    {
+        // Два файла по 12 МБ = 24 МБ > лимита 20 МБ.
+        $big = fn () => UploadedFile::fake()->create('big.pdf', 12 * 1024, 'application/pdf');
+
+        $rfqData = [
+            'title' => 'RFQ слишком большой',
+            'company_id' => $this->company->id,
+            'type' => 'open',
+            'currency' => 'RUB',
+            'start_date' => now()->format('Y-m-d H:i:s'),
+            'end_date' => now()->addDays(7)->format('Y-m-d H:i:s'),
+            'weight_price' => 40,
+            'weight_deadline' => 30,
+            'weight_advance' => 30,
+            'status' => 'draft',
+            'technical_specification' => $big(),
+            'notice' => $big(),
+        ];
+
+        $this->actingAs($this->user)
+            ->post(route('rfqs.store'), $rfqData)
+            ->assertSessionHasErrors('other_documents');
+
+        $this->assertDatabaseMissing('rfqs', ['title' => 'RFQ слишком большой']);
+    }
+
+    public function test_documents_access_closed_after_procedure_ends_for_outsiders(): void
+    {
+        $rfq = $this->createRfq(['status' => 'closed']);
+        $rfq->addMedia(UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4'))
+            ->toMediaCollection('technical_specification');
+
+        // Посторонний пользователь не может скачать после завершения процедуры.
+        $stranger = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($stranger)
+            ->get(route('rfqs.documents.archive', $rfq))
+            ->assertStatus(403);
+
+        // Организатору доступ сохраняется.
+        $this->actingAs($this->user)
+            ->get(route('rfqs.documents.archive', $rfq))
+            ->assertOk();
+    }
 }

@@ -99,8 +99,8 @@ class AuctionController extends Controller
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);
 
-            // F3: Загрузка технического задания с поддержкой temp-файлов
-            $this->addFileToModel($auction, $request, 'technical_specification', 'technical_specification');
+            // #185 Загрузка конкурсной документации (Извещение / ТЗ / Проект договора / Прочие) со сжатием.
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($auction, $request);
 
             if ($request->type === 'closed' && $request->filled('invited_companies')) {
                 foreach ($request->invited_companies as $companyId) {
@@ -240,11 +240,8 @@ class AuctionController extends Controller
         try {
             $auction->update($request->validated());
 
-            if ($request->hasFile('technical_specification')) {
-                $auction->clearMediaCollection('technical_specification');
-                $auction->addMedia($request->file('technical_specification'))
-                    ->toMediaCollection('technical_specification');
-            }
+            // #185 Обновление конкурсной документации (загруженные файлы заменяют/дополняют коллекции).
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($auction, $request);
 
             DB::commit();
 

@@ -64,41 +64,9 @@
                         <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $rfq->end_date->format('d.m.Y H:i') }}</p>
                     </div>
 
-                    <!-- Техническое задание (замена) -->
-                    <div class="mb-6">
-                        <label for="technical_specification" class="block text-sm font-medium text-gray-700 mb-2">
-                            Заменить техническое задание (PDF)
-                        </label>
-                        
-                        @if($rfq->hasMedia('technical_specification'))
-                            <div class="mb-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <svg class="w-8 h-8 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900">Текущий файл</p>
-                                        <p class="text-xs text-gray-500">{{ $rfq->getFirstMedia('technical_specification')->file_name }}</p>
-                                    </div>
-                                </div>
-                                <a href="{{ $rfq->getFirstMediaUrl('technical_specification') }}" 
-                                   target="_blank"
-                                   class="text-sm text-emerald-600 hover:text-emerald-500">
-                                    Просмотр
-                                </a>
-                            </div>
-                        @endif
-                        
-                        <input type="file" 
-                               name="technical_specification" 
-                               id="technical_specification" 
-                               accept="application/pdf"
-                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 @error('technical_specification') border-red-500 @enderror">
-                        <p class="mt-1 text-sm text-gray-500">Оставьте пустым, если не хотите заменять файл. Максимальный размер: 10 МБ</p>
-                        @error('technical_specification')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    {{-- #185 Конкурсная документация: Извещение / ТЗ / Проект договора / Прочие файлы --}}
+                    <p class="text-sm text-gray-500 mb-2">Загрузите новый файл, чтобы заменить текущий; пустое поле оставляет файл без изменений.</p>
+                    @include('partials.procurement-documents', ['model' => $rfq, 'tzRequired' => false])
 
                     <!-- Скрытие результатов после завершения -->
                     <div class="mb-6">

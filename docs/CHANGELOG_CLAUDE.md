@@ -1930,3 +1930,49 @@ Pint чист. Ассеты пересобраны (`npm run build`) — нов�
 переносит, `required_if`-валидация); заменён тест «первое предложение задаёт референс» на
 «референсы организатора фиксированы и не меняются предложениями» + новый тест отклонения предложения
 сверх максимума; поправлен `refs.max_deadline` в state-payload. Pint чист.
+
+---
+
+## 2026-07-24 — Первоочередные issues: #182, #191, #118, #188, #185
+
+Ветка `fix/priority-batch-191` → develop → test.bizzio.ru.
+
+**#182 (проверка).** Неверифицированная компания не может подавать заявки — уже реализовано
+(guard `is_verified` в `RfqController::storeBid` / `AuctionController::storeBid`/`storeOffer`, UI
+фильтрует компании, 4 теста `PriorityTasksTest`). Карточка переведена в In review (test).
+
+**#191 — PDF-протоколы (аукцион / запрос цен / ком. аукцион).**
+- Заголовок → «ПРОТОКОЛ ПОДВЕДЕНИЯ ПРЕДВАРИТЕЛЬНЫХ ИТОГОВ».
+- Победитель — формат ОПФ «Название» (ИНН …) через `Company::legalNameWithInn()`.
+- Строка «Общее количество компаний-участников».
+- Оговорка об информационном характере результатов.
+Файлы: `resources/views/pdf/auction-protocol.blade.php`, `pdfs/rfq-protocol.blade.php`,
+`pdfs/commercial-auction-protocol.blade.php`, `app/Models/Company.php`.
+
+**#118 — протокол при авто-отмене аукциона без заявок.**
+- `AuctionProtocolService` формирует протокол с причиной отмены; `UpdateAuctionStatuses` вызывает
+  генерацию при отмене (нет заявок / нет ставок 24 ч); шаблон показывает уведомление об отмене.
+
+**#188 — «Подано заявок» в карточке обычного аукциона** (`auctions/show.blade.php`, sidebar).
+
+**#185 — конкурсная документация (полная реализация).**
+- Четыре типа документов (Извещение / ТЗ / Проект договора / Прочие файлы) для RFQ, Ком. аукциона и
+  Аукциона — media-коллекции `notice` / `technical_specification` / `contract_draft` / `other_documents`
+  (только PDF). Трейт `HasProcurementDocuments`, константы в `App\Support\ProcurementDocuments`.
+- Валидация: только PDF, суммарный объём ≤ 20 МБ (`ValidatesProcurementDocuments` в Store/Update
+  Request'ах RFQ и Аукциона; поднят `config/media-library.php` до 20 МБ).
+- Сжатие PDF при загрузке (`PdfCompressionService`, Ghostscript `/ebook` с graceful fallback —
+  если `gs` нет в образе, файл сохраняется без изменений; для активации нужен ghostscript в Docker-образе).
+- Скачивание архивом (ZIP) и по файлу через `ProcurementDocumentController` с контролем доступа:
+  после завершения процедуры документы доступны только организатору и участникам (`documentsAccessibleBy`).
+- Автоудаление: команда `documents:cleanup` (планировщик, ежедневно 03:00) удаляет документацию
+  завершённых процедур старше срока хранения; срок настраивается в админке
+  (Orchid `DocumentSettingsScreen`, модель `Setting`, миграция `settings`).
+- Формы create/edit RFQ и Аукциона используют партиал `partials/procurement-documents`; страницы
+  процедур — `partials/procurement-documents-list` (список + кнопка «Скачать всё архивом»).
+
+**Тесты:** RfqTest + CommercialAuctionTest + AuctionTest — 108 passed; добавлены 3 теста #185
+(мультизагрузка + zip, лимит 20 МБ, закрытие доступа после завершения) и тест #118. Pint чист (307 файлов).
+
+**Примечание по #185:** сжатие PDF реализовано, но требует `ghostscript` в Docker-образе `app`
+(сейчас не установлен) — до этого работает fallback (файлы сохраняются как есть).

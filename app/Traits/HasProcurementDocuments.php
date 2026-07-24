@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Support\ProcurementDocuments;
 use Illuminate\Support\Collection;
 
 /**
@@ -15,31 +16,17 @@ use Illuminate\Support\Collection;
  *   contract_draft        — Проект договора (1 файл)
  *   other_documents       — Прочие файлы (несколько)
  *
- * Все — только PDF. Общий лимит объёма (20 МБ) проверяется в Form Request.
+ * Все — только PDF. Константы — в App\Support\ProcurementDocuments.
  */
 trait HasProcurementDocuments
 {
-    /** Коллекции документов: ключ = media-коллекция, значение = человекочитаемая метка. */
-    public const DOCUMENT_COLLECTIONS = [
-        'notice' => 'Извещение',
-        'technical_specification' => 'Техническое задание (ТЗ)',
-        'contract_draft' => 'Проект договора',
-        'other_documents' => 'Прочие файлы',
-    ];
-
-    /** Одиночные коллекции (ровно один файл). */
-    public const SINGLE_DOCUMENT_COLLECTIONS = ['notice', 'technical_specification', 'contract_draft'];
-
-    /** Общий лимит объёма конкурсной документации (байты) — 20 МБ. */
-    public const DOCUMENTS_MAX_TOTAL_BYTES = 20 * 1024 * 1024;
-
     /**
      * Регистрация media-коллекций конкурсной документации (PDF).
      * Вызывается из registerMediaCollections() модели.
      */
     public function registerProcurementDocumentMediaCollections(): void
     {
-        foreach (self::SINGLE_DOCUMENT_COLLECTIONS as $collection) {
+        foreach (ProcurementDocuments::SINGLE_COLLECTIONS as $collection) {
             $this->addMediaCollection($collection)
                 ->singleFile()
                 ->acceptsMimeTypes(['application/pdf']);
@@ -57,7 +44,7 @@ trait HasProcurementDocuments
      */
     public function allProcurementDocuments(): Collection
     {
-        return collect(array_keys(self::DOCUMENT_COLLECTIONS))
+        return collect(array_keys(ProcurementDocuments::COLLECTIONS))
             ->flatMap(fn (string $collection) => $this->getMedia($collection))
             ->values();
     }
@@ -65,5 +52,36 @@ trait HasProcurementDocuments
     public function hasAnyProcurementDocument(): bool
     {
         return $this->allProcurementDocuments()->isNotEmpty();
+    }
+
+    /**
+     * #185 Доступ к конкурсной документации.
+     *
+     * Пока процедура активна (не завершена/не отменена) — документы доступны всем
+     * (участникам для подготовки заявок). После завершения доступ закрывается:
+     * остаётся только у организатора и компаний-участников (подавших заявку или приглашённых).
+     */
+    public function documentsAccessibleBy(?\App\Models\User $user): bool
+    {
+        if (! in_array($this->status, ['closed', 'cancelled'], true)) {
+            return true;
+        }
+
+        if (! $user) {
+            return false;
+        }
+
+        if (method_exists($this, 'canManage') && $this->canManage($user)) {
+            return true;
+        }
+
+        $companyIds = $user->moderatedCompanies()->pluck('companies.id');
+
+        if ($companyIds->isEmpty()) {
+            return false;
+        }
+
+        return $this->bids()->whereIn('company_id', $companyIds)->exists()
+            || $this->invitations()->whereIn('company_id', $companyIds)->exists();
     }
 }
