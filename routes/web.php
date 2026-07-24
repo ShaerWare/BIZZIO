@@ -219,6 +219,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/rfqs/{rfq}/invitations', [RfqController::class, 'storeInvitation'])->name('rfqs.invitations.store');
 });
 
+// #205 Лёгкий статус этапа 2 для авто-перехода к запущенному аукциону (до catch-all show)
+Route::get('/rfqs/{rfq}/stage2-status', [RfqController::class, 'stage2Status'])->name('rfqs.stage2-status');
+
 // Публичный просмотр RFQ (после auth-группы, чтобы create не конфликтовал)
 Route::get('/rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
 
@@ -252,6 +255,9 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::post('/{auction}/activate', [AuctionController::class, 'activate'])->name('activate');
         Route::post('/{auction}/cancel', [AuctionController::class, 'cancel'])->name('cancel');
         Route::post('/{auction}/bids', [AuctionController::class, 'storeBid'])->name('bids.store');
+
+        // #179 Подача предложения в коммерческом аукционе (этап 2)
+        Route::post('/{auction}/offers', [AuctionController::class, 'storeOffer'])->name('offers.store');
 
         // Генерация протокола (для организатора)
         Route::post('/{auction}/protocol', [AuctionController::class, 'generateProtocol'])->name('protocol.generate');

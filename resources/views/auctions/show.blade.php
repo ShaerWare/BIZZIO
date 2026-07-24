@@ -212,6 +212,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <span>Создатель: <strong>{{ $auction->creator->name }}</strong></span>
+                            <x-user-badges :user="$auction->creator" class="ml-2" />
                         </div>
                     </div>
 
@@ -222,7 +223,7 @@
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
                                 <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
-                                <li>• Шаг снижения — <strong>0.5% — 5%</strong> от текущей цены</li>
+                                <li>• Шаг снижения — <strong>{{ rtrim(rtrim(number_format($auction->step_percent, 2, '.', ''), '0'), '.') }}% — 5%</strong> от текущей цены</li>
                                 @if($auction->isTrading())
                                     <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 @endif
@@ -330,8 +331,13 @@
             </div>
         @endif
 
+        {{-- #179 Коммерческий аукцион: блок «Настройка предложения» --}}
+        @if($auction->isCommercial() && $auction->isTrading())
+            @include('auctions.partials.commercial-trading')
+        @endif
+
         {{-- A8: Панель торгов на главном экране (только для статуса trading) --}}
-        @if($auction->isTrading())
+        @if($auction->isTrading() && ! $auction->isCommercial())
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <div class="flex flex-col lg:flex-row gap-6">
@@ -372,7 +378,8 @@
                                         <div>
                                             <p class="text-xs text-gray-500 mb-2">Снижение цены:</p>
                                             <div class="grid grid-cols-3 gap-1">
-                                                @php $percentages = [0.5, 1, 2, 3, 4, 5]; @endphp
+                                                {{-- #196 Кнопки снижения — от организаторского минимального шага до 5% --}}
+                                                @php $stepMin = (float) $auction->step_percent; $percentages = collect([0.5, 1, 2, 3, 4, 5])->push($stepMin)->filter(fn ($p) => $p >= $stepMin && $p <= 5)->unique()->sort()->values()->all(); @endphp
                                                 @foreach($percentages as $pct)
                                                     @php $newPrice = round($currentPrice * (1 - $pct / 100), 2); @endphp
                                                     <button type="button" onclick="setMainBidPrice({{ $newPrice }})"
@@ -516,8 +523,10 @@
                                         <div class="mb-3">
                                             <p class="text-xs text-gray-500 mb-2">Выберите размер снижения:</p>
                                             <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                                {{-- #196 Кнопки снижения — от организаторского минимального шага до 5% --}}
                                                 @php
-                                                    $percentages = [0.5, 1, 2, 3, 4, 5];
+                                                    $stepMin = (float) $auction->step_percent;
+                                                    $percentages = collect([0.5, 1, 2, 3, 4, 5])->push($stepMin)->filter(fn ($p) => $p >= $stepMin && $p <= 5)->unique()->sort()->values()->all();
                                                 @endphp
                                                 @foreach($percentages as $pct)
                                                     @php
@@ -801,11 +810,13 @@
                                                         <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                             {{ $bid->company->name }}
                                                         </a>
+                                                        <x-user-badges :user="$bid->user" class="ml-2" />
                                                     @elseif($auction->status === 'closed' && $auction->type === 'closed' && $auction->canManage(auth()->user()))
                                                         {{-- #38: В закрытом аукционе после завершения — имена видны только организатору --}}
                                                         <a href="{{ route('companies.show', $bid->company) }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                                                             {{ $bid->company->name }}
                                                         </a>
+                                                        <x-user-badges :user="$bid->user" class="ml-2" />
                                                     @else
                                                         {{-- A15: На этапе приёма заявок скрываем названия от ВСЕХ (включая организатора) --}}
                                                         <span class="text-sm font-medium {{ $isUserBid ? 'text-emerald-600' : 'text-gray-900' }}">

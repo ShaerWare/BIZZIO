@@ -23,7 +23,7 @@ class RfqController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Rfq::with(['company', 'creator', 'bids'])
+        $query = Rfq::with(['company', 'creator.badges', 'bids'])
             ->orderBy('created_at', 'desc');
 
         // Скрываем черновики от посторонних (C3)
@@ -88,14 +88,18 @@ class RfqController extends Controller
         DB::beginTransaction();
 
         try {
-            // Создание RFQ
-            $rfq = Rfq::create([
+            $procedure = $request->input('procedure', 'standard') === 'commercial'
+                ? Rfq::PROCEDURE_COMMERCIAL
+                : Rfq::PROCEDURE_STANDARD;
+
+            $attributes = [
                 'number' => Rfq::generateNumber(),
                 'title' => $request->title,
                 'description' => $request->description,
                 'company_id' => $request->company_id,
                 'created_by' => auth()->id(),
                 'type' => $request->type,
+                'procedure' => $procedure,
                 'currency' => $request->currency ?? 'RUB',
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
@@ -104,7 +108,22 @@ class RfqController extends Controller
                 'weight_advance' => $request->weight_advance,
                 'status' => $request->status ?? 'draft', // ✅ ИСПОЛЬЗУЕМ СТАТУС ИЗ ФОРМЫ
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
-            ]);
+            ];
+
+            // #179 Параметры этапа 2 для коммерческого аукциона.
+            // trading_end не задаётся (торги закрываются через 20 мин после последнего предложения);
+            // max_deadline/max_advance определяются первым предложением этапа 2.
+            if ($procedure === Rfq::PROCEDURE_COMMERCIAL) {
+                $attributes += [
+                    'trading_start' => $request->trading_start,
+                    'step_price' => $request->step_price,
+                    'step_deadline' => $request->step_deadline,
+                    'step_advance' => $request->step_advance,
+                ];
+            }
+
+            // Создание RFQ
+            $rfq = Rfq::create($attributes);
 
             // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
             $this->addFileToModel($rfq, $request, 'technical_specification', 'technical_specification');
@@ -154,7 +173,9 @@ class RfqController extends Controller
         // Eager loading
         $rfq->load([
             'company.industry',
+            'creator.badges',
             'bids.company',
+            'bids.user.badges',
             'invitations.company',
         ]);
 
@@ -172,12 +193,14 @@ class RfqController extends Controller
         // Проверка: может ли пользователь подать заявку
         $canBid = false;
         $userCompanies = auth()->check() ? auth()->user()->moderatedCompanies : collect();
+        // #182: Подавать заявки могут только верифицированные компании
+        $biddableCompanies = $userCompanies->where('is_verified', true);
         $alreadyBid = false;
 
         if ($rfq->isActive() && ! $rfq->isExpired()) {
             if ($rfq->type === 'open') {
                 // Открытая процедура: любая компания пользователя (кроме организатора)
-                foreach ($userCompanies as $company) {
+                foreach ($biddableCompanies as $company) {
                     if ($company->id !== $rfq->company_id) {
                         // Проверяем, не подана ли уже заявка от этой компании
                         $bidExists = $rfq->bids()->where('company_id', $company->id)->exists();
@@ -192,7 +215,7 @@ class RfqController extends Controller
             } else {
                 // Закрытая процедура: только приглашённые компании
                 $invitedCompanyIds = $rfq->invitations()
-                    ->whereIn('company_id', $userCompanies->pluck('id'))
+                    ->whereIn('company_id', $biddableCompanies->pluck('id'))
                     ->pluck('company_id')
                     ->toArray();
 
@@ -213,17 +236,17 @@ class RfqController extends Controller
         $availableCompanies = collect();
         if ($canBid) {
             if ($rfq->type === 'open') {
-                $availableCompanies = $userCompanies->filter(function ($company) use ($rfq) {
+                $availableCompanies = $biddableCompanies->filter(function ($company) use ($rfq) {
                     return $company->id !== $rfq->company_id &&
                            ! $rfq->bids()->where('company_id', $company->id)->exists();
                 });
             } else {
                 $invitedIds = $rfq->invitations()
-                    ->whereIn('company_id', $userCompanies->pluck('id'))
+                    ->whereIn('company_id', $biddableCompanies->pluck('id'))
                     ->pluck('company_id')
                     ->toArray();
 
-                $availableCompanies = $userCompanies->filter(function ($company) use ($invitedIds, $rfq) {
+                $availableCompanies = $biddableCompanies->filter(function ($company) use ($invitedIds, $rfq) {
                     return in_array($company->id, $invitedIds) &&
                            ! $rfq->bids()->where('company_id', $company->id)->exists();
                 });
@@ -246,6 +269,20 @@ class RfqController extends Controller
         $canDownloadProtocol = (auth()->check() && $rfq->canManage(auth()->user())) || $isProtocolParticipant;
 
         return view('rfqs.show', compact('rfq', 'canBid', 'alreadyBid', 'availableCompanies', 'canSeeResults', 'canDownloadProtocol'));
+    }
+
+    /**
+     * #205 Лёгкий статус этапа 2: запущен ли связанный коммерческий аукцион.
+     * Используется JS-поллингом на странице этапа 1 для авто-перехода к торгам.
+     */
+    public function stage2Status(Rfq $rfq)
+    {
+        $launched = $rfq->isCommercial() && $rfq->linked_auction_id !== null;
+
+        return response()->json([
+            'launched' => $launched,
+            'url' => $launched ? route('auctions.show', $rfq->linked_auction_id) : null,
+        ]);
     }
 
     /**
@@ -306,6 +343,54 @@ class RfqController extends Controller
      */
     public function storeBid(Request $request, Rfq $rfq)
     {
+        // #179 На этапе 1 коммерческого аукциона оценивается ТОЛЬКО цена
+        $rules = [
+            'company_id' => 'required|exists:companies,id',
+            'price' => 'required|numeric|min:0',
+            'comment' => 'nullable|string|max:1000',
+        ];
+
+        if (! $rfq->isCommercial()) {
+            $rules['deadline'] = 'required|integer|min:1';
+            $rules['advance_percent'] = 'required|numeric|min:0|max:100';
+        }
+
+        $request->validate($rules);
+
+        // RFQ должен быть активным и не просроченным
+        if (! $rfq->isActive() || $rfq->isExpired()) {
+            return back()->withInput()->with('error', 'Приём заявок по этому запросу цен завершён.');
+        }
+
+        $company = Company::find($request->company_id);
+
+        // #182: Заявку может подать только модератор компании — и только от верифицированной компании
+        if (! $company || ! $company->isModerator(auth()->user())) {
+            return back()->withInput()->with('error', 'Вы не можете подать заявку от имени этой компании.');
+        }
+
+        if (! $company->is_verified) {
+            return back()->withInput()->with('error', 'Подавать заявки на участие могут только верифицированные компании. Пройдите верификацию компании.');
+        }
+
+        // Нельзя подавать заявку от компании-организатора
+        if ($company->id === $rfq->company_id) {
+            return back()->withInput()->with('error', 'Организатор не может подать заявку на собственный запрос цен.');
+        }
+
+        // Для закрытого RFQ компания должна быть приглашена
+        if ($rfq->type !== 'open') {
+            $isInvited = $rfq->invitations()->where('company_id', $company->id)->exists();
+            if (! $isInvited) {
+                return back()->withInput()->with('error', 'Ваша компания не приглашена к участию в этом запросе цен.');
+            }
+        }
+
+        // Запрет повторной заявки от одной компании
+        if ($rfq->bids()->where('company_id', $company->id)->exists()) {
+            return back()->withInput()->with('error', 'Ваша компания уже подала заявку на этот запрос цен.');
+        }
+
         DB::beginTransaction();
 
         try {
@@ -314,8 +399,8 @@ class RfqController extends Controller
                 'company_id' => $request->company_id,
                 'user_id' => auth()->id(),
                 'price' => $request->price,
-                'deadline' => $request->deadline,
-                'advance_percent' => $request->advance_percent,
+                'deadline' => $rfq->isCommercial() ? null : $request->deadline,
+                'advance_percent' => $rfq->isCommercial() ? null : $request->advance_percent,
                 'comment' => $request->comment,
                 'status' => 'pending',
             ]);

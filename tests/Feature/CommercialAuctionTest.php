@@ -1,0 +1,583 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Jobs\CloseAuctionJob;
+use App\Jobs\CloseRfqJob;
+use App\Jobs\UpdateAuctionStatuses;
+use App\Models\Auction;
+use App\Models\AuctionBid;
+use App\Models\Company;
+use App\Models\Rfq;
+use App\Models\RfqBid;
+use App\Models\User;
+use App\Services\AuctionWinnerService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+/**
+ * #179 Коммерческий аукцион — двухэтапная процедура (Запрос цен → Аукцион).
+ */
+class CommercialAuctionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $user;
+
+    private Company $company;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::factory()->create(['email_verified_at' => now()]);
+        $this->company = Company::factory()->create([
+            'created_by' => $this->user->id,
+            'is_verified' => true,
+        ]);
+        $this->company->assignModerator($this->user, 'owner');
+
+        Storage::fake('public');
+        Queue::fake();
+    }
+
+    /** Данные формы создания коммерческого RFQ. */
+    private function commercialRfqPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'title' => 'Коммерческий аукцион на поставку',
+            'description' => 'Описание',
+            'company_id' => $this->company->id,
+            'type' => 'open',
+            'procedure' => 'commercial',
+            'currency' => 'RUB',
+            'status' => 'draft',
+            'start_date' => now()->format('Y-m-d H:i:s'),
+            'end_date' => now()->addDay()->format('Y-m-d H:i:s'),
+            'weight_price' => 70,
+            'weight_deadline' => 20,
+            'weight_advance' => 10,
+            'trading_start' => now()->addDay()->addHour()->format('Y-m-d H:i:s'),
+            'step_price' => 0.5,
+            'step_deadline' => 1,
+            'step_advance' => 5,
+            'technical_specification' => UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test'),
+        ], $overrides);
+    }
+
+    public function test_creates_commercial_rfq_with_stage_2_config(): void
+    {
+        $this->actingAs($this->user)
+            ->post(route('rfqs.store'), $this->commercialRfqPayload())
+            ->assertRedirect();
+
+        $rfq = Rfq::where('title', 'Коммерческий аукцион на поставку')->first();
+
+        $this->assertNotNull($rfq);
+        $this->assertTrue($rfq->isCommercial());
+        $this->assertSame(1, (int) $rfq->step_deadline);
+        $this->assertEqualsWithDelta(0.5, (float) $rfq->step_price, 1e-9);
+        $this->assertNotNull($rfq->trading_start);
+        // #179 max_deadline/max_advance больше не задаются организатором (референс — из 1-го предложения),
+        // trading_end не задаётся (торги закрываются через 20 мин после последнего предложения).
+        $this->assertNull($rfq->max_deadline);
+        $this->assertNull($rfq->max_advance);
+        $this->assertNull($rfq->trading_end);
+    }
+
+    public function test_commercial_requires_stage_2_fields(): void
+    {
+        $payload = $this->commercialRfqPayload([
+            'trading_start' => null,
+            'step_price' => null,
+        ]);
+
+        $this->actingAs($this->user)
+            ->post(route('rfqs.store'), $payload)
+            ->assertSessionHasErrors(['trading_start', 'step_price']);
+
+        $this->assertDatabasemissing('rfqs', ['title' => 'Коммерческий аукцион на поставку']);
+    }
+
+    public function test_standard_rfq_ignores_stage_2_fields(): void
+    {
+        $payload = $this->commercialRfqPayload([
+            'procedure' => 'standard',
+            'weight_price' => 40,
+            'weight_deadline' => 30,
+            'weight_advance' => 30,
+            // намеренно без параметров этапа 2 — для standard они не требуются
+            'trading_start' => null,
+            'trading_end' => null,
+            'step_price' => null,
+            'step_deadline' => null,
+            'step_advance' => null,
+            'max_deadline' => null,
+            'max_advance' => null,
+        ]);
+
+        $this->actingAs($this->user)
+            ->post(route('rfqs.store'), $payload)
+            ->assertRedirect();
+
+        $rfq = Rfq::where('title', 'Коммерческий аукцион на поставку')->first();
+        $this->assertNotNull($rfq);
+        $this->assertFalse($rfq->isCommercial());
+        $this->assertNull($rfq->trading_start);
+    }
+
+    public function test_stage_1_bid_is_price_only(): void
+    {
+        $rfq = $this->activeCommercialRfq();
+
+        [$bidder, $bidderCompany] = $this->verifiedBidder();
+
+        // Заявка без срока/аванса — на этапе 1 это допустимо.
+        $this->actingAs($bidder)
+            ->post(route('rfqs.bids.store', $rfq), [
+                'company_id' => $bidderCompany->id,
+                'price' => 900_000,
+            ])
+            ->assertRedirect();
+
+        $bid = RfqBid::where('rfq_id', $rfq->id)->where('company_id', $bidderCompany->id)->first();
+        $this->assertNotNull($bid);
+        $this->assertEqualsWithDelta(900_000, (float) $bid->price, 1e-6);
+        $this->assertNull($bid->deadline);
+        $this->assertNull($bid->advance_percent);
+    }
+
+    /** Активный коммерческий RFQ (этап 1 идёт). */
+    private function activeCommercialRfq(): Rfq
+    {
+        return Rfq::create([
+            'number' => Rfq::generateNumber(),
+            'title' => 'Активный КА',
+            'description' => 'Описание',
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'type' => 'open',
+            'procedure' => Rfq::PROCEDURE_COMMERCIAL,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+            'trading_start' => now()->addDay()->addHour(),
+            'trading_end' => now()->addDays(2),
+            'weight_price' => 70,
+            'weight_deadline' => 20,
+            'weight_advance' => 10,
+            'step_price' => 0.5,
+            'step_deadline' => 1,
+            'step_advance' => 5,
+            'max_deadline' => 100,
+            'max_advance' => 50,
+            'status' => 'active',
+        ]);
+    }
+
+    /** @return array{0: User, 1: Company} */
+    private function verifiedBidder(): array
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $company = Company::factory()->create(['created_by' => $user->id, 'is_verified' => true]);
+        $company->assignModerator($user, 'owner');
+
+        return [$user, $company];
+    }
+
+    // =========================================================
+    // Слайс 4 — авто-запуск этапа 2
+    // =========================================================
+
+    /** Коммерческий RFQ этапа 1 с истёкшим приёмом заявок и заданными ценами участников. */
+    private function closeableCommercialRfq(array $prices): Rfq
+    {
+        $rfq = Rfq::create([
+            'number' => Rfq::generateNumber(),
+            'title' => 'КА для закрытия',
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'type' => 'open',
+            'procedure' => Rfq::PROCEDURE_COMMERCIAL,
+            'start_date' => now()->subDays(2),
+            'end_date' => now()->subMinute(),
+            'trading_start' => now()->addMinutes(5),
+            'trading_end' => now()->addDay(),
+            'weight_price' => 70,
+            'weight_deadline' => 20,
+            'weight_advance' => 10,
+            'step_price' => 0.5,
+            'step_deadline' => 1,
+            'step_advance' => 5,
+            'max_deadline' => 100,
+            'max_advance' => 50,
+            'status' => 'active',
+        ]);
+
+        foreach ($prices as $price) {
+            [$user, $company] = $this->verifiedBidder();
+            RfqBid::create([
+                'rfq_id' => $rfq->id,
+                'company_id' => $company->id,
+                'user_id' => $user->id,
+                'price' => $price,
+                'status' => 'pending',
+            ]);
+        }
+
+        return $rfq;
+    }
+
+    private function runCloseRfqJob(Rfq $rfq): void
+    {
+        app()->call([new CloseRfqJob($rfq), 'handle']);
+    }
+
+    public function test_closing_commercial_rfq_launches_stage_2_auction(): void
+    {
+        $rfq = $this->closeableCommercialRfq([900_000, 1_200_000, 1_000_000]);
+
+        $this->runCloseRfqJob($rfq);
+        $rfq->refresh();
+
+        // Этап 1 закрыт, победитель/протокол НЕ формируются.
+        $this->assertSame('closed', $rfq->status);
+        $this->assertNull($rfq->winner_bid_id);
+
+        // Связанный аукцион этапа 2 создан.
+        $auction = $rfq->linkedAuction;
+        $this->assertNotNull($auction);
+        $this->assertTrue($auction->isCommercial());
+        $this->assertSame('trading', $auction->status);
+        // #202 НМЦ = средняя цена этапа 1: (900k + 1.2M + 1M) / 3 = 1 033 333.33.
+        $this->assertEqualsWithDelta(1_033_333.33, (float) $auction->starting_price, 0.01);
+        // Перенос весов/шагов. Референсы (max_deadline/max_advance) НЕ переносятся —
+        // они выставляются первым предложением этапа 2.
+        $this->assertEqualsWithDelta(70, (float) $auction->weight_price, 1e-6);
+        $this->assertNull($auction->max_deadline);
+        $this->assertSame(1, (int) $auction->step_deadline);
+        // Приглашены все 3 участника.
+        $this->assertSame(3, $auction->invitations()->count());
+        $this->assertSame($rfq->id, $auction->rfq_id);
+    }
+
+    public function test_closing_commercial_rfq_without_bids_does_not_launch(): void
+    {
+        $rfq = $this->closeableCommercialRfq([]);
+
+        $this->runCloseRfqJob($rfq);
+        $rfq->refresh();
+
+        $this->assertSame('closed', $rfq->status);
+        $this->assertNull($rfq->linked_auction_id);
+        $this->assertSame(0, Auction::where('rfq_id', $rfq->id)->count());
+    }
+
+    public function test_update_statuses_closes_commercial_auction_after_last_offer_idle(): void
+    {
+        Queue::fake();
+
+        // #179 Коммерческий аукцион закрывается через 20 мин после последнего предложения (как обычный).
+        $auction = $this->tradingCommercialAuction([
+            'trading_end' => null,
+            'last_bid_at' => now()->subMinutes(21),
+        ]);
+
+        (new UpdateAuctionStatuses)->handle();
+
+        Queue::assertPushed(CloseAuctionJob::class);
+    }
+
+    public function test_commercial_winner_is_best_offer(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+
+        [$u1, $c1] = $this->verifiedBidder();
+        $weak = AuctionBid::create([
+            'auction_id' => $auction->id, 'company_id' => $c1->id, 'user_id' => $u1->id,
+            'type' => 'offer', 'price' => 1_000_000, 'deadline' => 80, 'advance_percent' => 40,
+            'total_score' => 15, 'anonymous_code' => 'AA11',
+        ]);
+        [$u2, $c2] = $this->verifiedBidder();
+        $best = AuctionBid::create([
+            'auction_id' => $auction->id, 'company_id' => $c2->id, 'user_id' => $u2->id,
+            'type' => 'offer', 'price' => 800_000, 'deadline' => 50, 'advance_percent' => 20,
+            'total_score' => 45, 'became_best_at' => now(), 'anonymous_code' => 'BB22',
+        ]);
+        $auction->update(['best_bid_id' => $best->id]);
+
+        $winner = app(AuctionWinnerService::class)->determineWinner($auction->fresh());
+
+        $this->assertNotNull($winner);
+        $this->assertSame($best->id, $winner->id);
+        $this->assertSame('closed', $auction->fresh()->status);
+        $this->assertSame($best->id, (int) $auction->fresh()->winner_bid_id);
+    }
+
+    // =========================================================
+    // Слайс 5 — подача предложений (реал-тайм)
+    // =========================================================
+
+    public function test_first_offer_becomes_best_and_is_base(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->post(route('auctions.offers.store', $auction), [
+                'company_id' => $company->id,
+                'price' => 1_000_000,
+                'deadline' => 60,
+                'advance_percent' => 30,
+            ])
+            ->assertRedirect();
+
+        $offer = AuctionBid::where('auction_id', $auction->id)->where('company_id', $company->id)->first();
+        $this->assertNotNull($offer);
+        $this->assertTrue((bool) $offer->is_base);
+        $this->assertNotNull($offer->became_best_at);
+        $this->assertNotNull($offer->total_score);
+        $this->assertSame($offer->id, (int) $auction->fresh()->best_bid_id);
+    }
+
+    public function test_worse_offer_is_rejected(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$u1, $c1] = $this->participant($auction);
+        [$u2, $c2] = $this->participant($auction);
+
+        // Сильное лидирующее предложение.
+        $this->actingAs($u1)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c1->id, 'price' => 800_000, 'deadline' => 40, 'advance_percent' => 10,
+        ])->assertRedirect();
+
+        $bestId = $auction->fresh()->best_bid_id;
+
+        // Заведомо худшее предложение другого участника — отклоняется.
+        $this->actingAs($u2)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c2->id, 'price' => 1_150_000, 'deadline' => 90, 'advance_percent' => 45,
+        ])->assertSessionHas('error');
+
+        $this->assertSame($bestId, $auction->fresh()->best_bid_id, 'Лидер не должен смениться на худшее предложение');
+        $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->where('company_id', $c2->id)->count());
+    }
+
+    public function test_strictly_better_offer_takes_lead(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$u1, $c1] = $this->participant($auction);
+        [$u2, $c2] = $this->participant($auction);
+
+        $this->actingAs($u1)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c1->id, 'price' => 1_000_000, 'deadline' => 60, 'advance_percent' => 30,
+        ])->assertRedirect();
+
+        $this->actingAs($u2)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $c2->id, 'price' => 850_000, 'deadline' => 45, 'advance_percent' => 15,
+        ])->assertRedirect();
+
+        $best = $auction->fresh()->bestBid;
+        $this->assertSame($c2->id, $best->company_id);
+    }
+
+    public function test_non_participant_cannot_submit_offer(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        // Верифицированная компания, но НЕ приглашена (не участник этапа 1).
+        [$user, $company] = $this->verifiedBidder();
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 500_000, 'deadline' => 10, 'advance_percent' => 0,
+        ])->assertSessionHas('error');
+
+        $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->count());
+    }
+
+    public function test_first_offer_sets_normalization_reference(): void
+    {
+        // #179 Референсы срока/аванса определяет первое предложение этапа 2 (не организатор).
+        $auction = $this->tradingCommercialAuction(['max_deadline' => null, 'max_advance' => null]);
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 150, 'advance_percent' => 40,
+        ])->assertRedirect();
+
+        $auction->refresh();
+        $this->assertSame(150, (int) $auction->max_deadline);
+        $this->assertEqualsWithDelta(40.0, (float) $auction->max_advance, 1e-9);
+        $this->assertSame(1, AuctionBid::where('auction_id', $auction->id)->count());
+    }
+
+    public function test_commercial_show_page_renders_offer_block(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Коммерческий аукцион — торги')
+            ->assertSee('История лучших предложений', false)
+            ->assertSee('commercialAuction(', false);
+    }
+
+    public function test_get_state_returns_commercial_payload(): void
+    {
+        $auction = $this->tradingCommercialAuction();
+        [$user, $company] = $this->participant($auction);
+
+        // Одно принятое предложение → становится лучшим.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 50, 'advance_percent' => 20,
+        ])->assertRedirect();
+
+        $this->actingAs($user)
+            ->getJson(route('auctions.state', $auction))
+            ->assertOk()
+            ->assertJsonPath('procedure', 'commercial')
+            ->assertJsonPath('best_offer.price', 900000)
+            ->assertJsonPath('weights.p', 70)
+            // #179 Референс выставлен первым предложением (deadline=50), а не организатором.
+            ->assertJsonPath('refs.max_deadline', 50);
+    }
+
+    /**
+     * Верифицированный участник аукциона (создаёт приглашение).
+     *
+     * @return array{0: User, 1: Company}
+     */
+    private function participant(Auction $auction): array
+    {
+        [$user, $company] = $this->verifiedBidder();
+        $auction->invitations()->create(['company_id' => $company->id, 'status' => 'accepted']);
+
+        return [$user, $company];
+    }
+
+    // =========================================================
+    // Слайс 7 — каталог/навигация
+    // =========================================================
+
+    public function test_tenders_catalog_filters_by_procedure(): void
+    {
+        // Один коммерческий и один обычный активный RFQ.
+        $commercial = $this->closeableCommercialRfq([500_000]);
+        $commercial->update(['status' => 'active', 'end_date' => now()->addDay(), 'title' => 'КА в каталоге']);
+
+        $standard = Rfq::create([
+            'number' => Rfq::generateNumber(),
+            'title' => 'Обычный RFQ в каталоге',
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'type' => 'open',
+            'procedure' => Rfq::PROCEDURE_STANDARD,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'weight_price' => 50, 'weight_deadline' => 30, 'weight_advance' => 20,
+            'status' => 'active',
+        ]);
+
+        // Фильтр commercial показывает только коммерческий.
+        $this->get(route('tenders.index', ['procedure' => 'commercial']))
+            ->assertOk()
+            ->assertSee('КА в каталоге')
+            ->assertDontSee('Обычный RFQ в каталоге');
+
+        // Карточка коммерческого RFQ несёт метку этапа 1.
+        $this->get(route('tenders.index', ['procedure' => 'commercial']))
+            ->assertSee('Коммерческий аукцион · Этап 1');
+    }
+
+    public function test_stage_1_page_links_to_launched_auction(): void
+    {
+        $rfq = $this->closeableCommercialRfq([700_000, 900_000]);
+        $this->runCloseRfqJob($rfq);
+        $rfq->refresh();
+
+        $this->get(route('rfqs.show', $rfq))
+            ->assertOk()
+            ->assertSee('Перейти к аукциону')
+            ->assertSee(route('auctions.show', $rfq->linked_auction_id), false)
+            // #204 На этапе 1 у коммерческого аукциона показываем только количество
+            // предложений (count-блок), без таблицы промежуточных результатов.
+            ->assertSee('Подано предложений')
+            ->assertSee('итоги определяются на этапе 2 (торги)');
+    }
+
+    public function test_stage2_status_endpoint_reports_launch(): void
+    {
+        $rfq = $this->closeableCommercialRfq([700_000, 900_000]);
+
+        // #205 До закрытия этап 2 ещё не запущен.
+        $this->getJson(route('rfqs.stage2-status', $rfq))
+            ->assertOk()
+            ->assertJson(['launched' => false, 'url' => null]);
+
+        $this->runCloseRfqJob($rfq);
+        $rfq->refresh();
+
+        // После закрытия — запущен, отдаётся URL аукциона для авто-перехода.
+        $this->getJson(route('rfqs.stage2-status', $rfq))
+            ->assertOk()
+            ->assertJson([
+                'launched' => true,
+                'url' => route('auctions.show', $rfq->linked_auction_id),
+            ]);
+    }
+
+    // =========================================================
+    // Слайс 6 — протокол
+    // =========================================================
+
+    public function test_commercial_close_generates_protocol_with_winner(): void
+    {
+        $auction = $this->tradingCommercialAuction(['trading_end' => now()->subMinute()]);
+        [$user, $company] = $this->participant($auction);
+
+        $offer = AuctionBid::create([
+            'auction_id' => $auction->id, 'company_id' => $company->id, 'user_id' => $user->id,
+            'type' => 'offer', 'price' => 850_000, 'deadline' => 40, 'advance_percent' => 15,
+            'total_score' => 55, 'became_best_at' => now(), 'anonymous_code' => 'CC33',
+        ]);
+        $auction->update(['best_bid_id' => $offer->id]);
+
+        app()->call([new CloseAuctionJob($auction->id), 'handle']);
+
+        $auction->refresh();
+        $this->assertSame('closed', $auction->status);
+        $this->assertSame($offer->id, (int) $auction->winner_bid_id);
+        $this->assertNotNull($auction->getFirstMedia('protocol'), 'Протокол коммерческого аукциона должен быть сгенерирован');
+    }
+
+    /** Коммерческий аукцион в статусе trading. */
+    private function tradingCommercialAuction(array $overrides = []): Auction
+    {
+        return Auction::create(array_merge([
+            'number' => Auction::generateNumber(),
+            'title' => 'КА торги',
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'type' => 'open',
+            'procedure' => Auction::PROCEDURE_COMMERCIAL,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->subDay(),
+            'trading_start' => now()->subHour(),
+            'trading_end' => now()->addDay(),
+            'starting_price' => 1_200_000,
+            'weight_price' => 70,
+            'weight_deadline' => 20,
+            'weight_advance' => 10,
+            'step_price' => 0.5,
+            'step_deadline' => 1,
+            'step_advance' => 5,
+            'max_deadline' => 100,
+            'max_advance' => 50,
+            'status' => 'trading',
+        ], $overrides));
+    }
+}

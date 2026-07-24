@@ -6,7 +6,9 @@
 <div class="py-12">
     <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
         <!-- Профиль -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+        @php $profileBadge = optional($user->badges)->first(); @endphp
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6"
+             @if($profileBadge) style="border: 3px solid {{ $profileBadge->color }};" @endif>
             <div class="p-6">
                 <div class="flex items-start space-x-6">
                     <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}"
@@ -16,6 +18,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <h1 class="text-2xl font-bold text-gray-900">{{ $user->full_name }}</h1>
+                                <x-user-badges :user="$user" class="mt-2" />
                                 @if($user->position)
                                     <p class="text-gray-600 mt-1">{{ $user->position }}</p>
                                 @endif

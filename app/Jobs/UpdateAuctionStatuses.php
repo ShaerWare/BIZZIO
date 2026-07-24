@@ -22,7 +22,9 @@ class UpdateAuctionStatuses implements ShouldQueue
         Log::info('=== UpdateAuctionStatuses: СТАРТ ===', ['time' => $now->toDateTimeString()]);
 
         // 1. Активные аукционы, у которых истёк срок приёма заявок
+        // (коммерческие аукционы стартуют сразу в 'trading' — их здесь нет)
         $expiredActive = Auction::where('status', 'active')
+            ->where('procedure', '!=', Auction::PROCEDURE_COMMERCIAL)
             ->where('end_date', '<=', $now)
             ->where('trading_start', '<=', $now)
             ->get();
@@ -58,7 +60,8 @@ class UpdateAuctionStatuses implements ShouldQueue
             }
         }
 
-        // 2. Торги, у которых прошло 20 минут с последней ставки
+        // 2. Торги (в т.ч. коммерческие), у которых прошло 20 минут с последнего предложения.
+        // #179 Коммерческие аукционы закрываются по тому же правилу, что и обычные.
         $expiredTrading = Auction::where('status', 'trading')
             ->whereNotNull('last_bid_at')
             ->where('last_bid_at', '<=', $now->copy()->subMinutes(20))

@@ -31,6 +31,8 @@ class UpdateAuctionRequest extends FormRequest
             'trading_start' => ['required', 'date', 'after:end_date'],
             'currency' => ['required', 'string', Rule::in(array_keys(\App\Models\Auction::CURRENCIES))],
             'starting_price' => ['required', 'numeric', 'min:1'],
+            // #196 Организатор задаёт минимальный шаг снижения цены (0.5%–5%).
+            'step_percent' => ['required', 'numeric', 'min:0.5', 'max:5'],
             'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             'is_results_hidden' => ['nullable', 'boolean'],
         ];
@@ -56,6 +58,9 @@ class UpdateAuctionRequest extends FormRequest
             'trading_start.after' => 'Дата начала торгов должна быть после окончания приёма заявок.',
             'starting_price.required' => 'Укажите начальную (максимальную) цену.',
             'starting_price.min' => 'Начальная цена должна быть больше нуля.',
+            'step_percent.required' => 'Укажите минимальный шаг снижения цены.',
+            'step_percent.min' => 'Шаг аукциона должен быть не менее 0.5%.',
+            'step_percent.max' => 'Шаг аукциона должен быть не более 5%.',
             'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
             'technical_specification.max' => 'Размер файла не должен превышать 20 МБ.',
         ];

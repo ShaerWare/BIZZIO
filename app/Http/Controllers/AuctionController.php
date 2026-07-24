@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateAuctionRequest;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
+use App\Models\Company;
 use App\Services\AuctionProtocolService;
 use App\Traits\HandlesTempUploads;
 use Carbon\Carbon;
@@ -21,7 +22,7 @@ class AuctionController extends Controller
 
     public function index(Request $request)
     {
-        $query = Auction::with(['company.industry', 'creator', 'bids']);
+        $query = Auction::with(['company.industry', 'creator.badges', 'bids']);
 
         // Скрываем черновики от посторонних (C3) и закрытые аукционы от неприглашённых (#38)
         if (auth()->check()) {
@@ -93,7 +94,7 @@ class AuctionController extends Controller
                 'end_date' => $request->end_date,
                 'trading_start' => $request->trading_start,
                 'starting_price' => $request->starting_price,
-                'step_percent' => 2.5, // A4: Фиксированный диапазон 0.5-5%, среднее значение для совместимости
+                'step_percent' => $request->step_percent, // #196 Организатор задаёт минимальный шаг снижения цены
                 'status' => $request->status ?? 'draft',
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);
@@ -134,8 +135,9 @@ class AuctionController extends Controller
 
         $auction->load([
             'company.industry',
-            'creator',
+            'creator.badges',
             'bids.company',
+            'bids.user.badges',
             'invitations.company',
         ]);
 
@@ -157,7 +159,10 @@ class AuctionController extends Controller
         // Вычисляем $canBid на основе всех условий
         $canBid = false;
 
-        if (auth()->check() && $userCompanies->isNotEmpty()) {
+        // #182: Подавать заявки/ставки могут только верифицированные компании
+        $biddableCompanies = $userCompanies->where('is_verified', true);
+
+        if (auth()->check() && $biddableCompanies->isNotEmpty()) {
             // 1. Проверка статуса аукциона
             $isAcceptingOrTrading = $auction->isAcceptingApplications() || $auction->isTrading();
 
@@ -165,7 +170,7 @@ class AuctionController extends Controller
                 // 2. Для закрытых аукционов проверяем приглашение
                 if ($auction->type === 'closed') {
                     $isInvited = $auction->invitations()
-                        ->whereIn('company_id', $userCompanies->pluck('id'))
+                        ->whereIn('company_id', $biddableCompanies->pluck('id'))
                         ->exists();
 
                     $canBid = $isInvited;
@@ -180,7 +185,7 @@ class AuctionController extends Controller
                     $initialBid = $auction->bids()
                         ->where('type', 'initial')
                         ->where('user_id', auth()->id())
-                        ->whereIn('company_id', $userCompanies->pluck('id'))
+                        ->whereIn('company_id', $biddableCompanies->pluck('id'))
                         ->first();
                     $canBid = (bool) $initialBid;
                     $existingBid = $initialBid;
@@ -203,9 +208,10 @@ class AuctionController extends Controller
         }
 
         // #119: При торгах показываем только компанию, от которой подана заявка текущим пользователем
-        $bidCompanies = $userCompanies;
+        // #182: в форме заявки — только верифицированные компании
+        $bidCompanies = $biddableCompanies;
         if ($auction->isTrading() && $canBid && $existingBid) {
-            $bidCompanies = $userCompanies->where('id', $existingBid->company_id)->values();
+            $bidCompanies = $biddableCompanies->where('id', $existingBid->company_id)->values();
         }
 
         return view('auctions.show', compact(
@@ -301,6 +307,41 @@ class AuctionController extends Controller
 
         try {
             $companyId = $request->company_id;
+            $company = Company::find($companyId);
+
+            // #182: Заявку/ставку можно подать только от своей верифицированной компании
+            if (! $company || ! $company->isModerator(auth()->user())) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Вы не можете участвовать от имени этой компании.');
+            }
+
+            if (! $company->is_verified) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Участвовать в аукционе могут только верифицированные компании. Пройдите верификацию компании.');
+            }
+
+            if ($company->id === $auction->company_id) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Организатор не может участвовать в собственном аукционе.');
+            }
+
+            // Аукцион должен принимать заявки или идти торги
+            if (! $auction->isAcceptingApplications() && ! $auction->isTrading()) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Аукцион не принимает заявки.');
+            }
+
+            // Для закрытого аукциона компания должна быть приглашена
+            if ($auction->type === 'closed'
+                && ! $auction->invitations()->where('company_id', $companyId)->exists()) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Ваша компания не приглашена к участию в этом аукционе.');
+            }
 
             // Проверка существующей заявки
             $existingBid = $auction->bids()
@@ -459,6 +500,11 @@ class AuctionController extends Controller
             ], 400);
         }
 
+        // #179 Коммерческий аукцион отдаёт расширенное состояние (3 критерия).
+        if ($auction->isCommercial()) {
+            return response()->json($this->commercialState($auction));
+        }
+
         $userCompanies = auth()->check()
             ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray() // ⚠️ ИСПРАВЛЕНО
             : [];
@@ -502,6 +548,177 @@ class AuctionController extends Controller
             'time_remaining' => $timeRemaining,
             'last_updated' => Carbon::now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * #179 Состояние коммерческого аукциона для long-polling (3 критерия).
+     *
+     * @return array<string, mixed>
+     */
+    private function commercialState(Auction $auction): array
+    {
+        $scoring = app(\App\Services\CommercialAuctionScoringService::class);
+
+        $userCompanies = auth()->check()
+            ? auth()->user()->moderatedCompanies()->pluck('companies.id')->toArray()
+            : [];
+
+        $canSeeCompany = auth()->check() && $auction->canManage(auth()->user());
+
+        $mapOffer = function (AuctionBid $offer) use ($auction, $userCompanies, $canSeeCompany) {
+            return [
+                'id' => $offer->id,
+                'anonymous_code' => $offer->anonymous_code,
+                'company_name' => $canSeeCompany ? $offer->company->name : null,
+                'price' => (float) $offer->price,
+                'price_formatted' => number_format((float) $offer->price, 2, '.', ' ').' '.$auction->currency_symbol,
+                'deadline' => (int) $offer->deadline,
+                'advance' => (float) $offer->advance_percent,
+                'total_score' => (float) $offer->total_score,
+                'time' => optional($offer->became_best_at ?? $offer->created_at)->format('H:i:s'),
+                'is_mine' => in_array($offer->company_id, $userCompanies),
+            ];
+        };
+
+        $history = $auction->offerBids()->with('company:id,name')->get()->map($mapOffer)->values();
+
+        $best = $auction->bestBid;
+
+        // #179 Торги закрываются через 20 мин после последнего предложения (как в обычном аукционе).
+        $timeRemaining = null;
+        if ($auction->last_bid_at) {
+            $closingTime = Carbon::parse($auction->last_bid_at)->addMinutes(20);
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds($closingTime, false));
+        }
+
+        return [
+            'status' => 'trading',
+            'auction_status' => $auction->status,
+            'procedure' => 'commercial',
+            'currency_symbol' => $auction->currency_symbol,
+            'nmc' => (float) $auction->starting_price,
+            'weights' => $scoring->weights($auction),
+            'refs' => [
+                'max_deadline' => (int) $auction->max_deadline,
+                'max_advance' => (float) $auction->max_advance,
+            ],
+            'steps' => [
+                'price' => (float) $auction->step_price,
+                'deadline' => (int) $auction->step_deadline,
+                'advance' => (float) $auction->step_advance,
+            ],
+            'best_offer' => $best ? $mapOffer($best->loadMissing('company:id,name')) : null,
+            'best_offer_history' => $history,
+            'offers_count' => $history->count(),
+            'time_remaining' => $timeRemaining,
+            'last_updated' => Carbon::now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * #179 Подача предложения в коммерческом аукционе (этап 2).
+     */
+    public function storeOffer(
+        \App\Http\Requests\StoreCommercialOfferRequest $request,
+        Auction $auction,
+        \App\Services\CommercialAuctionScoringService $scoring
+    ) {
+        if (! $auction->isCommercial() || ! $auction->isTrading()) {
+            return back()->withInput()->with('error', 'Коммерческий аукцион не находится в режиме торгов.');
+        }
+
+        $company = Company::find($request->company_id);
+
+        // Право участия: модератор своей верифицированной компании, не организатор, приглашён.
+        if (! $company || ! $company->isModerator(auth()->user())) {
+            return back()->withInput()->with('error', 'Вы не можете участвовать от имени этой компании.');
+        }
+        if (! $company->is_verified) {
+            return back()->withInput()->with('error', 'Участвовать могут только верифицированные компании.');
+        }
+        if ($company->id === $auction->company_id) {
+            return back()->withInput()->with('error', 'Организатор не может участвовать в собственном аукционе.');
+        }
+        if (! $auction->invitations()->where('company_id', $company->id)->exists()) {
+            return back()->withInput()->with('error', 'Ваша компания не является участником этого аукциона.');
+        }
+
+        $price = (float) $request->price;
+        $deadline = (int) $request->deadline;
+        $advance = (float) $request->advance_percent;
+
+        // Цена не может превышать НМЦ (среднюю цену этапа 1, #202).
+        // Срок и аванс участники задают свободно — референсы нормировки определяет первое предложение.
+        if ($price > (float) $auction->starting_price) {
+            return back()->withInput()->with('error', 'Цена не может превышать начальную максимальную цену.');
+        }
+
+        try {
+            $result = DB::transaction(function () use ($auction, $company, $price, $deadline, $advance, $scoring) {
+                // Блокируем строку аукциона — сериализуем одновременные предложения.
+                $locked = Auction::whereKey($auction->id)->lockForUpdate()->first();
+
+                // #179 Первое предложение этапа 2 фиксирует референсы нормировки срока/аванса.
+                $isFirstOffer = ! $locked->bids()->exists();
+                if ($isFirstOffer) {
+                    $locked->max_deadline = $deadline;
+                    $locked->max_advance = $advance;
+                }
+
+                // Строгое превосходство над текущим лидером (перечитан под локом).
+                if (! $scoring->wouldBeat($locked, $price, $deadline, $advance)) {
+                    $analysis = $scoring->analyze($locked, $price, $deadline, $advance);
+
+                    return ['ok' => false, 'deficit' => $analysis['deficit']];
+                }
+
+                // Код участника: переиспользуем существующий код компании либо генерируем.
+                $prior = $locked->bids()->where('company_id', $company->id)->first();
+                $code = $prior?->anonymous_code ?? Auction::generateAnonymousCode();
+                $isBase = $prior === null;
+
+                $offer = new AuctionBid([
+                    'auction_id' => $locked->id,
+                    'company_id' => $company->id,
+                    'user_id' => auth()->id(),
+                    'price' => $price,
+                    'deadline' => $deadline,
+                    'advance_percent' => $advance,
+                    'anonymous_code' => $code,
+                    'type' => 'offer',
+                    'status' => 'pending',
+                    'is_base' => $isBase,
+                    'became_best_at' => now(),
+                ]);
+                $scoring->fillScores($locked, $offer);
+                $offer->save();
+
+                $locked->update([
+                    'best_bid_id' => $offer->id,
+                    'last_bid_at' => now(),
+                    // Персистим референсы (для первого предложения — только что выставлены).
+                    'max_deadline' => $locked->max_deadline,
+                    'max_advance' => $locked->max_advance,
+                ]);
+
+                return ['ok' => true, 'code' => $code];
+            });
+        } catch (\Throwable $e) {
+            \Log::error('Ошибка подачи коммерческого предложения', [
+                'auction_id' => $auction->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withInput()->with('error', 'Ошибка при подаче предложения: '.$e->getMessage());
+        }
+
+        if (! $result['ok']) {
+            return back()->withInput()->with('error',
+                'Предложение не принято: до лучшего предложения не хватает '.number_format($result['deficit'], 2, '.', ' ').' баллов.');
+        }
+
+        return redirect()->route('auctions.show', $auction)
+            ->with('success', 'Предложение принято! Ваш код участника: '.$result['code']);
     }
 
     /**

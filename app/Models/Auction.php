@@ -25,8 +25,10 @@ class Auction extends Model implements HasMedia
         'title',
         'description',
         'company_id',
+        'rfq_id',
         'created_by',
         'type',
+        'procedure',
         'currency',
         'start_date',
         'end_date',
@@ -34,11 +36,20 @@ class Auction extends Model implements HasMedia
         'trading_end',
         'starting_price',
         'step_percent',
+        'weight_price',
+        'weight_deadline',
+        'weight_advance',
+        'step_price',
+        'step_deadline',
+        'step_advance',
+        'max_deadline',
+        'max_advance',
         'last_bid_at',
         'status',
         'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
+        'best_bid_id',
     ];
 
     protected $casts = [
@@ -50,7 +61,16 @@ class Auction extends Model implements HasMedia
         'last_bid_at' => 'datetime',
         'starting_price' => 'decimal:2',
         'step_percent' => 'decimal:2',
+        'weight_price' => 'decimal:2',
+        'weight_deadline' => 'decimal:2',
+        'weight_advance' => 'decimal:2',
+        'step_price' => 'decimal:2',
+        'step_advance' => 'decimal:2',
     ];
+
+    public const PROCEDURE_STANDARD = 'standard';
+
+    public const PROCEDURE_COMMERCIAL = 'commercial';
 
     public const CURRENCIES = [
         'RUB' => '₽',
@@ -125,6 +145,53 @@ class Auction extends Model implements HasMedia
     public function winnerBid(): BelongsTo
     {
         return $this->belongsTo(AuctionBid::class, 'winner_bid_id');
+    }
+
+    /**
+     * #179 RFQ этапа 1 (для коммерческого аукциона)
+     */
+    public function rfq(): BelongsTo
+    {
+        return $this->belongsTo(Rfq::class, 'rfq_id');
+    }
+
+    /**
+     * #179 Текущее «Лучшее предложение» (принцип непрерывного лидерства)
+     */
+    public function bestBid(): BelongsTo
+    {
+        return $this->belongsTo(AuctionBid::class, 'best_bid_id');
+    }
+
+    /**
+     * #179 Коммерческие предложения этапа 2 (type=offer), новейшие сверху
+     */
+    public function offerBids(): HasMany
+    {
+        return $this->hasMany(AuctionBid::class)
+            ->where('type', 'offer')
+            ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * #179 Базовые (первые) предложения участников этапа 2
+     */
+    public function baseBids(): HasMany
+    {
+        return $this->hasMany(AuctionBid::class)
+            ->where('type', 'offer')
+            ->where('is_base', true);
+    }
+
+    /**
+     * #179 История «Лучших предложений» (лидеров) по возрастанию времени
+     */
+    public function bestOfferHistory(): HasMany
+    {
+        return $this->hasMany(AuctionBid::class)
+            ->where('type', 'offer')
+            ->whereNotNull('became_best_at')
+            ->orderBy('became_best_at', 'asc');
     }
 
     // ========================
@@ -210,6 +277,14 @@ class Auction extends Model implements HasMedia
     }
 
     /**
+     * #179 Это коммерческий аукцион (этап 2 двухэтапной процедуры)
+     */
+    public function isCommercial(): bool
+    {
+        return $this->procedure === self::PROCEDURE_COMMERCIAL;
+    }
+
+    /**
      * Проверка: завершён ли аукцион
      */
     public function isClosed(): bool
@@ -228,15 +303,19 @@ class Auction extends Model implements HasMedia
     }
 
     /**
-     * Рассчитать минимальный и максимальный шаг снижения цены
+     * Рассчитать минимальный и максимальный шаг снижения цены.
+     * #196 Минимальный шаг задаёт организатор (step_percent), потолок снижения — 5% от текущей цены.
      */
     public function getStepRange(): array
     {
         $currentPrice = $this->getCurrentPrice();
 
+        $minPercent = (float) ($this->step_percent ?: 0.5);
+        $maxPercent = max($minPercent, 5.0);
+
         return [
-            'min' => $currentPrice * 0.005, // 0.5%
-            'max' => $currentPrice * 0.05,  // 5%
+            'min' => $currentPrice * $minPercent / 100,
+            'max' => $currentPrice * $maxPercent / 100,
         ];
     }
 

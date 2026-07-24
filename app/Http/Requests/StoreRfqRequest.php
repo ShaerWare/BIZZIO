@@ -27,6 +27,7 @@ class StoreRfqRequest extends FormRequest
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:open,closed',
+            'procedure' => 'nullable|in:standard,commercial',
             'currency' => 'required|in:RUB,USD,CNY',
             'status' => 'required|in:draft,active',
             'start_date' => 'required|date|after_or_equal:today',
@@ -39,6 +40,14 @@ class StoreRfqRequest extends FormRequest
             'invited_companies' => 'nullable|array',
             'invited_companies.*' => 'exists:companies,id',
             'is_results_hidden' => 'nullable|boolean',
+
+            // #179 Параметры этапа 2 (Коммерческий аукцион) — обязательны при procedure=commercial.
+            // trading_end и max_deadline/max_advance убраны: торги закрываются через 20 мин после
+            // последнего предложения, а референсы нормировки берутся из первого предложения этапа 2.
+            'trading_start' => 'nullable|required_if:procedure,commercial|date|after:end_date',
+            'step_price' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
+            'step_deadline' => 'nullable|required_if:procedure,commercial|integer|min:1',
+            'step_advance' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
         ];
     }
 
@@ -109,6 +118,13 @@ class StoreRfqRequest extends FormRequest
             'technical_specification.max' => 'Размер файла не должен превышать 20 МБ',
             'invited_companies.array' => 'Неверный формат списка приглашённых компаний',
             'invited_companies.*.exists' => 'Одна из приглашённых компаний не найдена',
+
+            // #179
+            'trading_start.required_if' => 'Укажите дату начала коммерческого аукциона (этап 2)',
+            'trading_start.after' => 'Начало торгов должно быть позже окончания приёма предложений',
+            'step_price.required_if' => 'Укажите шаг изменения цены (%)',
+            'step_deadline.required_if' => 'Укажите шаг изменения срока (дни)',
+            'step_advance.required_if' => 'Укажите шаг изменения аванса (%)',
         ];
     }
 

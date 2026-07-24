@@ -1,6 +1,8 @@
 @props(['auction'])
 
-<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-md transition-shadow duration-200">
+@php $creatorBadge = optional(optional($auction->creator)->badges)->first(); @endphp
+<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-md transition-shadow duration-200"
+     @if($creatorBadge) style="border: 3px solid {{ $creatorBadge->color }};" @endif>
     <div class="p-6">
         <!-- Статус -->
         @php
@@ -34,9 +36,15 @@
         @endphp
 
         <div class="flex items-center flex-wrap gap-2 mb-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                Аукцион
-            </span>
+            @if($auction->isCommercial())
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Коммерческий аукцион · Этап 2
+                </span>
+            @else
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Аукцион
+                </span>
+            @endif
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
                 {{ $statusLabel }}
             </span>
