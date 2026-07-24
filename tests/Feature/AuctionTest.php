@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\UpdateAuctionStatuses;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
@@ -779,5 +780,25 @@ class AuctionTest extends TestCase
         $this->actingAs($stranger)
             ->post(route('auctions.cancel', $auction), ['cancellation_reason' => 'Хочу'])
             ->assertStatus(403);
+    }
+
+    // #118: протокол формируется при авто-отмене аукциона из-за отсутствия заявок
+
+    public function test_protocol_generated_when_auction_cancelled_without_bids(): void
+    {
+        $auction = $this->createAuction([
+            'status' => 'active',
+            'end_date' => now()->subMinute(),
+            'trading_start' => now()->subMinute(),
+        ]);
+
+        (new UpdateAuctionStatuses)->handle();
+        $auction->refresh();
+
+        $this->assertSame('cancelled', $auction->status);
+        $this->assertTrue(
+            $auction->getMedia('protocol')->isNotEmpty(),
+            'Протокол об отмене должен быть сформирован'
+        );
     }
 }

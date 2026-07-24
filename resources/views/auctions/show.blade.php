@@ -224,6 +224,10 @@
                             <ul class="text-sm text-gray-700 space-y-1">
                                 <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 <li>• Шаг снижения — <strong>0.5% — 5%</strong> от текущей цены</li>
+                                {{-- #188 Количество поданных заявок в карточке процедуры (обычный аукцион) --}}
+                                @unless($auction->isCommercial())
+                                    <li>• Подано заявок — <strong>{{ $auction->initialBids->count() }}</strong></li>
+                                @endunless
                                 @if($auction->isTrading())
                                     <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 @endif

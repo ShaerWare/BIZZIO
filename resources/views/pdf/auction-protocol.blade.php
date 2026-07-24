@@ -92,7 +92,7 @@
         <div class="header-logo">
             <img src="{{ public_path('images/android-chrome-192x192.png') }}" alt="Bizzio" style="height: 40px;">
         </div>
-        <div class="title">ПРОТОКОЛ ПОДВЕДЕНИЯ ИТОГОВ</div>
+        <div class="title">ПРОТОКОЛ ПОДВЕДЕНИЯ ПРЕДВАРИТЕЛЬНЫХ ИТОГОВ</div>
         <div>Аукцион № {{ $auction->number }}</div>
         <div>от {{ now()->format('d.m.Y H:i') }}</div>
     </div>
@@ -121,6 +121,13 @@
             <span class="label">Дата закрытия:</span> {{ $auction->trading_end ? $auction->trading_end->format('d.m.Y H:i') : now()->format('d.m.Y H:i') }}
         </div>
     </div>
+
+    <!-- #118 Уведомление об отмене аукциона -->
+    @if(($cancellationReason ?? null))
+        <div class="info-block" style="margin-top: 15px; padding: 10px; border: 1px solid #dc3545; background-color: #f8d7da; color: #721c24;">
+            <strong>{{ $cancellationReason }}</strong>
+        </div>
+    @endif
 
     <!-- Таблица результатов -->
     <h3>Результаты торгов:</h3>
@@ -152,12 +159,17 @@
         </table>
     @endif
 
+    <!-- #191 Общее количество компаний-участников, сделавших ставки -->
+    <div class="info-row" style="margin-top: 10px;">
+        <span class="label">Общее количество компаний-участников:</span> {{ $bids->pluck('company_id')->unique()->count() }}
+    </div>
+
     <!-- Победитель -->
     @if($winner)
         <div class="info-block" style="margin-top: 20px;">
             <h3>Победитель аукциона:</h3>
             <div class="info-row">
-                <span class="label">Компания:</span> {{ $winner->company->name }}
+                <span class="label">Компания:</span> {{ $winner->company->legalNameWithInn() }}
             </div>
             <div class="info-row">
                 <span class="label">Код участника:</span> {{ $winner->anonymous_code }}
@@ -175,5 +187,12 @@
             <p><strong>Победитель не определён (отсутствуют ставки).</strong></p>
         </div>
     @endif
+
+    <!-- #191 Оговорка об информационном характере результатов -->
+    <div class="info-block" style="margin-top: 25px; font-size: 10pt; color: #333; text-align: justify;">
+        Результаты проведения аукциона являются информационными и не обязывают Заказчика к заключению
+        договора, окончательное решение о выборе поставщика и заключении договора принимается Заказчиком
+        на основе комплексной оценки коммерческих предложений.
+    </div>
 </body>
 </html>
