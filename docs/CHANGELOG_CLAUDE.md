@@ -1898,6 +1898,27 @@ Pint чист. Ассеты пересобраны (`npm run build`) — нов�
 
 ---
 
+## 2026-07-13 — fix: лимит загрузки PDF/документов поднят с 10 МБ до 20 МБ (relates #185)
+
+**Задача:** Пользователи жаловались, что не могут загрузить большие PDF (ТЗ, документы компании). Валидация Laravel резала на 10 МБ, хотя nginx/PHP допускают 100 МБ, а `TempUploadController` уже разрешал 20 МБ. Issue #185 также требует общий лимит 20 МБ и только PDF (остальная часть #185 — отдельные поля документации, сжатие, скачивание архивом, автоудаление — не входит в этот фикс).
+
+**Изменения (лимит `max:10240` → `max:20480`):**
+- `app/Http/Requests/StoreRfqRequest.php`, `UpdateRfqRequest.php` — `technical_specification`
+- `app/Http/Requests/StoreAuctionRequest.php`, `UpdateAuctionRequest.php` — `technical_specification`
+- `app/Http/Requests/StoreCompanyRequest.php`, `UpdateCompanyRequest.php` — `documents.*`
+- `config/media-library.php` — `max_file_size` 10 МБ → 20 МБ (иначе сохранение через Media Library упало бы уже после успешной валидации)
+
+**Тексты сообщений и подсказок «10 МБ» → «20 МБ»:**
+- сообщения валидации в перечисленных Request-классах
+- `app/Orchid/Screens/RfqEditScreen.php`, `CompanyEditScreen.php` (help)
+- `resources/views/auctions/edit.blade.php`, `rfqs/edit.blade.php`
+- `resources/views/companies/edit.blade.php`, `companies/create.blade.php`
+- `resources/views/components/pdf-documents-input.blade.php`, `file-upload.blade.php`
+
+**Примечание:** локально нет PHP и не запущен контейнер `app` — тесты/Pint не прогонялись; изменения затрагивают только числовые лимиты и текст.
+
+---
+
 ## 2026-07-24 — #196 Возвращаем параметр «Шаг аукциона»
 
 **Задача.** Организатор снова задаёт минимальный шаг снижения цены обычного аукциона
