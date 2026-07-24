@@ -67,7 +67,9 @@ class CommercialAuctionLauncherService
                 'step_price' => $rfq->step_price,
                 'step_deadline' => $rfq->step_deadline,
                 'step_advance' => $rfq->step_advance,
-                // max_deadline/max_advance (референсы нормировки) выставляются первым предложением этапа 2.
+                // #210 Референсы нормировки (100% шкалы) задаёт организатор на этапе 1 — переносим в аукцион.
+                'max_deadline' => $rfq->max_deadline,
+                'max_advance' => $rfq->max_advance,
                 'is_results_hidden' => $rfq->is_results_hidden,
                 'status' => 'trading',
             ]);
