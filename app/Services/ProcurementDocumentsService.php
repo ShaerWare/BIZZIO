@@ -45,17 +45,19 @@ class ProcurementDocumentsService
             }
         }
 
-        if ($request->hasFile('other_documents')) {
+        // «Прочие файлы» (несколько): temp-хранилище накапливает полный список (источник истины
+        // при работающем AJAX). Если temp пуст — берём файлы напрямую из запроса (fallback).
+        if (! empty($temp['other_documents'])) {
+            foreach ($temp['other_documents'] as $entry) {
+                $this->attachTempFile($model, $entry, 'other_documents', single: false);
+            }
+        } elseif ($request->hasFile('other_documents')) {
             foreach ($request->file('other_documents') as $file) {
                 $this->compressor->compressInPlace($file->getRealPath());
                 $model->addMedia($file->getRealPath())
                     ->usingFileName($this->pdfFileName($file->getClientOriginalName()))
                     ->toMediaCollection('other_documents');
             }
-        }
-
-        foreach ($temp['other_documents'] ?? [] as $entry) {
-            $this->attachTempFile($model, $entry, 'other_documents', single: false);
         }
 
         // Очищаем temp-хранилище после успешного прикрепления.

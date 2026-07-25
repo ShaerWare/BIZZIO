@@ -44,13 +44,15 @@
             if (!file) return;
             this.errors[collection] = null;
             this.uploading[collection] = true;
+            // #185 Файл НЕ убираем из input — он уйдёт с формой обычным способом (надёжный
+            // путь). Temp-загрузка нужна только для восстановления после ошибки валидации.
             const data = await this.send(file, collection);
             this.uploading[collection] = false;
-            event.target.value = '';
             if (data && data.success) {
                 this[collection] = { id: data.id, name: data.filename, size: data.size };
             } else {
-                this.errors[collection] = (data && data.message) || 'Ошибка загрузки';
+                // Temp не сохранился — оставляем файл в input, он всё равно уйдёт с формой.
+                this.errors[collection] = (data && data.message) || 'Файл будет отправлен вместе с формой';
             }
         },
 
@@ -93,6 +95,8 @@
         async removeSingle(collection) {
             await this.remove(collection, null);
             this[collection] = null;
+            // Очищаем и сам input (файл мог остаться в нём).
+            if (this.$refs[collection + '_input']) this.$refs[collection + '_input'].value = '';
         },
 
         async removeOther(id) {
@@ -133,7 +137,7 @@
             <button type="button" @click="removeSingle('notice')" class="ml-2 text-red-600 hover:text-red-800 text-sm">Удалить</button>
         </div>
 
-        <input type="file" name="notice" id="notice" accept="application/pdf" x-show="!notice"
+        <input type="file" name="notice" id="notice" accept="application/pdf" x-ref="notice_input" x-show="!notice"
                @change="uploadSingle('notice', $event)"
                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 @error('notice') border border-red-500 rounded @enderror">
         <span x-show="uploading.notice" x-cloak class="text-xs text-gray-500">Загрузка…</span>
@@ -158,7 +162,7 @@
             <button type="button" @click="removeSingle('technical_specification')" class="ml-2 text-red-600 hover:text-red-800 text-sm">Удалить</button>
         </div>
 
-        <input type="file" name="technical_specification" id="technical_specification" accept="application/pdf" x-show="!technical_specification"
+        <input type="file" name="technical_specification" id="technical_specification" accept="application/pdf" x-ref="technical_specification_input" x-show="!technical_specification"
                @change="uploadSingle('technical_specification', $event)"
                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 @error('technical_specification') border border-red-500 rounded @enderror">
         <span x-show="uploading.technical_specification" x-cloak class="text-xs text-gray-500">Загрузка…</span>
@@ -181,7 +185,7 @@
             <button type="button" @click="removeSingle('contract_draft')" class="ml-2 text-red-600 hover:text-red-800 text-sm">Удалить</button>
         </div>
 
-        <input type="file" name="contract_draft" id="contract_draft" accept="application/pdf" x-show="!contract_draft"
+        <input type="file" name="contract_draft" id="contract_draft" accept="application/pdf" x-ref="contract_draft_input" x-show="!contract_draft"
                @change="uploadSingle('contract_draft', $event)"
                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 @error('contract_draft') border border-red-500 rounded @enderror">
         <span x-show="uploading.contract_draft" x-cloak class="text-xs text-gray-500">Загрузка…</span>

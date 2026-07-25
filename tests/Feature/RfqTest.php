@@ -343,6 +343,46 @@ class RfqTest extends TestCase
         $this->assertEquals($participantCompany->id, $rfq->invitations->first()->company_id);
     }
 
+    public function test_procurement_temp_upload_preserves_tz_across_submit(): void
+    {
+        // #185 Браузерный сценарий: файл грузится в temp через AJAX, а форма отправляется
+        // БЕЗ файлового поля (браузер очищает input). ТЗ должен приняться из temp-хранилища.
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
+
+        $upload = $this->actingAs($this->user)
+            ->post(route('procurement-temp-upload.store'), [
+                'file' => $pdf,
+                'collection' => 'technical_specification',
+            ]);
+        $upload->assertOk();
+        $upload->assertJson(['success' => true]);
+
+        $rfqData = [
+            'title' => 'RFQ с temp-ТЗ',
+            'description' => 'Описание',
+            'company_id' => $this->company->id,
+            'type' => 'open',
+            'currency' => 'RUB',
+            'start_date' => now()->format('Y-m-d H:i:s'),
+            'end_date' => now()->addDays(7)->format('Y-m-d H:i:s'),
+            'weight_price' => 40,
+            'weight_deadline' => 30,
+            'weight_advance' => 30,
+            'status' => 'draft',
+            // technical_specification НЕ передаётся — только в temp.
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->post(route('rfqs.store'), $rfqData);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $rfq = Rfq::where('title', 'RFQ с temp-ТЗ')->first();
+        $this->assertNotNull($rfq, 'RFQ должен создаться с ТЗ из temp-хранилища');
+        $this->assertTrue($rfq->getMedia('technical_specification')->isNotEmpty(), 'ТЗ должно прикрепиться из temp');
+    }
+
     // ==========================================
     // Подача заявок
     // ==========================================

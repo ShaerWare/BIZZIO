@@ -9,6 +9,7 @@ use App\Models\AuctionInvitation;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -175,6 +176,38 @@ class AuctionTest extends TestCase
             'company_id' => $this->company->id,
             'status' => 'draft',
         ]);
+    }
+
+    public function test_can_create_auction_with_procurement_document_via_direct_upload(): void
+    {
+        // #185 Надёжный путь: файл уходит вместе с формой (без temp/AJAX) — аукцион создаётся.
+        $pdf = UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test content');
+
+        $auctionData = [
+            'title' => 'Аукцион с документом',
+            'description' => 'Описание',
+            'company_id' => $this->company->id,
+            'type' => 'open',
+            'currency' => 'RUB',
+            'start_date' => now()->addDay()->format('Y-m-d H:i:s'),
+            'end_date' => now()->addDays(7)->format('Y-m-d H:i:s'),
+            'trading_start' => now()->addDays(8)->format('Y-m-d H:i:s'),
+            'starting_price' => 1000000,
+            'step_percent' => 2.5,
+            'status' => 'draft',
+            'notification_agreement' => true,
+            'technical_specification' => $pdf,
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->post(route('auctions.store'), $auctionData);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $auction = Auction::where('title', 'Аукцион с документом')->first();
+        $this->assertNotNull($auction);
+        $this->assertTrue($auction->getMedia('technical_specification')->isNotEmpty(), 'ТЗ должно прикрепиться');
     }
 
     public function test_auction_number_is_auto_generated(): void

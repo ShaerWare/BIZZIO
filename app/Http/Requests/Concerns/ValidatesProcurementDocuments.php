@@ -73,7 +73,8 @@ trait ValidatesProcurementDocuments
             }
         }
 
-        if ($this->hasFile('other_documents')) {
+        // Файлы из запроса считаем только если temp по «прочим» пуст (иначе двойной учёт).
+        if ($this->hasFile('other_documents') && ! ProcurementDocuments::hasTemp('other_documents')) {
             foreach ((array) $this->file('other_documents') as $file) {
                 $total += (int) $file->getSize();
             }
