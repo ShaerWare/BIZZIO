@@ -23,7 +23,7 @@ class TenderController extends Controller
 
         // RFQ
         if ($kind !== 'auction') {
-            $rfqQuery = Rfq::with(['company', 'creator.badges', 'bids'])
+            $rfqQuery = Rfq::with(['company', 'creator.badges', 'bids', 'linkedAuction'])
                 ->orderBy('created_at', 'desc');
 
             $this->applyDraftFilter($rfqQuery);
@@ -68,7 +68,7 @@ class TenderController extends Controller
     {
         $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
 
-        $rfqs = Rfq::with(['company', 'bids', 'winnerBid.company'])
+        $rfqs = Rfq::with(['company', 'bids', 'winnerBid.company', 'linkedAuction'])
             ->whereIn('company_id', $userCompanies)
             ->orderBy('created_at', 'desc')
             ->get()

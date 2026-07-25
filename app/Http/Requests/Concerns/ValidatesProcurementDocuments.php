@@ -45,14 +45,30 @@ trait ValidatesProcurementDocuments
     }
 
     /**
+     * #185 Загружен ли документ в коллекцию — в запросе или во временном хранилище
+     * (файл, сохранённый при предыдущей ошибке валидации).
+     */
+    protected function procurementDocumentUploaded(string $collection): bool
+    {
+        if ($collection === 'other_documents') {
+            return $this->hasFile('other_documents') || ProcurementDocuments::hasTemp('other_documents');
+        }
+
+        return $this->hasFile($collection) || ProcurementDocuments::hasTemp($collection);
+    }
+
+    /**
      * Проверка суммарного объёма загружаемой документации (≤ 20 МБ).
+     * Учитывает как файлы из запроса, так и сохранённые во временном хранилище.
      */
     protected function validateProcurementDocumentsTotalSize(Validator $validator): void
     {
-        $total = 0;
+        // #185 Временные файлы (сохранённые при ошибке валидации).
+        $total = ProcurementDocuments::tempTotalSize();
 
         foreach (ProcurementDocuments::SINGLE_COLLECTIONS as $field) {
-            if ($this->hasFile($field)) {
+            // Файл из запроса имеет приоритет над temp — считаем его только если temp по этой коллекции нет.
+            if ($this->hasFile($field) && ! ProcurementDocuments::hasTemp($field)) {
                 $total += (int) $this->file($field)->getSize();
             }
         }

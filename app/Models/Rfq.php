@@ -138,6 +138,19 @@ class Rfq extends Model implements HasMedia
         return $this->procedure === self::PROCEDURE_COMMERCIAL;
     }
 
+    /**
+     * #217 Коммерческий аукцион: этап 1 (запрос цен) уже закрыт, но порождённый
+     * аукцион этапа 2 ещё идёт (приём заявок или торги). В этом случае процедура
+     * НЕ завершена, и статус не должен отображаться как «Завершён».
+     */
+    public function commercialTradingInProgress(): bool
+    {
+        return $this->isCommercial()
+            && $this->status === 'closed'
+            && $this->linkedAuction
+            && in_array($this->linkedAuction->status, ['active', 'trading'], true);
+    }
+
     // ========================
     // МЕТОДЫ
     // ========================

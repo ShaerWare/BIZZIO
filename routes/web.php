@@ -60,6 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/temp-upload', [TempUploadController::class, 'destroy'])->name('temp-upload.destroy');
     Route::get('/temp-upload', [TempUploadController::class, 'index'])->name('temp-upload.index');
 
+    // #185 Временная загрузка конкурсной документации (сохранение при ошибке валидации)
+    Route::post('/procurement-temp-upload', [TempUploadController::class, 'storeProcurement'])->name('procurement-temp-upload.store');
+    Route::delete('/procurement-temp-upload', [TempUploadController::class, 'destroyProcurement'])->name('procurement-temp-upload.destroy');
+
     // Using resource routes for authenticated actions (create, store, edit, update, destroy)
     // 'index' and 'show' are excluded here as they are defined above as public.
     Route::get('companies/create', [CompanyController::class, 'create'])->name('companies.create');

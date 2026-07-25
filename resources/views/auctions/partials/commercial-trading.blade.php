@@ -354,7 +354,13 @@ function commercialAuction(cfg) {
             const sc = this.scores(this.p, this.d, this.a);
             this.total = sc.total;
 
-            const bestScore = this.best ? this.best.total_score : null;
+            // #206 Балл лидера пересчитываем из его критериев на той же точности, что и sc.total.
+            // Если брать округлённое best.total_score (decimal(8,4) с сервера), идентичное
+            // предложение ложно «превосходит» лидера и кнопка «Подать» активна — так проходили
+            // одинаковые предложения подряд.
+            const bestScore = this.best
+                ? this.scores(this.best.price, this.best.deadline, this.best.advance).total
+                : null;
             const target = bestScore !== null ? bestScore + EPS : null;
             this.deficit = target !== null ? Math.max(0, target - sc.total) : 0;
             this.wouldBeat = target === null ? true : sc.total > target;

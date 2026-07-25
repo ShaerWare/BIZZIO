@@ -61,8 +61,8 @@ class StoreRfqRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // #185 Техническое задание обязательно при создании.
-            if (! $this->hasFile('technical_specification')) {
+            // #185 Техническое задание обязательно при создании (учитываем temp-файл).
+            if (! $this->procurementDocumentUploaded('technical_specification')) {
                 $validator->errors()->add('technical_specification', 'Загрузите техническое задание (PDF)');
             }
 

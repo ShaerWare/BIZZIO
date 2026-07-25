@@ -92,12 +92,37 @@ class CommercialAuctionScoringServiceTest extends TestCase
         $this->assertFalse($this->service->wouldBeat($auction, 900_000, 60, 25));
     }
 
+    public function test_identical_offer_rejected_even_if_stored_score_rounded_down(): void
+    {
+        // #206 Регресс: total_score в БД — decimal(8,4). Если сравнивать кандидата
+        // (полная точность) с округлённым total_score лидера, идентичное предложение
+        // ложно «превосходит» и принимается. Балл лидера должен пересчитываться из критериев.
+        $auction = $this->auction();
+
+        // Настоящий балл лидера, посчитанный из его критериев.
+        $trueScore = $this->service->computeScores($auction, 812_345, 63, 27)['total'];
+
+        // Имитируем округление колонки decimal(8,4) вниз (как хранит БД).
+        $rounded = floor($trueScore * 10_000) / 10_000;
+
+        $auction->setRelation('bestBid', $this->bestBid([
+            'price' => 812_345, 'deadline' => 63, 'advance_percent' => 27, 'total_score' => $rounded,
+        ]));
+
+        // Идентичное предложение — строго НЕ лучше, должно быть отклонено.
+        $this->assertFalse($this->service->wouldBeat($auction, 812_345, 63, 27));
+    }
+
     public function test_analyze_price_threshold_makes_offer_beat_leader(): void
     {
         $auction = $this->auction();
+        // Критерии лидера дают total = (30*70 + 50*20 + 60*10)/100 = 37.
+        // #206 Балл лидера пересчитывается из критериев (не из округлённого total_score).
         $auction->setRelation('bestBid', $this->bestBid([
-            'price' => 700_000, 'deadline' => 50, 'advance_percent' => 20, 'total_score' => 39,
+            'price' => 700_000, 'deadline' => 50, 'advance_percent' => 20, 'total_score' => 37,
         ]));
+
+        $leaderScore = $this->service->computeScores($auction, 700_000, 50, 20)['total'];
 
         // Кандидат хуже лидера; проверяем порог по цене (срок/аванс фиксированы).
         $candidate = ['price' => 800_000, 'deadline' => 60, 'advance' => 25];
@@ -112,7 +137,7 @@ class CommercialAuctionScoringServiceTest extends TestCase
                 $auction, $priceCriterion['threshold'], $candidate['deadline'], $candidate['advance']
             )['total'];
 
-            $target = 39 + CommercialAuctionScoringService::EPSILON;
+            $target = $leaderScore + CommercialAuctionScoringService::EPSILON;
             $this->assertEqualsWithDelta($target, $total, 1e-4);
         } else {
             $this->markTestSkipped('Порог по цене недостижим при данных весах — проверяется отдельным кейсом.');

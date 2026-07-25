@@ -136,10 +136,17 @@
                                 'cancelled' => 'Отменён',
                                 'draft' => 'Черновик',
                             ];
+                            $rfqStatusColor = $statusColors[$rfq->status] ?? 'bg-gray-100 text-gray-800';
+                            $rfqStatusLabel = $statusLabels[$rfq->status] ?? $rfq->status;
+                            // #217 Коммерческий аукцион: этап 2 ещё идёт — не показываем «Завершён»
+                            if ($rfq->commercialTradingInProgress()) {
+                                $rfqStatusLabel = 'Идут торги (этап 2)';
+                                $rfqStatusColor = 'bg-emerald-100 text-emerald-800';
+                            }
                         @endphp
                         <div class="flex items-center space-x-2 mb-4">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$rfq->status] }}">
-                                {{ $statusLabels[$rfq->status] }}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $rfqStatusColor }}">
+                                {{ $rfqStatusLabel }}
                             </span>
 
                             {{-- #189 Живой таймер до окончания приёма заявок/предложений (между статусом и типом) --}}
@@ -202,6 +209,18 @@
                             </svg>
                             <span><strong>{{ $endLabel }}:</strong> {{ $rfq->end_date->format('d.m.Y H:i') }} (МСК)</span>
                         </div>
+                        {{-- #217 Этап 1 закрыт, аукцион этапа 2 идёт — ссылка на торги --}}
+                        @if($rfq->commercialTradingInProgress())
+                            <div class="mb-2">
+                                <a href="{{ route('auctions.show', $rfq->linkedAuction) }}"
+                                   class="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-sm font-semibold rounded-md hover:bg-emerald-700 transition">
+                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    Перейти к торгам (этап 2)
+                                </a>
+                            </div>
+                        @endif
                         @if($rfq->isCommercial() && $rfq->trading_start)
                             <div class="flex items-center text-gray-600 mb-2">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
