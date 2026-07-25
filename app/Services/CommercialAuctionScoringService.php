@@ -93,12 +93,26 @@ class CommercialAuctionScoringService
 
     /**
      * Итоговый балл текущего «Лучшего предложения» (или null, если лидера нет).
+     *
+     * #206 Балл ПЕРЕСЧИТЫВАЕТСЯ из критериев лидера на полной точности, а не читается
+     * из колонки total_score (decimal(8,4), округление). Иначе идентичное предложение,
+     * посчитанное на полной точности, ложно «превосходит» округлённого лидера и
+     * принимается — так проходили одинаковые предложения подряд.
      */
     public function bestScore(Auction $auction): ?float
     {
         $best = $auction->bestBid;
 
-        return $best?->total_score !== null ? (float) $best->total_score : null;
+        if (! $best) {
+            return null;
+        }
+
+        return $this->computeScores(
+            $auction,
+            (float) $best->price,
+            (float) $best->deadline,
+            (float) $best->advance_percent,
+        )['total'];
     }
 
     /**
@@ -139,7 +153,8 @@ class CommercialAuctionScoringService
         $scores = $this->computeScores($auction, $price, $deadline, $advance);
 
         $best = $auction->bestBid;
-        $bestScore = $best?->total_score !== null ? (float) $best->total_score : null;
+        // #206 Балл лидера пересчитываем на полной точности (см. bestScore()).
+        $bestScore = $this->bestScore($auction);
 
         // Целевой итог, который нужно превзойти.
         $target = $bestScore !== null ? $bestScore + self::EPSILON : null;

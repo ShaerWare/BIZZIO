@@ -23,7 +23,7 @@ class RfqController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Rfq::with(['company', 'creator.badges', 'bids'])
+        $query = Rfq::with(['company', 'creator.badges', 'bids', 'linkedAuction'])
             ->orderBy('created_at', 'desc');
 
         // Скрываем черновики от посторонних (C3)
@@ -179,6 +179,7 @@ class RfqController extends Controller
             'bids.company',
             'bids.user.badges',
             'invitations.company',
+            'linkedAuction',
         ]);
 
         // Проверка доступа к закрытым RFQ

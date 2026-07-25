@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Support\ProcurementDocuments;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\HasMedia;
 use ZipArchive;
 
@@ -27,6 +28,9 @@ class ProcurementDocumentsService
      */
     public function attachFromRequest(HasMedia $model, Request $request): void
     {
+        // #185 Временно загруженные файлы (сохранённые при ошибке валидации).
+        $temp = ProcurementDocuments::tempFiles();
+
         foreach (ProcurementDocuments::SINGLE_COLLECTIONS as $collection) {
             if ($request->hasFile($collection)) {
                 $file = $request->file($collection);
@@ -35,6 +39,9 @@ class ProcurementDocumentsService
                 $model->addMedia($file->getRealPath())
                     ->usingFileName($this->pdfFileName($file->getClientOriginalName()))
                     ->toMediaCollection($collection);
+            } elseif (! empty($temp[$collection]['path'])) {
+                // Файл из temp-хранилища (не был перезагружен в форме).
+                $this->attachTempFile($model, $temp[$collection], $collection, single: true);
             }
         }
 
@@ -46,6 +53,39 @@ class ProcurementDocumentsService
                     ->toMediaCollection('other_documents');
             }
         }
+
+        foreach ($temp['other_documents'] ?? [] as $entry) {
+            $this->attachTempFile($model, $entry, 'other_documents', single: false);
+        }
+
+        // Очищаем temp-хранилище после успешного прикрепления.
+        ProcurementDocuments::clearTemp();
+    }
+
+    /**
+     * #185 Прикрепить один файл из temp-хранилища к модели (со сжатием PDF).
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function attachTempFile(HasMedia $model, array $entry, string $collection, bool $single): void
+    {
+        $path = $entry['path'] ?? null;
+
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            return;
+        }
+
+        $fullPath = Storage::disk('local')->path($path);
+        $this->compressor->compressInPlace($fullPath);
+
+        if ($single) {
+            $model->clearMediaCollection($collection);
+        }
+
+        $model->addMedia($fullPath)
+            ->preservingOriginal() // temp-файл удаляется отдельно через ProcurementDocuments::clearTemp()
+            ->usingFileName($this->pdfFileName($entry['original_name'] ?? 'document.pdf'))
+            ->toMediaCollection($collection);
     }
 
     /**
