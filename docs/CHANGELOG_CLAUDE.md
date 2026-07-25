@@ -2054,3 +2054,28 @@ meta-описание → «Bizzio.ru — В2В бизнес-сеть: люди,
 баллу (37 вместо ошибочно захардкоженного 39), добавлен регресс-тест
 `test_identical_offer_rejected_even_if_stored_score_rounded_down`. Максимумы срок/аванс уже
 заданы организатором (#210). Тесты зелёные, Pint чист. Vite-ассеты не затрагивались.
+
+---
+
+## 2026-07-25 — Хотфикс #185: не отправлялась форма закупки с документами
+
+**Причина.** В партиале `procurement-documents.blade.php` обработчик выбора файла
+сразу очищал нативный `<input type=file>` (`event.target.value=''`) и полагался только
+на асинхронную temp-загрузку. Если AJAX-загрузка по какой-либо причине не проходила в
+браузере, файл пропадал и из input, и из temp — а для коммерческого аукциона (ТЗ
+обязательно) форму становилось невозможно отправить («не даёт разместить аукцион»).
+
+**Фикс.** Одиночные поля (Извещение/ТЗ/Проект договора) больше НЕ очищают input —
+файл всегда уходит вместе с формой обычным способом (надёжный путь, как в проверенном
+компоненте `x-file-upload`). Temp-загрузка теперь чисто вспомогательная — только для
+восстановления файлов после ошибки валидации. `removeSingle()` чистит input через
+`x-ref`. На сервере `ProcurementDocumentsService`: «Прочие файлы» берутся из temp, а если
+temp пуст — из запроса (без двойного прикрепления); валидация суммарного объёма
+(`ValidatesProcurementDocuments`) не учитывает запрос дважды. Добавлены тесты:
+`AuctionTest::test_can_create_auction_with_procurement_document_via_direct_upload` и
+`RfqTest::test_procurement_temp_upload_preserves_tz_across_submit`.
+
+Файлы: `resources/views/partials/procurement-documents.blade.php`,
+`app/Services/ProcurementDocumentsService.php`,
+`app/Http/Requests/Concerns/ValidatesProcurementDocuments.php`,
+`tests/Feature/AuctionTest.php`, `tests/Feature/RfqTest.php`. Ассеты пересобраны. Pint чист.
