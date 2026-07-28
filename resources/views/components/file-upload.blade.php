@@ -4,7 +4,7 @@
     'accept' => '*',
     'multiple' => false,
     'required' => false,
-    'maxSize' => '10MB',
+    'maxSize' => '20MB',
     'label' => 'Выберите файл',
     'hint' => null,
 ])
