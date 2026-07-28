@@ -220,7 +220,7 @@
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
                                 <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
-                                <li>• Шаг снижения — <strong>0.5% — 5%</strong> от текущей цены</li>
+                                <li>• Шаг снижения — <strong>{{ rtrim(rtrim(number_format($auction->step_percent, 2, '.', ''), '0'), '.') }}% — 5%</strong> от текущей цены</li>
                                 {{-- #188 Количество поданных заявок в карточке процедуры (обычный аукцион) --}}
                                 @unless($auction->isCommercial())
                                     <li>• Подано заявок — <strong>{{ $auction->initialBids->count() }}</strong></li>
@@ -375,7 +375,8 @@
                                         <div>
                                             <p class="text-xs text-gray-500 mb-2">Снижение цены:</p>
                                             <div class="grid grid-cols-3 gap-1">
-                                                @php $percentages = [0.5, 1, 2, 3, 4, 5]; @endphp
+                                                {{-- #196 Кнопки снижения — от организаторского минимального шага до 5% --}}
+                                                @php $stepMin = (float) $auction->step_percent; $percentages = collect([0.5, 1, 2, 3, 4, 5])->push($stepMin)->filter(fn ($p) => $p >= $stepMin && $p <= 5)->unique()->sort()->values()->all(); @endphp
                                                 @foreach($percentages as $pct)
                                                     @php $newPrice = round($currentPrice * (1 - $pct / 100), 2); @endphp
                                                     <button type="button" onclick="setMainBidPrice({{ $newPrice }})"
@@ -519,8 +520,10 @@
                                         <div class="mb-3">
                                             <p class="text-xs text-gray-500 mb-2">Выберите размер снижения:</p>
                                             <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                                {{-- #196 Кнопки снижения — от организаторского минимального шага до 5% --}}
                                                 @php
-                                                    $percentages = [0.5, 1, 2, 3, 4, 5];
+                                                    $stepMin = (float) $auction->step_percent;
+                                                    $percentages = collect([0.5, 1, 2, 3, 4, 5])->push($stepMin)->filter(fn ($p) => $p >= $stepMin && $p <= 5)->unique()->sort()->values()->all();
                                                 @endphp
                                                 @foreach($percentages as $pct)
                                                     @php

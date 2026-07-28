@@ -2119,3 +2119,51 @@ freshness) → merge → авто-деплой на test.bizzio.ru, плюс п�
 - Пароль root нового сервера НЕ записан в git (только временно в скретчпаде сессии).
 - До переключения DNS Caddy на новом сервере не может получить TLS-сертификаты Let's Encrypt (ACME-челлендж ещё уходит на старый IP) — исправится автоматически после смены DNS.
 - Временный ключ доступа new→old удалён из `authorized_keys` старого сервера после переноса.
+
+---
+
+## 2026-07-13 — fix: лимит загрузки PDF/документов поднят с 10 МБ до 20 МБ (relates #185)
+
+**Задача:** Пользователи жаловались, что не могут загрузить большие PDF (ТЗ, документы компании). Валидация Laravel резала на 10 МБ, хотя nginx/PHP допускают 100 МБ, а `TempUploadController` уже разрешал 20 МБ. Issue #185 также требует общий лимит 20 МБ и только PDF (остальная часть #185 — отдельные поля документации, сжатие, скачивание архивом, автоудаление — не входит в этот фикс).
+
+**Изменения (лимит `max:10240` → `max:20480`):**
+- `app/Http/Requests/StoreRfqRequest.php`, `UpdateRfqRequest.php` — `technical_specification`
+- `app/Http/Requests/StoreAuctionRequest.php`, `UpdateAuctionRequest.php` — `technical_specification`
+- `app/Http/Requests/StoreCompanyRequest.php`, `UpdateCompanyRequest.php` — `documents.*`
+- `config/media-library.php` — `max_file_size` 10 МБ → 20 МБ (иначе сохранение через Media Library упало бы уже после успешной валидации)
+
+**Тексты сообщений и подсказок «10 МБ» → «20 МБ»:**
+- сообщения валидации в перечисленных Request-классах
+- `app/Orchid/Screens/RfqEditScreen.php`, `CompanyEditScreen.php` (help)
+- `resources/views/auctions/edit.blade.php`, `rfqs/edit.blade.php`
+- `resources/views/companies/edit.blade.php`, `companies/create.blade.php`
+- `resources/views/components/pdf-documents-input.blade.php`, `file-upload.blade.php`
+
+**Примечание:** локально нет PHP и не запущен контейнер `app` — тесты/Pint не прогонялись; изменения затрагивают только числовые лимиты и текст.
+
+---
+
+## 2026-07-24 — #196 Возвращаем параметр «Шаг аукциона»
+
+**Задача.** Организатор снова задаёт минимальный шаг снижения цены обычного аукциона
+(поле `step_percent`, 0.5%–5%). Раньше при создании жёстко ставилось `2.5` (комментарий A4),
+а диапазон снижения был захардкожен 0.5%–5% независимо от настроек.
+
+**Изменения:**
+- `StoreAuctionRequest` / `UpdateAuctionRequest` — добавлено правило `step_percent`
+  (`required|numeric|min:0.5|max:5`) + сообщения об ошибках.
+- `AuctionController::store()` — `step_percent` берётся из запроса (было фиксированное `2.5`).
+- `Auction::getStepRange()` — минимум = организаторский `step_percent` (fallback 0.5%),
+  максимум = 5% от текущей цены (потолок снижения).
+- `auctions/create.blade.php`, `auctions/edit.blade.php` — новое поле «Шаг аукциона, %»
+  (обязательное, 0.5–5, шаг 0.01); поправлены подписи к начальной цене.
+- `auctions/show.blade.php` — в параметрах аукциона показывается фактический минимальный шаг;
+  кнопки быстрого снижения строятся от организаторского минимума до 5%.
+
+**Файлы:** `app/Http/Controllers/AuctionController.php`, `app/Http/Requests/StoreAuctionRequest.php`,
+`app/Http/Requests/UpdateAuctionRequest.php`, `app/Models/Auction.php`,
+`resources/views/auctions/{create,edit,show}.blade.php`, `tests/Feature/AuctionTest.php`.
+
+**Тесты:** `AuctionTest` — добавлена проверка сохранения организаторского шага при создании,
+`test_step_range_is_calculated_correctly` → `test_step_range_uses_organizer_step_percent`
+(минимум = 2% при `step_percent=2`, максимум = 5%).

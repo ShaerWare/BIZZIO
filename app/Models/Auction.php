@@ -304,15 +304,19 @@ class Auction extends Model implements HasMedia
     }
 
     /**
-     * Рассчитать минимальный и максимальный шаг снижения цены
+     * Рассчитать минимальный и максимальный шаг снижения цены.
+     * #196 Минимальный шаг задаёт организатор (step_percent), потолок снижения — 5% от текущей цены.
      */
     public function getStepRange(): array
     {
         $currentPrice = $this->getCurrentPrice();
 
+        $minPercent = (float) ($this->step_percent ?: 0.5);
+        $maxPercent = max($minPercent, 5.0);
+
         return [
-            'min' => $currentPrice * 0.005, // 0.5%
-            'max' => $currentPrice * 0.05,  // 5%
+            'min' => $currentPrice * $minPercent / 100,
+            'max' => $currentPrice * $maxPercent / 100,
         ];
     }
 
