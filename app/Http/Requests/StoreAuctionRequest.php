@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesProcurementDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreAuctionRequest extends FormRequest
 {
+    use ValidatesProcurementDocuments;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -42,12 +45,22 @@ class StoreAuctionRequest extends FormRequest
             // #196 Организатор задаёт минимальный шаг снижения цены (0.5%–5%).
             'step_percent' => ['required', 'numeric', 'min:0.5', 'max:5'],
             'status' => ['required', Rule::in(['draft', 'active'])],
-            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             'invited_companies' => ['nullable', 'array'],
             'invited_companies.*' => ['exists:companies,id'],
             'notification_agreement' => ['required', 'accepted'],
             'is_results_hidden' => ['nullable', 'boolean'],
-        ];
+            // #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие файлы).
+        ] + $this->procurementDocumentRules();
+    }
+
+    /**
+     * #185 Общий объём конкурсной документации ≤ 20 МБ.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $this->validateProcurementDocumentsTotalSize($validator);
+        });
     }
 
     /**
@@ -71,10 +84,8 @@ class StoreAuctionRequest extends FormRequest
             'step_percent.required' => 'Укажите минимальный шаг снижения цены.',
             'step_percent.min' => 'Шаг аукциона должен быть не менее 0.5%.',
             'step_percent.max' => 'Шаг аукциона должен быть не более 5%.',
-            'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
-            'technical_specification.max' => 'Размер файла не должен превышать 20 МБ.',
             'notification_agreement.accepted' => 'Необходимо подтвердить согласие с условиями.',
-        ];
+        ] + $this->procurementDocumentMessages();
     }
 
     /**

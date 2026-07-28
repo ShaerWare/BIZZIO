@@ -5,7 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Протокол коммерческого аукциона {{ $auction->number }}</title>
     <style>
-        @page { margin: 2cm 2cm 3cm 2cm; }
+        {{-- #211 Поля: левое 2см, остальные (верх/право/низ) 1см --}}
+        @page { margin: 1cm 1cm 1cm 2cm; }
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.4; padding-bottom: 60px; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #28a745; padding-bottom: 10px; }
         .header-logo img { height: 40px; }
@@ -35,8 +36,8 @@
         <div class="header-logo">
             <img src="{{ public_path('images/android-chrome-192x192.png') }}" alt="Bizzio" style="height: 40px;">
         </div>
-        <div class="title">ПРОТОКОЛ КОММЕРЧЕСКОГО АУКЦИОНА</div>
-        <div>Аукцион № {{ $auction->number }}</div>
+        <div class="title">ПРОТОКОЛ ПОДВЕДЕНИЯ ПРЕДВАРИТЕЛЬНЫХ ИТОГОВ</div>
+        <div>Коммерческий аукцион № {{ $auction->number }}</div>
         <div>от {{ now()->format('d.m.Y H:i') }}</div>
     </div>
 
@@ -56,12 +57,15 @@
             {{ $auction->trading_end ? $auction->trading_end->format('d.m.Y H:i') : now()->format('d.m.Y H:i') }}</div>
     </div>
 
+    {{-- #191 Общее количество компаний-участников, сделавших предложения --}}
+    <div class="info-row" style="margin-bottom: 12px;">
+        <span class="label">Общее количество компаний-участников:</span> {{ $history->pluck('company_id')->unique()->count() }}
+    </div>
+
     @if($winner)
         <div class="info-block">
             <h3>Победитель:</h3>
-            <div class="info-row"><span class="label">Компания:</span> {{ $winner->company->name }}
-                @if($winner->company->inn) (ИНН {{ $winner->company->inn }}) @endif
-            </div>
+            <div class="info-row"><span class="label">Компания:</span> {{ $winner->company->legalNameWithInn() }}</div>
             <div class="info-row"><span class="label">Код участника:</span> {{ $winner->anonymous_code }}</div>
             <div class="info-row"><span class="label">Итоговая цена:</span>
                 <span class="num">{{ number_format($winner->price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</span></div>
@@ -106,5 +110,12 @@
             </tbody>
         </table>
     @endif
+
+    {{-- #191 Оговорка об информационном характере результатов --}}
+    <div class="info-block" style="margin-top: 25px; font-size: 9pt; color: #333; text-align: justify;">
+        Результаты проведения коммерческого аукциона являются информационными и не обязывают Заказчика
+        к заключению договора, окончательное решение о выборе поставщика и заключении договора принимается
+        Заказчиком на основе комплексной оценки коммерческих предложений.
+    </div>
 </body>
 </html>

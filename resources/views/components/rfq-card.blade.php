@@ -52,6 +52,12 @@
                     $statusColor = $statusColors[$rfq->status] ?? 'bg-gray-100 text-gray-800';
                     $statusLabel = $statusLabels[$rfq->status] ?? $rfq->status;
                 }
+
+                // #217 Коммерческий аукцион: этап 2 ещё идёт — не показываем «Завершён»
+                if ($rfq->commercialTradingInProgress()) {
+                    $statusLabel = 'Идут торги (этап 2)';
+                    $statusColor = 'bg-emerald-100 text-emerald-800';
+                }
             @endphp
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
                 {{ $statusLabel }}

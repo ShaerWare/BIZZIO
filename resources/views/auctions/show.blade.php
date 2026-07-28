@@ -141,21 +141,18 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $displayColor }}">
                                 {{ $displayLabel }}
                             </span>
+                            {{-- #189 Живой таймер до окончания приёма заявок — между статусом и типом процедуры --}}
+                            @if($auction->status === 'active' && $auction->end_date->isFuture() && ! $auction->start_date->isFuture())
+                                @include('partials.countdown', ['target' => $auction->end_date, 'label' => 'До окончания приёма заявок'])
+                            @endif
+
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $auction->type === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800' }}">
                                 {{ $auction->type === 'open' ? 'Открытая процедура' : 'Закрытая процедура' }}
                             </span>
-                            
-                            <!-- Дополнительная информация о времени -->
-                            @if($auction->status === 'active')
-                                @if($auction->start_date->isFuture())
-                                    <span class="text-xs text-gray-500">
-                                        Начало через {{ $auction->start_date->diffForHumans() }}
-                                    </span>
-                                @elseif($auction->end_date->isFuture())
-                                    <span class="text-xs text-gray-500">
-                                        Завершится {{ $auction->end_date->diffForHumans() }}
-                                    </span>
-                                @endif
+
+                            {{-- #189 До старта приёма заявок (если ещё не начался) --}}
+                            @if($auction->status === 'active' && $auction->start_date->isFuture())
+                                @include('partials.countdown', ['target' => $auction->start_date, 'label' => 'До начала приёма заявок', 'color' => 'bg-blue-100 text-blue-800'])
                             @endif
                             
                             @if($auction->status === 'trading' && $auction->last_bid_at)
@@ -224,23 +221,18 @@
                             <ul class="text-sm text-gray-700 space-y-1">
                                 <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 <li>• Шаг снижения — <strong>{{ rtrim(rtrim(number_format($auction->step_percent, 2, '.', ''), '0'), '.') }}% — 5%</strong> от текущей цены</li>
+                                {{-- #188 Количество поданных заявок в карточке процедуры (обычный аукцион) --}}
+                                @unless($auction->isCommercial())
+                                    <li>• Подано заявок — <strong>{{ $auction->initialBids->count() }}</strong></li>
+                                @endunless
                                 @if($auction->isTrading())
                                     <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
                                 @endif
                             </ul>
                         </div>
 
-                        <!-- Техническое задание -->
-                        @if($auction->hasMedia('technical_specification'))
-                            <a href="{{ $auction->getFirstMediaUrl('technical_specification') }}" 
-                               target="_blank"
-                               class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition mb-4">
-                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                </svg>
-                                Скачать ТЗ (PDF)
-                            </a>
-                        @endif
+                        {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
+                        @include('partials.procurement-documents-list', ['model' => $auction])
 
                         <!-- Протокол (если завершён) — A16: доступ только организатору и участникам -->
                         @if($auction->status === 'closed' && $canSeeResults)
@@ -295,6 +287,11 @@
                                 </a>
                             @endif
                         @endauth
+
+                        {{-- #193 Приглашение сторонней (незарегистрированной) компании — готовый текст (только организатору) --}}
+                        @if(auth()->check() && $auction->canManage(auth()->user()))
+                            @include('partials.share-invite', ['model' => $auction])
+                        @endif
 
                         <!-- Служба поддержки -->
                         <div class="bg-gray-50 rounded-lg p-4">

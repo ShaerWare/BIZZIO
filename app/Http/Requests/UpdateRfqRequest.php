@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesProcurementDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRfqRequest extends FormRequest
 {
+    use ValidatesProcurementDocuments;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -23,14 +26,13 @@ class UpdateRfqRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
             'end_date' => ['sometimes', 'required', 'date', 'after:'.$this->route('rfq')->start_date],
-            'technical_specification' => 'nullable|file|mimes:pdf|max:20480',
-            'technical_specification_temp' => 'nullable|string',
             'is_results_hidden' => 'nullable|boolean',
-        ];
+            // #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие файлы).
+        ], $this->procurementDocumentRules());
     }
 
     /**
@@ -43,11 +45,19 @@ class UpdateRfqRequest extends FormRequest
         ]);
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            // #185 Общий объём конкурсной документации ≤ 20 МБ.
+            $this->validateProcurementDocumentsTotalSize($validator);
+        });
+    }
+
     public function messages(): array
     {
-        return [
+        return array_merge([
             'title.required' => 'Укажите название запроса цен',
             'end_date.after' => 'Дата окончания должна быть позже даты начала',
-        ];
+        ], $this->procurementDocumentMessages());
     }
 }

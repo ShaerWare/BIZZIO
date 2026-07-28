@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ProcurementDocuments;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 /**
  * F3: Временная загрузка файлов для сохранения при ошибке валидации
@@ -86,6 +88,104 @@ class TempUploadController extends Controller
         }
 
         return response()->json($result);
+    }
+
+    /**
+     * #185 Временная загрузка файла конкурсной документации (PDF).
+     * Сохраняет файл при ошибке валидации формы создания/редактирования процедуры.
+     */
+    public function storeProcurement(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf', 'max:20480'], // ≤ 20 МБ, только PDF
+            'collection' => ['required', 'string', Rule::in(array_keys(ProcurementDocuments::COLLECTIONS))],
+        ], [
+            'file.mimes' => 'Только формат PDF.',
+            'file.max' => 'Файл не должен превышать 20 МБ.',
+        ]);
+
+        $file = $request->file('file');
+        $collection = $request->input('collection');
+
+        $temp = ProcurementDocuments::tempFiles();
+
+        // Проверка суммарного объёма (≤ 20 МБ) с учётом уже загруженных temp-файлов.
+        if (ProcurementDocuments::tempTotalSize() + $file->getSize() > ProcurementDocuments::MAX_TOTAL_BYTES) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Общий объём конкурсной документации не должен превышать 20 МБ.',
+            ], 422);
+        }
+
+        $filename = Str::uuid().'.pdf';
+        $path = $file->storeAs(ProcurementDocuments::TEMP_DIR, $filename, 'local');
+
+        $meta = [
+            'id' => (string) Str::uuid(),
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+        ];
+
+        if ($collection === 'other_documents') {
+            $list = $temp['other_documents'] ?? [];
+            $list[] = $meta;
+            $temp['other_documents'] = $list;
+        } else {
+            // Одиночная коллекция — заменяем, старый temp-файл удаляем.
+            if (! empty($temp[$collection]['path'])) {
+                Storage::disk('local')->delete($temp[$collection]['path']);
+            }
+            $temp[$collection] = $meta;
+        }
+
+        session([ProcurementDocuments::TEMP_SESSION_KEY => $temp]);
+
+        return response()->json([
+            'success' => true,
+            'id' => $meta['id'],
+            'filename' => $meta['original_name'],
+            'size' => $this->formatBytes($meta['size']),
+            'collection' => $collection,
+        ]);
+    }
+
+    /**
+     * #185 Удаление временного файла конкурсной документации.
+     */
+    public function destroyProcurement(Request $request)
+    {
+        $collection = $request->input('collection');
+        $id = $request->input('id');
+
+        $temp = ProcurementDocuments::tempFiles();
+
+        if (! isset($temp[$collection])) {
+            return response()->json(['success' => true]);
+        }
+
+        if ($collection === 'other_documents') {
+            $list = $temp['other_documents'] ?? [];
+            foreach ($list as $i => $file) {
+                if (($file['id'] ?? null) === $id) {
+                    Storage::disk('local')->delete($file['path']);
+                    unset($list[$i]);
+                }
+            }
+            $temp['other_documents'] = array_values($list);
+            if (empty($temp['other_documents'])) {
+                unset($temp['other_documents']);
+            }
+        } else {
+            if (! empty($temp[$collection]['path'])) {
+                Storage::disk('local')->delete($temp[$collection]['path']);
+            }
+            unset($temp[$collection]);
+        }
+
+        session([ProcurementDocuments::TEMP_SESSION_KEY => $temp]);
+
+        return response()->json(['success' => true]);
     }
 
     /**

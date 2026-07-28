@@ -66,6 +66,9 @@ class CommercialAuctionTest extends TestCase
             'step_price' => 0.5,
             'step_deadline' => 1,
             'step_advance' => 5,
+            // #210 Организатор задаёт максимумы срока/аванса (референсы нормировки этапа 2).
+            'max_deadline' => 90,
+            'max_advance' => 100,
             'technical_specification' => UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test'),
         ], $overrides);
     }
@@ -83,10 +86,10 @@ class CommercialAuctionTest extends TestCase
         $this->assertSame(1, (int) $rfq->step_deadline);
         $this->assertEqualsWithDelta(0.5, (float) $rfq->step_price, 1e-9);
         $this->assertNotNull($rfq->trading_start);
-        // #179 max_deadline/max_advance больше не задаются организатором (референс — из 1-го предложения),
+        // #210 max_deadline/max_advance задаёт организатор — референсы нормировки (100% шкалы) этапа 2.
+        $this->assertSame(90, (int) $rfq->max_deadline);
+        $this->assertEqualsWithDelta(100.0, (float) $rfq->max_advance, 1e-9);
         // trading_end не задаётся (торги закрываются через 20 мин после последнего предложения).
-        $this->assertNull($rfq->max_deadline);
-        $this->assertNull($rfq->max_advance);
         $this->assertNull($rfq->trading_end);
     }
 
@@ -95,11 +98,13 @@ class CommercialAuctionTest extends TestCase
         $payload = $this->commercialRfqPayload([
             'trading_start' => null,
             'step_price' => null,
+            'max_deadline' => null,
+            'max_advance' => null,
         ]);
 
         $this->actingAs($this->user)
             ->post(route('rfqs.store'), $payload)
-            ->assertSessionHasErrors(['trading_start', 'step_price']);
+            ->assertSessionHasErrors(['trading_start', 'step_price', 'max_deadline', 'max_advance']);
 
         $this->assertDatabasemissing('rfqs', ['title' => 'Коммерческий аукцион на поставку']);
     }
@@ -255,10 +260,10 @@ class CommercialAuctionTest extends TestCase
         $this->assertSame('trading', $auction->status);
         // #202 НМЦ = средняя цена этапа 1: (900k + 1.2M + 1M) / 3 = 1 033 333.33.
         $this->assertEqualsWithDelta(1_033_333.33, (float) $auction->starting_price, 0.01);
-        // Перенос весов/шагов. Референсы (max_deadline/max_advance) НЕ переносятся —
-        // они выставляются первым предложением этапа 2.
+        // Перенос весов/шагов/референсов. #210 max_deadline/max_advance переносятся из RFQ (задал организатор).
         $this->assertEqualsWithDelta(70, (float) $auction->weight_price, 1e-6);
-        $this->assertNull($auction->max_deadline);
+        $this->assertSame(100, (int) $auction->max_deadline);
+        $this->assertEqualsWithDelta(50.0, (float) $auction->max_advance, 1e-9);
         $this->assertSame(1, (int) $auction->step_deadline);
         // Приглашены все 3 участника.
         $this->assertSame(3, $auction->invitations()->count());
@@ -397,20 +402,40 @@ class CommercialAuctionTest extends TestCase
         $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->count());
     }
 
-    public function test_first_offer_sets_normalization_reference(): void
+    public function test_organizer_references_are_fixed_and_not_changed_by_offers(): void
     {
-        // #179 Референсы срока/аванса определяет первое предложение этапа 2 (не организатор).
-        $auction = $this->tradingCommercialAuction(['max_deadline' => null, 'max_advance' => null]);
+        // #210 Референсы нормировки (max срок/аванс) заданы организатором и НЕ меняются предложениями.
+        $auction = $this->tradingCommercialAuction(['max_deadline' => 100, 'max_advance' => 50]);
         [$user, $company] = $this->participant($auction);
 
         $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
-            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 150, 'advance_percent' => 40,
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 60, 'advance_percent' => 30,
         ])->assertRedirect();
 
         $auction->refresh();
-        $this->assertSame(150, (int) $auction->max_deadline);
-        $this->assertEqualsWithDelta(40.0, (float) $auction->max_advance, 1e-9);
+        // Референсы остались организаторскими (не подменились значениями первого предложения).
+        $this->assertSame(100, (int) $auction->max_deadline);
+        $this->assertEqualsWithDelta(50.0, (float) $auction->max_advance, 1e-9);
         $this->assertSame(1, AuctionBid::where('auction_id', $auction->id)->count());
+    }
+
+    public function test_offer_exceeding_organizer_max_is_rejected(): void
+    {
+        // #210 Срок/аванс не могут превышать организаторские максимумы.
+        $auction = $this->tradingCommercialAuction(['max_deadline' => 100, 'max_advance' => 50]);
+        [$user, $company] = $this->participant($auction);
+
+        // Срок превышает максимум (120 > 100) — отклоняется.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 120, 'advance_percent' => 30,
+        ])->assertSessionHas('error');
+
+        // Аванс превышает максимум (60 > 50) — отклоняется.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 60, 'advance_percent' => 60,
+        ])->assertSessionHas('error');
+
+        $this->assertSame(0, AuctionBid::where('auction_id', $auction->id)->count());
     }
 
     public function test_commercial_show_page_renders_offer_block(): void
@@ -442,8 +467,8 @@ class CommercialAuctionTest extends TestCase
             ->assertJsonPath('procedure', 'commercial')
             ->assertJsonPath('best_offer.price', 900000)
             ->assertJsonPath('weights.p', 70)
-            // #179 Референс выставлен первым предложением (deadline=50), а не организатором.
-            ->assertJsonPath('refs.max_deadline', 50);
+            // #210 Референс задан организатором (max_deadline=100 из хелпера), не первым предложением.
+            ->assertJsonPath('refs.max_deadline', 100);
     }
 
     /**

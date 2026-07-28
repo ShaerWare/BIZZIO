@@ -15,6 +15,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // #184 Версия приложения (из env APP_VERSION или файла VERSION в корне репозитория).
+    'version' => env('APP_VERSION') ?: (is_file(base_path('VERSION')) ? trim((string) file_get_contents(base_path('VERSION'))) : 'dev'),
+
     'admin_email' => env('ADMIN_NOTIFICATION_EMAIL', 'admin@bizzio.ru'),
 
     /*

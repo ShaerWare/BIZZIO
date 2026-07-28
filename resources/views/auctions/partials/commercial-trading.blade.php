@@ -21,9 +21,15 @@
      x-init="init()">
     <div class="p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-1">Коммерческий аукцион — торги</h3>
-        <p class="text-sm text-gray-500 mb-4">
+        <p class="text-sm text-gray-500 mb-2">
             НМЦ: {{ number_format((float) $auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }} ·
             Веса: цена {{ (float) $auction->weight_price }}% / срок {{ (float) $auction->weight_deadline }}% / аванс {{ (float) $auction->weight_advance }}%
+        </p>
+        {{-- #198 Количество компаний-участников, сделавших ставку --}}
+        <p class="text-sm mb-4">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium">
+                Участников (сделали ставку): <span class="font-semibold" x-text="participants"></span>
+            </span>
         </p>
 
         <div class="flex flex-col lg:flex-row gap-6">
@@ -68,51 +74,64 @@
                             <input type="hidden" name="company_id" value="{{ $myCompanies->first()->id }}">
                         @endif
 
-                        {{-- Цена (#207: крупные шаги −/+ со стабильной шириной, разряды под полем) --}}
+                        {{-- Цена (#207: крупные кнопки −/+ со стабильной шириной + разделитель разрядов в поле) --}}
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваша цена ({{ $auction->currency_symbol }})</label>
                                 <span class="text-xs" :class="criteria.price.is_best ? 'text-emerald-600' : 'text-gray-400'"
                                       x-text="hintText('price')"></span>
                             </div>
+                            {{-- Реальное числовое значение цены уходит на сервер скрытым полем; видимое поле — форматированное. --}}
+                            <input type="hidden" name="price" :value="p">
                             <div class="flex items-stretch gap-2">
                                 <button type="button" @click="stepPrice(-1)" aria-label="Уменьшить цену"
-                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-2xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
-                                <input type="number" name="price" x-model.number="p" @input="recalc()" min="1" :max="nmc" :step="priceStep"
-                                       class="ca-no-spin flex-1 w-full text-center text-lg rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                        class="flex-none w-12 h-12 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
+                                <input type="text" inputmode="decimal" x-model="priceStr" @input="onPriceInput()" @blur="formatPriceStr()"
+                                       class="flex-1 w-full text-center text-lg rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <button type="button" @click="stepPrice(1)" aria-label="Увеличить цену"
-                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-2xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
+                                        class="flex-none w-12 h-12 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
                             </div>
-                            <input type="range" x-model.number="p" @input="recalc()" min="1" :max="nmc" :step="priceStep" class="w-full mt-2">
-                            <p class="text-xs text-gray-500 mt-1">
-                                <span class="font-semibold text-gray-700" x-text="fmt(p)"></span> {{ $auction->currency_symbol }}
-                                · допустимо до <span x-text="fmt(nmc)"></span>
-                            </p>
+                            <input type="range" x-model.number="p" @input="syncPriceStr()" min="1" :max="nmc" :step="priceStep" class="w-full mt-2">
+                            <p class="text-xs text-gray-500 mt-1">допустимо до <span x-text="fmt(nmc)"></span> {{ $auction->currency_symbol }}</p>
                         </div>
 
-                        {{-- Срок --}}
+                        {{-- Срок (#207: крупные кнопки −/+ как у цены) --}}
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваш срок (дни)</label>
                                 <span class="text-xs" :class="criteria.deadline.is_best ? 'text-emerald-600' : 'text-gray-400'"
                                       x-text="hintText('deadline')"></span>
                             </div>
-                            <input type="number" name="deadline" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d"
-                                   class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d" class="w-full mt-1">
+                            <input type="hidden" name="deadline" :value="d">
+                            <div class="flex items-stretch gap-2">
+                                <button type="button" @click="stepDeadline(-1)" aria-label="Уменьшить срок"
+                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
+                                <input type="number" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d"
+                                       class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <button type="button" @click="stepDeadline(1)" aria-label="Увеличить срок"
+                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
+                            </div>
+                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 1…<span x-text="maxDeadline"></span> дн.</p>
                         </div>
 
-                        {{-- Аванс --}}
+                        {{-- Аванс (#207: крупные кнопки −/+ как у цены) --}}
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваш аванс (%)</label>
                                 <span class="text-xs" :class="criteria.advance.is_best ? 'text-emerald-600' : 'text-gray-400'"
                                       x-text="hintText('advance')"></span>
                             </div>
-                            <input type="number" name="advance_percent" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a"
-                                   class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a" class="w-full mt-1">
+                            <input type="hidden" name="advance_percent" :value="a">
+                            <div class="flex items-stretch gap-2">
+                                <button type="button" @click="stepAdvance(-1)" aria-label="Уменьшить аванс"
+                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
+                                <input type="number" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a"
+                                       class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <button type="button" @click="stepAdvance(1)" aria-label="Увеличить аванс"
+                                        class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
+                            </div>
+                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="maxAdvance"></span>%</p>
                         </div>
 
@@ -202,14 +221,18 @@ function commercialAuction(cfg) {
         steps: cfg.steps,
         canOffer: cfg.canOffer,
 
-        // Ввод участника. До первого предложения этапа 2 референсов ещё нет —
-        // используем разумные значения по умолчанию, чтобы форма была валидной.
+        // #210 Референсы нормировки (max срок/аванс) заданы организатором на этапе 1 и не меняются
+        // в ходе торгов. Стартовая позиция участника = максимумы (худший балл) → улучшает вниз.
         p: cfg.nmc,
-        d: cfg.refs.d > 0 ? cfg.refs.d : 30,
-        a: cfg.refs.a > 0 ? cfg.refs.a : 10,
+        d: cfg.refs.d,
+        a: cfg.refs.a,
+
+        // #207 Строковое представление цены с разделителем разрядов (реальное число — в this.p).
+        priceStr: '',
 
         best: null,
         history: [],
+        participants: 0, // #198 количество компаний-участников, сделавших ставку
 
         // Результаты анализа
         total: 0,
@@ -224,11 +247,12 @@ function commercialAuction(cfg) {
             return Math.max(0.01, +(this.nmc * this.steps.p / 100).toFixed(2));
         },
 
-        // Верхние границы полей. До первого предложения референсов нет — даём свободный ввод.
-        get maxDeadline() { return this.refs.d > 0 ? this.refs.d : 730; },
-        get maxAdvance() { return this.refs.a > 0 ? this.refs.a : 100; },
+        // #210 Верхние границы полей — организаторские максимумы (100% шкалы критерия).
+        get maxDeadline() { return this.refs.d; },
+        get maxAdvance() { return this.refs.a; },
 
         init() {
+            this.formatPriceStr();
             this.fetchState();
             this.recalc();
             this.polling = setInterval(() => this.fetchState(), 5000);
@@ -245,18 +269,12 @@ function commercialAuction(cfg) {
                 }
                 const s = await res.json();
                 if (s.status !== 'trading') { location.reload(); return; }
-                // #179 Референсы нормировки выставляются первым предложением — подхватываем из состояния.
-                if (s.refs) {
-                    this.refs = {
-                        d: s.refs.max_deadline > 0 ? s.refs.max_deadline : this.refs.d,
-                        a: s.refs.max_advance > 0 ? s.refs.max_advance : this.refs.a,
-                    };
-                }
                 // #206 Поля отталкиваются от текущего лучшего предложения: при смене лидера
                 // пересеиваем значения полей его цифрами, чтобы участник улучшал от текущего лучшего.
                 const prevBestId = this.best ? this.best.id : null;
                 this.best = s.best_offer;
                 this.history = s.best_offer_history || [];
+                this.participants = s.participants_count ?? this.participants; // #198
                 const newBestId = this.best ? this.best.id : null;
                 if (newBestId !== prevBestId) {
                     this.seedFromBest();
@@ -266,7 +284,7 @@ function commercialAuction(cfg) {
             } catch (e) { /* временная сетевая ошибка — повторим на следующем тике */ }
         },
 
-        // #206 Значения полей = текущее лучшее предложение (или НМЦ/дефолты, если предложений нет).
+        // #206 Значения полей = текущее лучшее предложение (или НМЦ/организаторские максимумы, если предложений нет).
         seedFromBest() {
             if (this.best) {
                 this.p = this.best.price;
@@ -274,9 +292,10 @@ function commercialAuction(cfg) {
                 this.a = this.best.advance;
             } else {
                 this.p = this.nmc;
-                this.d = this.refs.d > 0 ? this.refs.d : 30;
-                this.a = this.refs.a > 0 ? this.refs.a : 10;
+                this.d = this.refs.d;
+                this.a = this.refs.a;
             }
+            this.formatPriceStr();
             this.recalc();
         },
 
@@ -284,6 +303,37 @@ function commercialAuction(cfg) {
         stepPrice(dir) {
             const v = (Number(this.p) || 0) + dir * this.priceStep;
             this.p = Math.min(this.nmc, Math.max(1, +v.toFixed(2)));
+            this.formatPriceStr();
+            this.recalc();
+        },
+
+        // #207 Шаги срока/аванса крупными кнопками −/+ (как у цены).
+        stepDeadline(dir) {
+            const v = (Number(this.d) || 0) + dir * (this.steps.d || 1);
+            this.d = Math.min(this.maxDeadline, Math.max(1, Math.round(v)));
+            this.recalc();
+        },
+        stepAdvance(dir) {
+            const v = (Number(this.a) || 0) + dir * (this.steps.a || 1);
+            this.a = Math.min(this.maxAdvance, Math.max(0, +v.toFixed(2)));
+            this.recalc();
+        },
+
+        // #207 Разделитель разрядов в поле цены.
+        // Во время ввода строку не трогаем (курсор стабилен) — только парсим в число.
+        onPriceInput() {
+            const parsed = parseFloat(String(this.priceStr).replace(/\s/g, '').replace(',', '.'));
+            this.p = isNaN(parsed) ? 0 : parsed;
+            this.recalc();
+        },
+        // Форматируем строку цены (разряды через пробел). Вызывается на blur, seed и шагах кнопок.
+        formatPriceStr() {
+            const n = Number(this.p) || 0;
+            this.priceStr = n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        },
+        // Слайдер меняет число напрямую — синхронизируем видимую строку.
+        syncPriceStr() {
+            this.formatPriceStr();
             this.recalc();
         },
 
@@ -304,7 +354,13 @@ function commercialAuction(cfg) {
             const sc = this.scores(this.p, this.d, this.a);
             this.total = sc.total;
 
-            const bestScore = this.best ? this.best.total_score : null;
+            // #206 Балл лидера пересчитываем из его критериев на той же точности, что и sc.total.
+            // Если брать округлённое best.total_score (decimal(8,4) с сервера), идентичное
+            // предложение ложно «превосходит» лидера и кнопка «Подать» активна — так проходили
+            // одинаковые предложения подряд.
+            const bestScore = this.best
+                ? this.scores(this.best.price, this.best.deadline, this.best.advance).total
+                : null;
             const target = bestScore !== null ? bestScore + EPS : null;
             this.deficit = target !== null ? Math.max(0, target - sc.total) : 0;
             this.wouldBeat = target === null ? true : sc.total > target;

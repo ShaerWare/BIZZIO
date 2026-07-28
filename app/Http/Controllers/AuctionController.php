@@ -99,8 +99,8 @@ class AuctionController extends Controller
                 'is_results_hidden' => $request->boolean('is_results_hidden'),
             ]);
 
-            // F3: Загрузка технического задания с поддержкой temp-файлов
-            $this->addFileToModel($auction, $request, 'technical_specification', 'technical_specification');
+            // #185 Загрузка конкурсной документации (Извещение / ТЗ / Проект договора / Прочие) со сжатием.
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($auction, $request);
 
             if ($request->type === 'closed' && $request->filled('invited_companies')) {
                 foreach ($request->invited_companies as $companyId) {
@@ -240,11 +240,8 @@ class AuctionController extends Controller
         try {
             $auction->update($request->validated());
 
-            if ($request->hasFile('technical_specification')) {
-                $auction->clearMediaCollection('technical_specification');
-                $auction->addMedia($request->file('technical_specification'))
-                    ->toMediaCollection('technical_specification');
-            }
+            // #185 Обновление конкурсной документации (загруженные файлы заменяют/дополняют коллекции).
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($auction, $request);
 
             DB::commit();
 
@@ -591,6 +588,9 @@ class AuctionController extends Controller
             $timeRemaining = max(0, Carbon::now()->diffInSeconds($closingTime, false));
         }
 
+        // #198 Количество компаний-участников, сделавших ставку (уникальные компании среди предложений).
+        $participantsCount = $auction->offerBids()->pluck('company_id')->unique()->count();
+
         return [
             'status' => 'trading',
             'auction_status' => $auction->status,
@@ -610,6 +610,7 @@ class AuctionController extends Controller
             'best_offer' => $best ? $mapOffer($best->loadMissing('company:id,name')) : null,
             'best_offer_history' => $history,
             'offers_count' => $history->count(),
+            'participants_count' => $participantsCount,
             'time_remaining' => $timeRemaining,
             'last_updated' => Carbon::now()->toIso8601String(),
         ];
@@ -648,9 +649,16 @@ class AuctionController extends Controller
         $advance = (float) $request->advance_percent;
 
         // Цена не может превышать НМЦ (среднюю цену этапа 1, #202).
-        // Срок и аванс участники задают свободно — референсы нормировки определяет первое предложение.
         if ($price > (float) $auction->starting_price) {
             return back()->withInput()->with('error', 'Цена не может превышать начальную максимальную цену.');
+        }
+
+        // #210 Срок и аванс не могут превышать заданные организатором максимумы (референсы нормировки).
+        if ($auction->max_deadline && $deadline > (int) $auction->max_deadline) {
+            return back()->withInput()->with('error', 'Срок не может превышать максимальный срок ('.(int) $auction->max_deadline.' дн.).');
+        }
+        if ($auction->max_advance && $advance > (float) $auction->max_advance) {
+            return back()->withInput()->with('error', 'Аванс не может превышать максимальный размер ('.rtrim(rtrim(number_format((float) $auction->max_advance, 2, '.', ''), '0'), '.').'%).');
         }
 
         try {
@@ -658,14 +666,8 @@ class AuctionController extends Controller
                 // Блокируем строку аукциона — сериализуем одновременные предложения.
                 $locked = Auction::whereKey($auction->id)->lockForUpdate()->first();
 
-                // #179 Первое предложение этапа 2 фиксирует референсы нормировки срока/аванса.
-                $isFirstOffer = ! $locked->bids()->exists();
-                if ($isFirstOffer) {
-                    $locked->max_deadline = $deadline;
-                    $locked->max_advance = $advance;
-                }
-
-                // Строгое превосходство над текущим лидером (перечитан под локом).
+                // #210 Референсы нормировки (max_deadline/max_advance) заданы организатором на этапе 1 —
+                // не меняются в ходе торгов. Строгое превосходство над текущим лидером (перечитан под локом).
                 if (! $scoring->wouldBeat($locked, $price, $deadline, $advance)) {
                     $analysis = $scoring->analyze($locked, $price, $deadline, $advance);
 
@@ -696,9 +698,6 @@ class AuctionController extends Controller
                 $locked->update([
                     'best_bid_id' => $offer->id,
                     'last_bid_at' => now(),
-                    // Персистим референсы (для первого предложения — только что выставлены).
-                    'max_deadline' => $locked->max_deadline,
-                    'max_advance' => $locked->max_advance,
                 ]);
 
                 return ['ok' => true, 'code' => $code];

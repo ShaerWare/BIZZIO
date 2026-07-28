@@ -23,7 +23,7 @@ class RfqController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Rfq::with(['company', 'creator.badges', 'bids'])
+        $query = Rfq::with(['company', 'creator.badges', 'bids', 'linkedAuction'])
             ->orderBy('created_at', 'desc');
 
         // Скрываем черновики от посторонних (C3)
@@ -111,22 +111,24 @@ class RfqController extends Controller
             ];
 
             // #179 Параметры этапа 2 для коммерческого аукциона.
-            // trading_end не задаётся (торги закрываются через 20 мин после последнего предложения);
-            // max_deadline/max_advance определяются первым предложением этапа 2.
+            // trading_end не задаётся (торги закрываются через 20 мин после последнего предложения).
+            // #210 max_deadline/max_advance задаёт организатор — референсы нормировки (100% шкалы) этапа 2.
             if ($procedure === Rfq::PROCEDURE_COMMERCIAL) {
                 $attributes += [
                     'trading_start' => $request->trading_start,
                     'step_price' => $request->step_price,
                     'step_deadline' => $request->step_deadline,
                     'step_advance' => $request->step_advance,
+                    'max_deadline' => $request->max_deadline,
+                    'max_advance' => $request->max_advance,
                 ];
             }
 
             // Создание RFQ
             $rfq = Rfq::create($attributes);
 
-            // Загрузка технического задания (PDF) - F3: поддержка temp-файлов
-            $this->addFileToModel($rfq, $request, 'technical_specification', 'technical_specification');
+            // #185 Загрузка конкурсной документации (Извещение / ТЗ / Проект договора / Прочие) со сжатием.
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($rfq, $request);
 
             // T8: Отправка приглашений (для любого типа процедуры)
             if ($request->filled('invited_companies')) {
@@ -177,6 +179,7 @@ class RfqController extends Controller
             'bids.company',
             'bids.user.badges',
             'invitations.company',
+            'linkedAuction',
         ]);
 
         // Проверка доступа к закрытым RFQ
@@ -307,12 +310,8 @@ class RfqController extends Controller
         try {
             $rfq->update($request->validated());
 
-            // Обновление технического задания
-            if ($request->hasFile('technical_specification')) {
-                $rfq->clearMediaCollection('technical_specification');
-                $rfq->addMediaFromRequest('technical_specification')
-                    ->toMediaCollection('technical_specification');
-            }
+            // #185 Обновление конкурсной документации (загруженные файлы заменяют/дополняют коллекции).
+            app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($rfq, $request);
 
             DB::commit();
 

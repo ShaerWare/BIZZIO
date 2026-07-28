@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasProcurementDocuments;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Rfq extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'number',
@@ -137,6 +138,19 @@ class Rfq extends Model implements HasMedia
         return $this->procedure === self::PROCEDURE_COMMERCIAL;
     }
 
+    /**
+     * #217 Коммерческий аукцион: этап 1 (запрос цен) уже закрыт, но порождённый
+     * аукцион этапа 2 ещё идёт (приём заявок или торги). В этом случае процедура
+     * НЕ завершена, и статус не должен отображаться как «Завершён».
+     */
+    public function commercialTradingInProgress(): bool
+    {
+        return $this->isCommercial()
+            && $this->status === 'closed'
+            && $this->linkedAuction
+            && in_array($this->linkedAuction->status, ['active', 'trading'], true);
+    }
+
     // ========================
     // МЕТОДЫ
     // ========================
@@ -205,9 +219,8 @@ class Rfq extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('technical_specification')
-            ->singleFile()
-            ->acceptsMimeTypes(['application/pdf']);
+        // #185 Конкурсная документация (notice / technical_specification / contract_draft / other_documents).
+        $this->registerProcurementDocumentMediaCollections();
 
         $this->addMediaCollection('protocol')
             ->singleFile()

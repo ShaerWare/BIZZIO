@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesProcurementDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateAuctionRequest extends FormRequest
 {
+    use ValidatesProcurementDocuments;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -33,9 +36,9 @@ class UpdateAuctionRequest extends FormRequest
             'starting_price' => ['required', 'numeric', 'min:1'],
             // #196 Организатор задаёт минимальный шаг снижения цены (0.5%–5%).
             'step_percent' => ['required', 'numeric', 'min:0.5', 'max:5'],
-            'technical_specification' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             'is_results_hidden' => ['nullable', 'boolean'],
-        ];
+            // #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие файлы).
+        ] + $this->procurementDocumentRules();
     }
 
     /**
@@ -46,6 +49,16 @@ class UpdateAuctionRequest extends FormRequest
         $this->merge([
             'is_results_hidden' => $this->boolean('is_results_hidden'),
         ]);
+    }
+
+    /**
+     * #185 Общий объём конкурсной документации ≤ 20 МБ.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $this->validateProcurementDocumentsTotalSize($validator);
+        });
     }
 
     public function messages(): array
@@ -61,8 +74,6 @@ class UpdateAuctionRequest extends FormRequest
             'step_percent.required' => 'Укажите минимальный шаг снижения цены.',
             'step_percent.min' => 'Шаг аукциона должен быть не менее 0.5%.',
             'step_percent.max' => 'Шаг аукциона должен быть не более 5%.',
-            'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF.',
-            'technical_specification.max' => 'Размер файла не должен превышать 20 МБ.',
-        ];
+        ] + $this->procurementDocumentMessages();
     }
 }

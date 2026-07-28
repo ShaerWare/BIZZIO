@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesProcurementDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRfqRequest extends FormRequest
 {
+    use ValidatesProcurementDocuments;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,7 +25,7 @@ class StoreRfqRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'company_id' => 'required|exists:companies,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -35,20 +38,21 @@ class StoreRfqRequest extends FormRequest
             'weight_price' => 'required|numeric|min:0|max:100',
             'weight_deadline' => 'required|numeric|min:0|max:100',
             'weight_advance' => 'required|numeric|min:0|max:100',
-            'technical_specification' => 'nullable|file|mimes:pdf|max:20480', // 20MB
-            'technical_specification_temp' => 'nullable|string',
             'invited_companies' => 'nullable|array',
             'invited_companies.*' => 'exists:companies,id',
             'is_results_hidden' => 'nullable|boolean',
 
             // #179 Параметры этапа 2 (Коммерческий аукцион) — обязательны при procedure=commercial.
-            // trading_end и max_deadline/max_advance убраны: торги закрываются через 20 мин после
-            // последнего предложения, а референсы нормировки берутся из первого предложения этапа 2.
+            // trading_end не задаётся: торги закрываются через 20 мин после последнего предложения.
+            // #210 max_deadline/max_advance задаёт организатор — референсы нормировки (100% шкалы) этапа 2.
             'trading_start' => 'nullable|required_if:procedure,commercial|date|after:end_date',
             'step_price' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
             'step_deadline' => 'nullable|required_if:procedure,commercial|integer|min:1',
             'step_advance' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
-        ];
+            'max_deadline' => 'nullable|required_if:procedure,commercial|integer|min:1',
+            'max_advance' => 'nullable|required_if:procedure,commercial|numeric|min:0.01|max:100',
+            // #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие файлы).
+        ], $this->procurementDocumentRules());
     }
 
     /**
@@ -57,10 +61,13 @@ class StoreRfqRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Проверка: техническое задание обязательно (файл или temp-upload)
-            if (! $this->hasFile('technical_specification') && ! $this->filled('technical_specification_temp')) {
+            // #185 Техническое задание обязательно при создании (учитываем temp-файл).
+            if (! $this->procurementDocumentUploaded('technical_specification')) {
                 $validator->errors()->add('technical_specification', 'Загрузите техническое задание (PDF)');
             }
+
+            // #185 Общий объём конкурсной документации ≤ 20 МБ.
+            $this->validateProcurementDocumentsTotalSize($validator);
 
             // Проверка: сумма весов = 100%
             $totalWeight = $this->weight_price + $this->weight_deadline + $this->weight_advance;
@@ -112,10 +119,6 @@ class StoreRfqRequest extends FormRequest
             'weight_advance.numeric' => 'Вес "Размер аванса" должен быть числом',
             'weight_advance.min' => 'Вес "Размер аванса" не может быть отрицательным',
             'weight_advance.max' => 'Вес "Размер аванса" не может превышать 100',
-            'technical_specification.required' => 'Загрузите техническое задание (PDF)',
-            'technical_specification.file' => 'Техническое задание должно быть файлом',
-            'technical_specification.mimes' => 'Техническое задание должно быть в формате PDF',
-            'technical_specification.max' => 'Размер файла не должен превышать 20 МБ',
             'invited_companies.array' => 'Неверный формат списка приглашённых компаний',
             'invited_companies.*.exists' => 'Одна из приглашённых компаний не найдена',
 
@@ -125,6 +128,11 @@ class StoreRfqRequest extends FormRequest
             'step_price.required_if' => 'Укажите шаг изменения цены (%)',
             'step_deadline.required_if' => 'Укажите шаг изменения срока (дни)',
             'step_advance.required_if' => 'Укажите шаг изменения аванса (%)',
+            // #210
+            'max_deadline.required_if' => 'Укажите максимальный срок выполнения (дни)',
+            'max_advance.required_if' => 'Укажите максимальный размер аванса (%)',
+            // #185 Сообщения по конкурсной документации.
+            ...$this->procurementDocumentMessages(),
         ];
     }
 

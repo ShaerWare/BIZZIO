@@ -56,6 +56,8 @@ class UpdateAuctionStatuses implements ShouldQueue
                 Log::info("✅ Аукцион {$auction->number} переведён в 'trading'");
             } else {
                 $auction->update(['status' => 'cancelled']);
+                // #118 Формируем протокол об отмене (причина — отсутствие поданных заявок).
+                $this->generateCancellationProtocol($auction->fresh());
                 Log::warning("❌ Аукцион {$auction->number} отменён (нет заявок)");
             }
         }
@@ -84,9 +86,25 @@ class UpdateAuctionStatuses implements ShouldQueue
 
         foreach ($tradingWithoutBids as $auction) {
             $auction->update(['status' => 'cancelled']);
+            // #118 Формируем протокол об отмене (причина — отсутствие ставок в ходе торгов).
+            $this->generateCancellationProtocol($auction->fresh());
             Log::warning("❌ Аукцион {$auction->number} отменён (нет ставок 24 часа)");
         }
 
         Log::info('=== UpdateAuctionStatuses: ЗАВЕРШЕНО ===');
+    }
+
+    /**
+     * #118 Формирование протокола для отменённого/несостоявшегося аукциона.
+     * Коммерческий аукцион (этап 2) использует собственный шаблон протокола —
+     * стандартный шаблон не рассчитан на его структуру ставок.
+     */
+    private function generateCancellationProtocol(Auction $auction): void
+    {
+        if ($auction->isCommercial()) {
+            app(\App\Services\CommercialAuctionProtocolService::class)->generate($auction);
+        } else {
+            app(\App\Services\AuctionProtocolService::class)->generate($auction);
+        }
     }
 }

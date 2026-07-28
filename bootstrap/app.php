@@ -40,6 +40,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->runInBackground();
 
+        // #185 Автоудаление конкурсной документации завершённых процедур (срок хранения — в админке)
+        $schedule->command('documents:cleanup')
+            ->dailyAt('03:00')
+            ->withoutOverlapping();
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // 419 CSRF token expired → redirect to login instead of error page

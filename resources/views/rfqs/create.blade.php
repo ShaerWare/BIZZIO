@@ -353,7 +353,7 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Параметры коммерческого аукциона (Этап 2)</h3>
                         <p class="text-sm text-gray-600 mb-4">
                             После окончания приёма заявок (этап 1) система автоматически запустит торги.
-                            Начальная максимальная цена этапа 2 = максимальная цена этапа 1.
+                            Начальная максимальная цена этапа 2 = средняя цена предложений этапа 1.
                         </p>
 
                         <p class="text-sm text-gray-600 mb-4">
@@ -386,28 +386,34 @@
                             </div>
                         </div>
 
+                        {{-- #210 Максимальные значения критериев Срок и Аванс — задаёт организатор.
+                             Используются как 100% шкалы (референсы нормировки) на этапе 2. --}}
+                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Максимальные значения критериев (этап 2)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Макс. срок выполнения (дни)</label>
+                                <input type="number" name="max_deadline" value="{{ old('max_deadline', '90') }}"
+                                       min="1" step="1"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('max_deadline') border-red-500 @enderror">
+                                @error('max_deadline')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Макс. размер аванса (%)</label>
+                                <input type="number" name="max_advance" value="{{ old('max_advance', '100') }}"
+                                       min="0.01" max="100" step="0.01"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('max_advance') border-red-500 @enderror">
+                                @error('max_advance')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
                         <p class="text-xs text-gray-500">
-                            Баллы за срок и аванс нормируются от значений первого предложения этапа 2 — участники задают
-                            критерии свободно, лучшее предложение определяется по совокупной оценке трёх критериев.
+                            Баллы за срок и аванс нормируются от заданных выше максимумов (100% шкалы): чем меньше срок и
+                            аванс участника, тем выше балл. Лучшее предложение определяется по совокупной оценке трёх критериев.
                         </p>
                     </div>
 
-                    <!-- Техническое задание (PDF) - F3: с сохранением при ошибке валидации -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Техническое задание (PDF) <span class="text-red-500">*</span>
-                        </label>
-                        <x-file-upload
-                            name="technical_specification"
-                            collection="technical_specification"
-                            accept="application/pdf"
-                            :required="true"
-                            hint="Максимальный размер: 20 МБ. Файл сохраняется при ошибке валидации."
-                        />
-                        @error('technical_specification')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    {{-- #185 Конкурсная документация: Извещение / ТЗ / Проект договора / Прочие файлы --}}
+                    @include('partials.procurement-documents', ['tzRequired' => true])
 
                     <!-- Уведомление -->
                     <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -457,30 +463,22 @@
 
 @push('scripts')
 <script>
-    // #91: JS-валидация файла ТЗ при submit формы
+    // #91/#185: JS-валидация обязательного файла ТЗ при submit формы
     document.getElementById('rfq-create-form').addEventListener('submit', function(e) {
-        const tempInput = this.querySelector('input[name="technical_specification_temp"]');
         const fileInput = this.querySelector('input[name="technical_specification"]');
-        const hasTempFile = tempInput && tempInput.value;
         const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
 
-        if (!hasTempFile && !hasNewFile) {
+        if (!hasNewFile) {
             e.preventDefault();
-            // Показать ошибку рядом с полем ТЗ
             let errorEl = document.getElementById('ts-error');
-            if (!errorEl) {
+            if (!errorEl && fileInput) {
                 errorEl = document.createElement('p');
                 errorEl.id = 'ts-error';
                 errorEl.className = 'mt-1 text-sm text-red-600';
                 errorEl.textContent = 'Загрузите техническое задание (PDF)';
-                const container = fileInput ? fileInput.closest('.space-y-2').parentElement : null;
-                if (container) {
-                    container.appendChild(errorEl);
-                }
+                fileInput.parentElement.appendChild(errorEl);
             }
-            // Прокрутить к полю ТЗ
-            const tsLabel = document.querySelector('label[for="technical_specification"], .space-y-2');
-            if (tsLabel) tsLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
     });
