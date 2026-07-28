@@ -203,7 +203,7 @@ Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom
 
 ## CI/CD & Deployment
 
-Two environments live on the same server (37.233.82.55), both behind the shared Caddy proxy:
+Two environments live on the same server (159.194.219.159), both behind the shared Caddy proxy:
 
 | | Staging | Production |
 |---|---|---|

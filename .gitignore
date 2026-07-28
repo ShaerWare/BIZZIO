@@ -28,3 +28,4 @@ docker-compose.override.yml
 
 # Local Claude Code settings (may contain secrets)
 .claude/
+/_db_dumps
