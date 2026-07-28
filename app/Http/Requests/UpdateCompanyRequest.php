@@ -30,7 +30,7 @@ class UpdateCompanyRequest extends FormRequest
             'short_description' => ['nullable', 'string', 'max:500'],
             'full_description' => ['nullable', 'string'],
             'industry_id' => ['nullable', 'exists:industries,id'],
-            'documents.*' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'documents.*' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
         ];
     }
 
@@ -45,7 +45,7 @@ class UpdateCompanyRequest extends FormRequest
             'logo.max' => 'Размер логотипа не должен превышать 2MB',
             'industry_id.exists' => 'Выбранная отрасль не существует',
             'documents.*.mimes' => 'Документы должны быть в формате PDF',
-            'documents.*.max' => 'Размер документа не должен превышать 10MB',
+            'documents.*.max' => 'Размер документа не должен превышать 20MB',
         ];
     }
 }

@@ -42,6 +42,8 @@ class StoreAuctionRequest extends FormRequest
             'end_date' => ['required', 'date', 'after:start_date'],
             'trading_start' => ['required', 'date', 'after:end_date'],
             'starting_price' => ['required', 'numeric', 'min:1'],
+            // #196 Организатор задаёт минимальный шаг снижения цены (0.5%–5%).
+            'step_percent' => ['required', 'numeric', 'min:0.5', 'max:5'],
             'status' => ['required', Rule::in(['draft', 'active'])],
             'invited_companies' => ['nullable', 'array'],
             'invited_companies.*' => ['exists:companies,id'],
@@ -79,6 +81,9 @@ class StoreAuctionRequest extends FormRequest
             'trading_start.after' => 'Дата начала торгов должна быть после окончания приёма заявок.',
             'starting_price.required' => 'Укажите начальную (максимальную) цену.',
             'starting_price.min' => 'Начальная цена должна быть больше нуля.',
+            'step_percent.required' => 'Укажите минимальный шаг снижения цены.',
+            'step_percent.min' => 'Шаг аукциона должен быть не менее 0.5%.',
+            'step_percent.max' => 'Шаг аукциона должен быть не более 5%.',
             'notification_agreement.accepted' => 'Необходимо подтвердить согласие с условиями.',
         ] + $this->procurementDocumentMessages();
     }
