@@ -28,6 +28,7 @@ class TenderController extends Controller
 
             $this->applyDraftFilter($rfqQuery);
             $this->applyFilters($rfqQuery, $request);
+            $this->hideLaunchedCommercialRfqs($rfqQuery);
 
             $rfqs = $rfqQuery->get()->map(fn ($r) => [
                 'model' => $r,
@@ -68,10 +69,12 @@ class TenderController extends Controller
     {
         $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
 
-        $rfqs = Rfq::with(['company', 'bids', 'winnerBid.company', 'linkedAuction'])
+        $rfqsQuery = Rfq::with(['company', 'bids', 'winnerBid.company', 'linkedAuction'])
             ->whereIn('company_id', $userCompanies)
-            ->orderBy('created_at', 'desc')
-            ->get()
+            ->orderBy('created_at', 'desc');
+        $this->hideLaunchedCommercialRfqs($rfqsQuery);
+
+        $rfqs = $rfqsQuery->get()
             ->map(fn ($r) => [
                 'model' => $r,
                 'kind' => 'rfq',
@@ -103,8 +106,11 @@ class TenderController extends Controller
     {
         $userCompanies = auth()->user()->moderatedCompanies()->pluck('companies.id');
 
+        // #231: заявки, чей тендер мягко удалён, остаются сиротами ($bid->rfq/auction === null)
+        // и роняют вью на route('rfqs.show', null) → 500. whereHas исключает их (уважает SoftDeletes).
         $rfqBids = RfqBid::with(['rfq.company', 'company'])
             ->whereIn('company_id', $userCompanies)
+            ->whereHas('rfq')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn ($b) => [
@@ -115,6 +121,7 @@ class TenderController extends Controller
 
         $auctionBids = AuctionBid::with(['auction.company', 'company'])
             ->whereIn('company_id', $userCompanies)
+            ->whereHas('auction')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn ($b) => [
@@ -148,6 +155,7 @@ class TenderController extends Controller
 
         $auctionInvitations = AuctionInvitation::with(['auction.company', 'company'])
             ->whereIn('company_id', $userCompanies)
+            ->whereHas('auction') // #231: исключаем приглашения на мягко удалённые аукционы
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn ($i) => [
@@ -183,6 +191,20 @@ class TenderController extends Controller
         } else {
             $query->where('status', '!=', 'draft');
         }
+    }
+
+    /**
+     * #233: Коммерческая процедура присутствует в каталоге как пара RFQ (этап 1) +
+     * Auction (этап 2). После запуска этапа 2 показываем только аукцион, а этап-1 RFQ
+     * (у него выставлен linked_auction_id) скрываем — иначе одна процедура дублируется.
+     * Незапущенные коммерческие RFQ (идёт приём заявок этапа 1) остаются видимыми.
+     */
+    private function hideLaunchedCommercialRfqs($query): void
+    {
+        $query->where(function ($q) {
+            $q->where('procedure', '!=', 'commercial')
+                ->orWhereNull('linked_auction_id');
+        });
     }
 
     /**
