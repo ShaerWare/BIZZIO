@@ -273,6 +273,7 @@
     <script src="{{ asset('js/custom.js') }}"></script>
 
     <!-- AI Chat Widget -->
-    <script src="https://ai-sekretar24.ru/widget.js?instance=bizzio"></script>
+    {{-- #226: defer — render-blocking сторонний скрипт иначе стопорит парсинг/Alpine, если хост недоступен. --}}
+    <script defer src="https://ai-sekretar24.ru/widget.js?instance=bizzio"></script>
 </body>
 </html>

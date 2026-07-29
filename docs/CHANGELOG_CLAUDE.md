@@ -2199,3 +2199,16 @@ Alpine была мертва**: не открывались меню (особе
 
 **Файлы:** `resources/views/layouts/app.blade.php`, `resources/css/app.css`,
 `public/build/*` (пересобрано).
+
+---
+
+## 2026-07-29 — fix #226 (продолжение): defer у виджета также в guest-лейауте и на welcome
+
+Первый фикс #226 добавил `defer` только в `layouts/app.blade.php`. Виджет AI-чата
+дублируется ещё в двух местах, которые остались render-blocking:
+- `resources/views/layouts/guest.blade.php` (страницы входа/регистрации),
+- `resources/views/welcome.blade.php` (публичная посадочная `bizzio.ru/`).
+
+Обнаружено при проверке живого прода: `curl https://bizzio.ru/` отдавал `<script>` виджета
+без `defer`. Добавлен `defer` во все три места (проверено: не осталось ни одного
+недеферренного вхождения). Ассеты не менялись.
