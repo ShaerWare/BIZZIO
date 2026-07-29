@@ -17,6 +17,7 @@
         refs: { d: {{ (int) $auction->max_deadline }}, a: {{ (float) $auction->max_advance }} },
         steps: { p: {{ (float) $auction->step_price }}, d: {{ (int) $auction->step_deadline }}, a: {{ (float) $auction->step_advance }} },
         canOffer: {{ $myCompanies->isNotEmpty() ? 'true' : 'false' }},
+        resultsHidden: {{ $auction->is_results_hidden && ! (auth()->check() && $auction->canManage(auth()->user())) ? 'true' : 'false' }},
      })"
      x-init="init()">
     <div class="p-6">
@@ -38,7 +39,20 @@
                 {{-- Текущее лучшее предложение --}}
                 <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4">
                     <p class="text-sm font-medium text-emerald-800 mb-1">Текущее лучшее предложение</p>
-                    <template x-if="best">
+                    {{-- #232 Скрытые результаты: детали лидера не показываем, только целевой балл для лидерства. --}}
+                    <template x-if="resultsHidden">
+                        <div class="text-sm text-gray-700 space-y-0.5">
+                            <p class="text-gray-500">Результаты скрыты организатором — детали конкурентов не отображаются.</p>
+                            <template x-if="bestScore !== null">
+                                <p>Чтобы выйти в лидеры, ваш рейтинг должен превысить
+                                   <span class="font-semibold" x-text="round2(bestScore)"></span>.</p>
+                            </template>
+                            <template x-if="bestScore === null">
+                                <p class="text-gray-500">Предложений ещё нет — первое корректное станет лучшим.</p>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="!resultsHidden && best">
                         <div class="text-sm text-gray-700 space-y-0.5">
                             <p>Участник: <span class="font-mono font-semibold" x-text="best.anonymous_code"></span>
                                 <span x-show="best.is_mine" class="text-emerald-600">(ваше)</span></p>
@@ -49,7 +63,7 @@
                                <span x-text="best.time"></span></p>
                         </div>
                     </template>
-                    <template x-if="!best">
+                    <template x-if="!resultsHidden && !best">
                         <p class="text-sm text-gray-500">Предложений ещё нет — первое корректное станет лучшим.</p>
                     </template>
                 </div>
@@ -162,10 +176,14 @@
 
             {{-- Правая колонка: история лучших предложений --}}
             <div class="lg:w-1/2">
-                <h4 class="text-sm font-semibold text-gray-900 mb-2">
+                {{-- #232 При скрытых результатах историю конкурентов не показываем. --}}
+                <div x-show="resultsHidden" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                    Результаты аукциона скрыты организатором. История предложений участников будет доступна после завершения торгов.
+                </div>
+                <h4 class="text-sm font-semibold text-gray-900 mb-2" x-show="!resultsHidden">
                     История лучших предложений (<span x-text="history.length"></span>)
                 </h4>
-                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <div class="border border-gray-200 rounded-lg overflow-hidden" x-show="!resultsHidden">
                     <table class="min-w-full text-xs">
                         <thead class="bg-gray-50 text-gray-500">
                             <tr>
@@ -220,6 +238,9 @@ function commercialAuction(cfg) {
         refs: cfg.refs,
         steps: cfg.steps,
         canOffer: cfg.canOffer,
+        // #232 Скрытые результаты: детали лидера скрыты, известен только целевой балл (bestScore).
+        resultsHidden: cfg.resultsHidden,
+        bestScore: null,
 
         // #210 Референсы нормировки (max срок/аванс) заданы организатором на этапе 1 и не меняются
         // в ходе торгов. Стартовая позиция участника = максимумы (худший балл) → улучшает вниз.
@@ -275,10 +296,15 @@ function commercialAuction(cfg) {
                 this.best = s.best_offer;
                 this.history = s.best_offer_history || [];
                 this.participants = s.participants_count ?? this.participants; // #198
+                // #232 Целевой балл лидерства (при скрытых результатах — единственный ориентир).
+                this.resultsHidden = s.results_hidden ?? this.resultsHidden;
+                this.bestScore = s.best_score ?? null;
                 const newBestId = this.best ? this.best.id : null;
-                if (newBestId !== prevBestId) {
+                if (! this.resultsHidden && newBestId !== prevBestId) {
+                    // Видимый лидер сменился — пересеиваем поля его цифрами (участник улучшает от лучшего).
                     this.seedFromBest();
                 } else {
+                    // Скрытые результаты: цифры лидера неизвестны — не пересеиваем, только пересчёт по целевому баллу.
                     this.recalc();
                 }
             } catch (e) { /* временная сетевая ошибка — повторим на следующем тике */ }
@@ -358,9 +384,11 @@ function commercialAuction(cfg) {
             // Если брать округлённое best.total_score (decimal(8,4) с сервера), идентичное
             // предложение ложно «превосходит» лидера и кнопка «Подать» активна — так проходили
             // одинаковые предложения подряд.
-            const bestScore = this.best
-                ? this.scores(this.best.price, this.best.deadline, this.best.advance).total
-                : null;
+            // #232 При скрытых результатах цифры лидера неизвестны — берём целевой балл с сервера.
+            // Иначе (результаты видны) считаем балл лидера из его критериев на полной точности.
+            const bestScore = this.resultsHidden
+                ? this.bestScore
+                : (this.best ? this.scores(this.best.price, this.best.deadline, this.best.advance).total : null);
             const target = bestScore !== null ? bestScore + EPS : null;
             this.deficit = target !== null ? Math.max(0, target - sc.total) : 0;
             this.wouldBeat = target === null ? true : sc.total > target;
