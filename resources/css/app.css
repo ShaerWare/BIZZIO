@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* #226: Alpine x-cloak. Alpine не добавляет это правило сам — без него элементы с x-cloak
+   (в т.ч. выпадающий поиск «Пригласить компании») видны до инициализации Alpine и «залипают»
+   открытыми, пока Alpine не загрузится. Скрываем их до старта Alpine. */
+[x-cloak] { display: none !important; }
+
 /* #87: Гарантированный отступ в полях ввода */
 @layer components {
     input[type="text"],
