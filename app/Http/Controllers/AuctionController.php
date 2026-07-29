@@ -581,6 +581,16 @@ class AuctionController extends Controller
 
         $best = $auction->bestBid;
 
+        // #232 Скрытые результаты: участнику не показываем детали лидера (цена/срок/аванс/код)
+        // и историю, но отдаём числовой «балл для лидерства» (best_score) — цель, которую нужно
+        // строго превзойти. Организатор (canManage) видит всё. Модель «непрерывного лидерства»
+        // сохраняется: клиент считает wouldBeat по best_score, детали конкурента остаются скрыты.
+        $hideResults = $auction->is_results_hidden
+            && ! (auth()->check() && $auction->canManage(auth()->user()));
+
+        // Полноточный балл лидера — цель для сравнения (null, если лидера ещё нет).
+        $bestScore = $best ? $scoring->bestScore($auction) : null;
+
         // #179 Торги закрываются через 20 мин после последнего предложения (как в обычном аукционе).
         $timeRemaining = null;
         if ($auction->last_bid_at) {
@@ -607,8 +617,11 @@ class AuctionController extends Controller
                 'deadline' => (int) $auction->step_deadline,
                 'advance' => (float) $auction->step_advance,
             ],
-            'best_offer' => $best ? $mapOffer($best->loadMissing('company:id,name')) : null,
-            'best_offer_history' => $history,
+            'results_hidden' => $hideResults,
+            // #232 При скрытых результатах детали лидера и историю не отдаём — только цель (best_score).
+            'best_offer' => $hideResults ? null : ($best ? $mapOffer($best->loadMissing('company:id,name')) : null),
+            'best_offer_history' => $hideResults ? [] : $history,
+            'best_score' => $bestScore,
             'offers_count' => $history->count(),
             'participants_count' => $participantsCount,
             'time_remaining' => $timeRemaining,
