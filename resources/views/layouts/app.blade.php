@@ -82,6 +82,8 @@
     @stack('scripts')
 
     <!-- AI Chat Widget -->
-    <script src="https://ai-sekretar24.ru/widget.js?instance=bizzio"></script>
+    {{-- #226: defer — иначе render-blocking сторонний скрипт стопорит парсинг HTML и инициализацию Alpine,
+         из-за чего меню (особенно мобильное) «висит» минутами, если хост виджета недоступен/медленный. --}}
+    <script defer src="https://ai-sekretar24.ru/widget.js?instance=bizzio"></script>
 </body>
 </html>
