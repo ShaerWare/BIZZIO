@@ -2297,3 +2297,27 @@ Alpine была мертва**: не открывались меню (особе
 
 **Файлы:** `resources/views/auctions/partials/commercial-trading.blade.php`,
 `tests/Feature/CommercialHiddenResultsTest.php` (+2 теста). Прогон 6/6 ✓, ассеты не изменились.
+
+---
+
+## 2026-07-31 — fix #232 (реальный корень): HTML5 step-валидация блокировала подачу предложения
+
+Долгоиграющий баг «не получается сделать первую ставку» в коммерческом аукционе. Сервер,
+форма, `action` и `wouldBeat` были корректны — воспроизвести серверными тестами не удавалось.
+
+**Найдено реальным браузером** (Playwright + системный Chrome против test.bizzio.ru, логин
+участником): `form.checkValidity() = false`. Поле «Ваш срок» — `<input type="number" min="1"
+:step="steps.d">`, дефолт `d = max_deadline`. При `min=1` база шага нечётная, а `max_deadline`
+чётный (30/90/100) + чётный `step_deadline` → значение не кратно шагу → HTML5 constraint
+validation. `requestSubmit()`/клик по кнопке молча блокируются (submit-событие не диспатчится),
+пользователь видит «ничего не происходит». Ручной `fetch` POST на `/offers` при этом проходил —
+подтверждая, что бэкенд исправен.
+
+**Фикс:** в `commercial-trading.blade.php` у видимых number/range полей срок/аванс HTML-атрибут
+`step` сделан мягким — срок `step="1"` (любое целое), аванс `step="any"`. Кнопки −/+ по-прежнему
+шагают организаторским шагом через `stepDeadline()`/`stepAdvance()` (Alpine). Диапазон min/max
+сохранён; сервер валидирует значения как раньше.
+
+**Файлы:** `resources/views/auctions/partials/commercial-trading.blade.php`,
+`tests/Feature/CommercialHiddenResultsTest.php` (регресс `test_offer_form_inputs_do_not_use_hard_step_binding`).
+Прогон CommercialHiddenResultsTest 7/7. Диагностика — через реальный браузер (задел под #238).
