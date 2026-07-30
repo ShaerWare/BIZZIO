@@ -119,12 +119,15 @@
                             <div class="flex items-stretch gap-2">
                                 <button type="button" @click="stepDeadline(-1)" aria-label="Уменьшить срок"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
-                                <input type="number" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d"
+                                {{-- #232 step="1" (любое целое), а НЕ организаторский шаг: иначе дефолт срока (=max_deadline)
+                                     мог не совпасть с шагом при базе min=1 и HTML5-валидация молча блокировала сабмит формы.
+                                     Кнопки −/+ шагают организаторским шагом через stepDeadline(). --}}
+                                <input type="number" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" step="1"
                                        class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <button type="button" @click="stepDeadline(1)" aria-label="Увеличить срок"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
                             </div>
-                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" :step="steps.d" class="w-full mt-2">
+                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" step="1" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 1…<span x-text="maxDeadline"></span> дн.</p>
                         </div>
 
@@ -139,12 +142,14 @@
                             <div class="flex items-stretch gap-2">
                                 <button type="button" @click="stepAdvance(-1)" aria-label="Уменьшить аванс"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
-                                <input type="number" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a"
+                                {{-- #232 step="any": организаторский шаг аванса мог не совпасть с дефолтом/max при базе
+                                     min=0 → HTML5-валидация блокировала сабмит. Кнопки −/+ шагают через stepAdvance(). --}}
+                                <input type="number" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" step="any"
                                        class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <button type="button" @click="stepAdvance(1)" aria-label="Увеличить аванс"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
                             </div>
-                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" :step="steps.a" class="w-full mt-2">
+                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" step="any" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="maxAdvance"></span>%</p>
                         </div>
 

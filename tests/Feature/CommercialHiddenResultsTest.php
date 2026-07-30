@@ -169,6 +169,24 @@ class CommercialHiddenResultsTest extends TestCase
             ->assertDontSee('Вы организатор этой процедуры');
     }
 
+    public function test_offer_form_inputs_do_not_use_hard_step_binding(): void
+    {
+        // #232 Регресс: у полей срок/аванс НЕ должно быть жёсткого организаторского шага
+        // как HTML-атрибута step — иначе дефолт (=max_deadline/max_advance) мог не совпасть
+        // с шагом при базе min и HTML5-валидация молча блокировала сабмит формы предложения.
+        // Берём max_deadline, кратный шагу «неудобно» (чётный max при чётном шаге и базе min=1).
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['max_deadline' => 30, 'step_deadline' => 2, 'max_advance' => 100, 'step_advance' => 10]);
+        [$user] = $this->participant($auction);
+
+        $resp = $this->actingAs($user)->get(route('auctions.show', $auction))->assertOk();
+        // Жёсткого биндинга шага быть не должно.
+        $resp->assertDontSee(':step="steps.d"', false);
+        $resp->assertDontSee(':step="steps.a"', false);
+        // Поле срока — целочисленный шаг 1 (любое целое допустимо и сабмитится).
+        $resp->assertSee('step="1"', false);
+    }
+
     public function test_worse_offer_still_rejected_with_hidden_results(): void
     {
         $auction = $this->hiddenTradingAuction();
