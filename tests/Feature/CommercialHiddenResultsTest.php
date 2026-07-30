@@ -142,6 +142,33 @@ class CommercialHiddenResultsTest extends TestCase
         $this->assertNotSame($bestBefore, $auction->fresh()->best_bid_id);
     }
 
+    public function test_organizer_sees_explicit_no_participation_message(): void
+    {
+        // #232 Организатор своего аукциона не видит форму подачи, а видит явное пояснение.
+        $auction = $this->hiddenTradingAuction();
+        $this->participant($auction); // хотя бы один участник, чтобы аукцион был осмысленным
+
+        $this->actingAs($this->organizer)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Вы организатор этой процедуры')
+            ->assertDontSee('Подать предложение')
+            ->assertDontSee('Настройка предложения');
+    }
+
+    public function test_participant_sees_offer_form(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$user] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Настройка предложения')
+            ->assertSee('Подать предложение')
+            ->assertDontSee('Вы организатор этой процедуры');
+    }
+
     public function test_worse_offer_still_rejected_with_hidden_results(): void
     {
         $auction = $this->hiddenTradingAuction();
