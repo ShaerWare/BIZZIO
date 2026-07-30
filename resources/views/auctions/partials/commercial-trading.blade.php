@@ -68,10 +68,9 @@
                     </template>
                 </div>
 
-                <h4 class="text-sm font-semibold text-gray-900 mb-2">Настройка предложения</h4>
-
                 @auth
                 @if($myCompanies->isNotEmpty())
+                    <h4 class="text-sm font-semibold text-gray-900 mb-2">Настройка предложения</h4>
                     <form method="POST" action="{{ route('auctions.offers.store', $auction) }}" class="space-y-4"
                           @submit="if (!wouldBeat) $event.preventDefault()">
                         @csrf
@@ -162,6 +161,11 @@
                             Подать предложение
                         </button>
                     </form>
+                @elseif($auction->canManage(auth()->user()))
+                    {{-- #232 Организатор не может участвовать в собственном аукционе — говорим об этом явно. --}}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                        Вы организатор этой процедуры. Подавать предложения могут только приглашённые компании-участники — участие организатора в собственном аукционе недоступно.
+                    </div>
                 @else
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
                         Подавать предложения могут только компании — участники этой процедуры (подавшие заявку на этапе 1).
