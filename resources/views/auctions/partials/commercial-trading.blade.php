@@ -426,7 +426,9 @@ function commercialAuction(cfg) {
             const c = this.criteria[key];
             if (!c) return '';
             if (c.is_best) return 'Лучший критерий';
-            if (!this.best) return '';
+            // #232 Порог «уменьшите до X» показываем при наличии цели (лидера) — в т.ч. при скрытых
+            // результатах: X считается от целевого балла и НЕ раскрывает цифры лидера.
+            if (this.bestScore === null) return '';
             if (!c.reachable || c.threshold === null) return '';
             const unit = key === 'advance' ? '%' : (key === 'deadline' ? ' дн.' : '');
             const val = key === 'price' ? this.fmt(Math.floor(c.threshold)) : Math.floor(c.threshold);
