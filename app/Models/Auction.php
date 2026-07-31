@@ -252,6 +252,34 @@ class Auction extends Model implements HasMedia
     }
 
     /**
+     * #237 Участник процедуры — модератор приглашённой компании (для этапа 2 коммерческого
+     * аукциона это участники этапа 1, приглашённые лончером).
+     */
+    public function isParticipant(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        $companyIds = $user->moderatedCompanies()->pluck('companies.id');
+
+        return $this->invitations()->whereIn('company_id', $companyIds)->exists();
+    }
+
+    /**
+     * #237 Скрывать ли ход торгов от данного зрителя. Скрытые результаты прячут торги только
+     * от ПОСТОРОННИХ: организатор и участники процедуры всегда видят ход торгов.
+     */
+    public function resultsHiddenFor(?User $user): bool
+    {
+        if (! $this->is_results_hidden) {
+            return false;
+        }
+
+        return ! ($user && ($this->canManage($user) || $this->isParticipant($user)));
+    }
+
+    /**
      * #148: можно ли отменить аукцион — только до начала торгов (черновик или приём заявок).
      */
     public function canBeCancelled(): bool

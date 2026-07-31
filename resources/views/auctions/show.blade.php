@@ -112,7 +112,11 @@
                             
                             // Определяем отображаемый статус
                             if ($auction->status === 'active') {
-                                if ($auction->start_date->isFuture()) {
+                                if ($auction->isCommercial()) {
+                                    // #222 Этап 2 ждёт назначенного времени начала торгов (приёма заявок нет).
+                                    $displayLabel = 'Ожидание начала торгов';
+                                    $displayColor = 'bg-blue-100 text-blue-800';
+                                } elseif ($auction->start_date->isFuture()) {
                                     $displayLabel = 'Ожидание начала приёма заявок';
                                     $displayColor = 'bg-yellow-100 text-yellow-800';
                                 } elseif ($auction->end_date->isPast()) {
@@ -151,8 +155,13 @@
                             </span>
 
                             {{-- #189 До старта приёма заявок (если ещё не начался) --}}
-                            @if($auction->status === 'active' && $auction->start_date->isFuture())
+                            @if($auction->status === 'active' && ! $auction->isCommercial() && $auction->start_date->isFuture())
                                 @include('partials.countdown', ['target' => $auction->start_date, 'label' => 'До начала приёма заявок', 'color' => 'bg-blue-100 text-blue-800'])
+                            @endif
+
+                            {{-- #222 Коммерческий этап 2: обратный отсчёт до назначенного начала торгов --}}
+                            @if($auction->status === 'active' && $auction->isCommercial() && $auction->trading_start->isFuture())
+                                @include('partials.countdown', ['target' => $auction->trading_start, 'label' => 'До начала торгов', 'color' => 'bg-blue-100 text-blue-800'])
                             @endif
                             
                             @if($auction->status === 'trading' && $auction->last_bid_at)

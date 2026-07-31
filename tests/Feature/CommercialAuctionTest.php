@@ -199,7 +199,7 @@ class CommercialAuctionTest extends TestCase
     // =========================================================
 
     /** Коммерческий RFQ этапа 1 с истёкшим приёмом заявок и заданными ценами участников. */
-    private function closeableCommercialRfq(array $prices): Rfq
+    private function closeableCommercialRfq(array $prices, ?\Carbon\Carbon $tradingStart = null): Rfq
     {
         $rfq = Rfq::create([
             'number' => Rfq::generateNumber(),
@@ -210,7 +210,8 @@ class CommercialAuctionTest extends TestCase
             'procedure' => Rfq::PROCEDURE_COMMERCIAL,
             'start_date' => now()->subDays(2),
             'end_date' => now()->subMinute(),
-            'trading_start' => now()->addMinutes(5),
+            // #222 По умолчанию время торгов уже наступило → этап 2 стартует в 'trading' сразу.
+            'trading_start' => $tradingStart ?? now()->subMinute(),
             'trading_end' => now()->addDay(),
             'weight_price' => 70,
             'weight_deadline' => 20,
@@ -268,6 +269,36 @@ class CommercialAuctionTest extends TestCase
         // Приглашены все 3 участника.
         $this->assertSame(3, $auction->invitations()->count());
         $this->assertSame($rfq->id, $auction->rfq_id);
+    }
+
+    public function test_stage_2_waits_for_trading_start_then_updatestatuses_starts_it(): void
+    {
+        // #222 Если время начала торгов ещё не наступило — этап 2 создаётся в 'active' (ожидание),
+        // а не сразу в 'trading'. UpdateAuctionStatuses стартует торги в назначенное время.
+        $rfq = $this->closeableCommercialRfq([800_000, 900_000], now()->addMinutes(30));
+        $this->runCloseRfqJob($rfq);
+        $auction = $rfq->fresh()->linkedAuction;
+
+        $this->assertNotNull($auction);
+        $this->assertSame('active', $auction->status, 'До trading_start торги не идут');
+
+        // Время ещё не пришло — статус не меняется.
+        (new UpdateAuctionStatuses)->handle();
+        $this->assertSame('active', $auction->fresh()->status);
+
+        // Наступило время начала торгов.
+        $auction->update(['trading_start' => now()->subMinute()]);
+        (new UpdateAuctionStatuses)->handle();
+        $this->assertSame('trading', $auction->fresh()->status, 'В назначенное время торги стартуют');
+    }
+
+    public function test_stage_2_starts_trading_immediately_when_trading_start_passed(): void
+    {
+        // Время начала торгов уже прошло на момент закрытия этапа 1 → стартуем сразу.
+        $rfq = $this->closeableCommercialRfq([800_000], now()->subMinute());
+        $this->runCloseRfqJob($rfq);
+
+        $this->assertSame('trading', $rfq->fresh()->linkedAuction->status);
     }
 
     public function test_closing_commercial_rfq_without_bids_does_not_launch(): void

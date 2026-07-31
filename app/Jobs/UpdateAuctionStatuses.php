@@ -62,6 +62,20 @@ class UpdateAuctionStatuses implements ShouldQueue
             }
         }
 
+        // 1b. #222 Коммерческие аукционы (этап 2), ожидающие начала торгов: стартуют в назначенное
+        // организатором время (trading_start). Участники известны с этапа 1 — проверки заявок нет.
+        $commercialReady = Auction::where('status', 'active')
+            ->where('procedure', Auction::PROCEDURE_COMMERCIAL)
+            ->where('trading_start', '<=', $now)
+            ->get();
+
+        Log::info('Найдено коммерческих аукционов к старту торгов: '.$commercialReady->count());
+
+        foreach ($commercialReady as $auction) {
+            $auction->update(['status' => 'trading']);
+            Log::info("✅ Коммерческий аукцион {$auction->number} → 'trading' (наступило trading_start)");
+        }
+
         // 2. Торги (в т.ч. коммерческие), у которых прошло 20 минут с последнего предложения.
         // #179 Коммерческие аукционы закрываются по тому же правилу, что и обычные.
         $expiredTrading = Auction::where('status', 'trading')
