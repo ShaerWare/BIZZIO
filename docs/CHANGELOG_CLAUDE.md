@@ -2383,3 +2383,25 @@ initialBids (у этапа 2 их нет — участники с этапа 1)
 
 **Файлы:** `app/Console/Commands/UpdateAuctionStatuses.php`, `tests/Feature/CommercialAuctionTest.php`
 (регресс `test_scheduler_command_starts_commercial_stage2_and_does_not_cancel_it`). Тесты 23/23.
+
+---
+
+## 2026-08-01 — fix: ложный лимит при перезагрузке файла + авто-открытие торгов этапа 2
+
+Два бага (Mike, аукцион 85).
+
+**Файловая ошибка «Общий объём…» при повторной загрузке.** В `TempUploadController::storeProcurement`
+проверка суммарного объёма учитывала прежний temp-файл ОДИНОЧНОЙ коллекции (Извещение/ТЗ/Проект
+договора), который тут же заменяется. Перезагрузка того же файла (>10 МБ) ложно упиралась в 20 МБ —
+приходилось удалять и прикладывать заново. Фикс: при замене одиночной коллекции исключаем её прежний
+размер из суммы. «Прочие файлы» (накапливаются) — кумулятивный лимит сохранён.
+
+**Торги этапа 2 открывались с задержкой и требовали ручного рефреша.** Планировщик переводит
+'active'→'trading' раз в минуту, а страница ожидания не обновлялась сама. Фикс: (1) ленивый переход в
+`AuctionController::show()` — если `trading_start` уже наступил, стартуем торги прямо при заходе; (2) на
+странице ожидания — авто-перезагрузка при наступлении времени начала (открывается окно торгов без
+ручного рефреша).
+
+**Файлы:** `app/Http/Controllers/TempUploadController.php`, `app/Http/Controllers/AuctionController.php`,
+`resources/views/auctions/show.blade.php`, `tests/Feature/ProcurementTempUploadSizeTest.php` (новый, 3 теста).
+Прогон: ProcurementTempUploadSizeTest 3/3, AuctionTest+CommercialAuctionTest 75/75. Pint чист, ассеты без изменений.

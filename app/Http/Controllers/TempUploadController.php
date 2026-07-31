@@ -110,7 +110,14 @@ class TempUploadController extends Controller
         $temp = ProcurementDocuments::tempFiles();
 
         // Проверка суммарного объёма (≤ 20 МБ) с учётом уже загруженных temp-файлов.
-        if (ProcurementDocuments::tempTotalSize() + $file->getSize() > ProcurementDocuments::MAX_TOTAL_BYTES) {
+        // Одиночная коллекция (Извещение/ТЗ/Проект договора) при повторной загрузке ЗАМЕНЯЕТ
+        // предыдущий файл — поэтому исключаем его размер из суммы, иначе перезагрузка того же
+        // файла ложно упиралась в лимит («Общий объём…»), и приходилось удалять и прикладывать заново.
+        $replacedSize = ($collection !== 'other_documents' && ! empty($temp[$collection]['size']))
+            ? (int) $temp[$collection]['size']
+            : 0;
+
+        if (ProcurementDocuments::tempTotalSize() - $replacedSize + $file->getSize() > ProcurementDocuments::MAX_TOTAL_BYTES) {
             return response()->json([
                 'success' => false,
                 'message' => 'Общий объём конкурсной документации не должен превышать 20 МБ.',

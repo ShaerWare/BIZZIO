@@ -133,6 +133,14 @@ class AuctionController extends Controller
     {
         $this->authorize('view', $auction);
 
+        // #222 Ленивый старт торгов этапа 2: если назначенное время уже наступило, а планировщик
+        // (раз в минуту) ещё не перевёл аукцион — стартуем торги прямо сейчас, при заходе на страницу.
+        // Так окно торгов открывается ровно вовремя, без задержки до минутного тика.
+        if ($auction->isCommercial() && $auction->status === 'active' && $auction->trading_start->isPast()) {
+            $auction->update(['status' => 'trading']);
+            $auction->refresh();
+        }
+
         $auction->load([
             'company.industry',
             'creator.badges',
