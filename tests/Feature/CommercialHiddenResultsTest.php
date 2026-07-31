@@ -93,19 +93,38 @@ class CommercialHiddenResultsTest extends TestCase
         return $offer;
     }
 
-    public function test_participant_state_hides_leader_but_exposes_target_score(): void
+    public function test_participant_sees_trading_even_when_results_hidden(): void
     {
+        // #237 Скрытые результаты НЕ прячут ход торгов от участников этапа 2 — они видят лидера/историю.
         $auction = $this->hiddenTradingAuction();
         [$leadUser, $leadCompany] = $this->participant($auction);
         $this->seedLeader($auction, $leadCompany, $leadUser);
 
-        // Другой участник смотрит состояние — деталей лидера не видит, но видит целевой балл.
         [$viewer] = $this->participant($auction);
 
         $this->actingAs($viewer)
             ->getJson(route('auctions.state', $auction))
             ->assertOk()
             ->assertJsonPath('procedure', 'commercial')
+            ->assertJsonPath('results_hidden', false)
+            ->assertJsonPath('best_offer.price', 900000)
+            ->assertJsonPath('best_score', fn ($v) => is_numeric($v) && $v > 0);
+    }
+
+    public function test_outsider_sees_hidden_results_on_open_auction(): void
+    {
+        // #237 Посторонний (не участник, не организатор) на открытом аукционе со скрытыми
+        // результатами видит только целевой балл — детали лидера и история скрыты.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['type' => 'open']); // чтобы посторонний мог просматривать
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+
+        [$outsider] = $this->verifiedBidder(); // верифицирован, но НЕ приглашён
+
+        $this->actingAs($outsider)
+            ->getJson(route('auctions.state', $auction))
+            ->assertOk()
             ->assertJsonPath('results_hidden', true)
             ->assertJsonPath('best_offer', null)
             ->assertJsonPath('best_offer_history', [])

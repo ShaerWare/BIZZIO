@@ -2337,3 +2337,30 @@ validation. `requestSubmit()`/клик по кнопке молча блокир
 скрытых результатах). X считается от целевого балла и НЕ раскрывает цифры лидера.
 
 **Файлы:** `resources/views/auctions/partials/commercial-trading.blade.php`. Тесты 7/7.
+
+---
+
+## 2026-07-31 — fix: старт этапа 2 по trading_start (#222) + участники видят торги (#237)
+
+Два бага по коммерческому аукциону (Mike, аукцион 83).
+
+**#222 — торги этапа 2 стартовали сразу по завершении приёма заявок, а не в назначенное время.**
+`CommercialAuctionLauncherService` ставил статус `trading` немедленно при закрытии RFQ, игнорируя
+`trading_start`. Теперь: если время начала торгов ещё не наступило — аукцион создаётся в `active`
+(ожидание, приёма заявок нет), а `UpdateAuctionStatuses` переводит его в `trading` в назначенное
+время (новый блок 1b, без проверки заявок — участники известны с этапа 1). Если время уже прошло —
+стартуем сразу. UI: статус «Ожидание начала торгов» + обратный отсчёт до `trading_start`
+(show.blade, auction-card).
+
+**#237 — скрытые результаты прятали ход торгов даже от участников.** Прежний #232-фикс скрывал
+лидера/историю от всех, кроме организатора. Правильно: скрывать только от ПОСТОРОННИХ. Добавлены
+`Auction::isParticipant()` и `Auction::resultsHiddenFor()`; `commercialState` и партиал используют
+их. Теперь организатор и участники этапа 2 видят ход торгов (коды анонимны), а посторонний на
+открытом аукционе видит лишь целевой балл.
+
+**Файлы:** `app/Services/CommercialAuctionLauncherService.php`, `app/Jobs/UpdateAuctionStatuses.php`,
+`app/Models/Auction.php`, `app/Http/Controllers/AuctionController.php`,
+`resources/views/auctions/show.blade.php`, `resources/views/components/auction-card.blade.php`,
+`resources/views/auctions/partials/commercial-trading.blade.php`,
+`tests/Feature/CommercialAuctionTest.php`, `tests/Feature/CommercialHiddenResultsTest.php`.
+Прогон: CommercialAuctionTest+CommercialHiddenResultsTest+AuctionTest 82/82. Pint чист.
