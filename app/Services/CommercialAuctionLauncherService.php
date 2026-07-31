@@ -44,7 +44,11 @@ class CommercialAuctionLauncherService
         // #202 НМЦ этапа 2 = среднее по всем предложениям этапа 1 (ранее — максимум).
         $startingPrice = round((float) $bids->avg('price'), 2);
 
-        return DB::transaction(function () use ($rfq, $bids, $startingPrice) {
+        // #222 Торги этапа 2 стартуют в назначенное организатором время (trading_start), а не сразу
+        // по завершении приёма заявок этапа 1. Если время начала уже наступило — стартуем сразу.
+        $startsTradingNow = ! $rfq->trading_start || ! $rfq->trading_start->isFuture();
+
+        return DB::transaction(function () use ($rfq, $bids, $startingPrice, $startsTradingNow) {
             $auction = Auction::create([
                 'number' => Auction::generateNumber(),
                 'title' => $rfq->title,
@@ -71,7 +75,9 @@ class CommercialAuctionLauncherService
                 'max_deadline' => $rfq->max_deadline,
                 'max_advance' => $rfq->max_advance,
                 'is_results_hidden' => $rfq->is_results_hidden,
-                'status' => 'trading',
+                // #222 До trading_start аукцион ждёт в статусе 'active' (участники известны, приёма
+                // заявок нет). UpdateAuctionStatuses переведёт его в 'trading' в назначенное время.
+                'status' => $startsTradingNow ? 'trading' : 'active',
             ]);
 
             // Приглашаем всех участников этапа 1 (по уникальным компаниям).

@@ -17,7 +17,7 @@
         refs: { d: {{ (int) $auction->max_deadline }}, a: {{ (float) $auction->max_advance }} },
         steps: { p: {{ (float) $auction->step_price }}, d: {{ (int) $auction->step_deadline }}, a: {{ (float) $auction->step_advance }} },
         canOffer: {{ $myCompanies->isNotEmpty() ? 'true' : 'false' }},
-        resultsHidden: {{ $auction->is_results_hidden && ! (auth()->check() && $auction->canManage(auth()->user())) ? 'true' : 'false' }},
+        resultsHidden: {{ $auction->resultsHiddenFor(auth()->user()) ? 'true' : 'false' }},
      })"
      x-init="init()">
     <div class="p-6">

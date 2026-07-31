@@ -10,7 +10,10 @@
             
             // Определяем отображаемый статус
             if ($auction->status === 'active') {
-                if ($auction->start_date->isFuture()) {
+                if ($auction->isCommercial()) {
+                    $statusLabel = 'Ожидание торгов';
+                    $statusColor = 'bg-blue-100 text-blue-800';
+                } elseif ($auction->start_date->isFuture()) {
                     $statusLabel = 'Скоро';
                     $statusColor = 'bg-yellow-100 text-yellow-800';
                 } elseif ($auction->end_date->isPast()) {
