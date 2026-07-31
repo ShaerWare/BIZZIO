@@ -163,6 +163,21 @@
                             @if($auction->status === 'active' && $auction->isCommercial() && $auction->trading_start->isFuture())
                                 @include('partials.countdown', ['target' => $auction->trading_start, 'label' => 'До начала торгов', 'color' => 'bg-blue-100 text-blue-800'])
                             @endif
+
+                            {{-- #222 Авто-открытие торгов: при наступлении времени начала перезагружаем страницу
+                                 (в show() сработает ленивый переход в 'trading' и откроется окно торгов) — без ручного рефреша. --}}
+                            @if($auction->status === 'active' && $auction->isCommercial())
+                                <div x-data="{
+                                        target: new Date('{{ $auction->trading_start->toIso8601String() }}').getTime(),
+                                        init() {
+                                            const tick = () => {
+                                                if (Date.now() >= this.target + 2000) { window.location.reload(); return; }
+                                                setTimeout(tick, 1000);
+                                            };
+                                            tick();
+                                        }
+                                     }" x-init="init()"></div>
+                            @endif
                             
                             @if($auction->status === 'trading' && $auction->last_bid_at)
                                 <span class="text-xs text-gray-500">
