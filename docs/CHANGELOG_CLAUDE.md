@@ -2364,3 +2364,22 @@ validation. `requestSubmit()`/клик по кнопке молча блокир
 `resources/views/auctions/partials/commercial-trading.blade.php`,
 `tests/Feature/CommercialAuctionTest.php`, `tests/Feature/CommercialHiddenResultsTest.php`.
 Прогон: CommercialAuctionTest+CommercialHiddenResultsTest+AuctionTest 82/82. Pint чист.
+
+---
+
+## 2026-07-31 — hotfix: планировщик отменял коммерческий этап 2 (регресс #222)
+
+Регресс предыдущего фикса #222. Существуют ДВЕ реализации обновления статусов:
+`App\Jobs\UpdateAuctionStatuses` (джоба) и `App\Console\Commands\UpdateAuctionStatuses`
+(команда `auctions:update-statuses`, её гоняет планировщик каждую минуту). Фикс #222 добавил
+обработку коммерческого 'active'→'trading' только в ДЖОБУ. Команда же дублировала логику и
+в блоке 1 НЕ исключала коммерческие: при наступлении trading_start видела 'active' + 0
+initialBids (у этапа 2 их нет — участники с этапа 1) и ОТМЕНЯЛА аукцион. Симптом (Mike):
+«этап 2 не стартует, аукцион переходит в завершён спустя минуту, окно торгов не открывается».
+
+Фикс: команда `auctions:update-statuses` теперь делегирует всю логику единственной реализации —
+`App\Jobs\UpdateAuctionStatuses` (устранено дублирование, фиксы больше не разойдутся). Джоба
+дополнительно формирует протокол при отмене — команда раньше этого не делала.
+
+**Файлы:** `app/Console/Commands/UpdateAuctionStatuses.php`, `tests/Feature/CommercialAuctionTest.php`
+(регресс `test_scheduler_command_starts_commercial_stage2_and_does_not_cancel_it`). Тесты 23/23.

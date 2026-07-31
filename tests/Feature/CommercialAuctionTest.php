@@ -301,6 +301,21 @@ class CommercialAuctionTest extends TestCase
         $this->assertSame('trading', $rfq->fresh()->linkedAuction->status);
     }
 
+    public function test_scheduler_command_starts_commercial_stage2_and_does_not_cancel_it(): void
+    {
+        // #222 Регресс: планировщик гоняет КОМАНДУ auctions:update-statuses. Она не должна
+        // отменять коммерческий этап 2 из-за отсутствия initialBids (у этапа 2 их нет) —
+        // при наступлении trading_start торги должны СТАРТОВАТЬ.
+        $auction = $this->tradingCommercialAuction([
+            'status' => 'active',
+            'trading_start' => now()->subMinute(),
+        ]);
+
+        $this->artisan('auctions:update-statuses')->assertExitCode(0);
+
+        $this->assertSame('trading', $auction->fresh()->status, 'Коммерческий этап 2 должен стартовать, а не отмениться');
+    }
+
     public function test_closing_commercial_rfq_without_bids_does_not_launch(): void
     {
         $rfq = $this->closeableCommercialRfq([]);
