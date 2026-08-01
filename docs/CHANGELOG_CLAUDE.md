@@ -2405,3 +2405,18 @@ initialBids (у этапа 2 их нет — участники с этапа 1)
 **Файлы:** `app/Http/Controllers/TempUploadController.php`, `app/Http/Controllers/AuctionController.php`,
 `resources/views/auctions/show.blade.php`, `tests/Feature/ProcurementTempUploadSizeTest.php` (новый, 3 теста).
 Прогон: ProcurementTempUploadSizeTest 3/3, AuctionTest+CommercialAuctionTest 75/75. Pint чист, ассеты без изменений.
+
+---
+
+## 2026-08-01 — fix: аванс в торгах показывал «кучу цифр» после запятой
+
+Mike: значение аванса выводилось с длинным хвостом дробей. Причина — ранее для поля аванса
+поставили `step="any"` (чтобы обойти HTML5-валидацию), и слайдер при перетаскивании давал
+непрерывный float (напр. 43.2857142857 %). Фикс: слайдер/поле аванса → `step="0.01"` (2 знака;
+max_advance — decimal(5,2), кратен 0.01, поэтому баг валидации не возвращается) + округление
+вывода аванса в панели лидера и истории через round2(). Кнопки −/+ по-прежнему шагают
+организаторским шагом. Сохранённые значения и так были decimal(5,2) — правка чисто в живом UI.
+
+**Файлы:** `resources/views/auctions/partials/commercial-trading.blade.php`,
+`tests/Feature/CommercialHiddenResultsTest.php` (тест дополнен: нет `step="any"`, есть `step="0.01"`).
+Прогон CommercialHiddenResultsTest 8/8. Ассеты без изменений.
