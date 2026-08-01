@@ -58,7 +58,7 @@
                                 <span x-show="best.is_mine" class="text-emerald-600">(ваше)</span></p>
                             <p>Цена: <span class="font-semibold" x-text="fmt(best.price)"></span> <span x-text="currency"></span></p>
                             <p>Срок: <span class="font-semibold" x-text="best.deadline"></span> дн. ·
-                               Аванс: <span class="font-semibold" x-text="best.advance"></span>%</p>
+                               Аванс: <span class="font-semibold" x-text="round2(best.advance)"></span>%</p>
                             <p>Рейтинг: <span class="font-semibold" x-text="round2(best.total_score)"></span> ·
                                <span x-text="best.time"></span></p>
                         </div>
@@ -142,14 +142,14 @@
                             <div class="flex items-stretch gap-2">
                                 <button type="button" @click="stepAdvance(-1)" aria-label="Уменьшить аванс"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
-                                {{-- #232 step="any": организаторский шаг аванса мог не совпасть с дефолтом/max при базе
-                                     min=0 → HTML5-валидация блокировала сабмит. Кнопки −/+ шагают через stepAdvance(). --}}
-                                <input type="number" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" step="any"
+                                {{-- #232/аванс: step="0.01" — 2 знака после запятой (без «кучи цифр» от слайдера)
+                                     и без бага валидации: max_advance — decimal(5,2), кратен 0.01. Кнопки −/+ шагают через stepAdvance(). --}}
+                                <input type="number" x-model.number="a" @input="a = round2(a); recalc()" min="0" :max="maxAdvance" step="0.01"
                                        class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <button type="button" @click="stepAdvance(1)" aria-label="Увеличить аванс"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
                             </div>
-                            <input type="range" x-model.number="a" @input="recalc()" min="0" :max="maxAdvance" step="any" class="w-full mt-2">
+                            <input type="range" x-model.number="a" @input="a = round2(a); recalc()" min="0" :max="maxAdvance" step="0.01" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="maxAdvance"></span>%</p>
                         </div>
 
@@ -210,7 +210,7 @@
                                     <td class="px-2 py-2 font-mono" x-text="o.anonymous_code"></td>
                                     <td class="px-2 py-2 text-right" x-text="fmt(o.price)"></td>
                                     <td class="px-2 py-2 text-right" x-text="o.deadline"></td>
-                                    <td class="px-2 py-2 text-right" x-text="o.advance + '%'"></td>
+                                    <td class="px-2 py-2 text-right" x-text="round2(o.advance) + '%'"></td>
                                     <td class="px-2 py-2 text-right" x-text="round2(o.total_score)"></td>
                                     <td class="px-2 py-2 text-right text-gray-400" x-text="o.time"></td>
                                 </tr>

@@ -202,8 +202,11 @@ class CommercialHiddenResultsTest extends TestCase
         // Жёсткого биндинга шага быть не должно.
         $resp->assertDontSee(':step="steps.d"', false);
         $resp->assertDontSee(':step="steps.a"', false);
-        // Поле срока — целочисленный шаг 1 (любое целое допустимо и сабмитится).
+        // step="any" убран у аванса — иначе слайдер давал «кучу цифр» после запятой.
+        $resp->assertDontSee('step="any"', false);
+        // Поле срока — целочисленный шаг 1; поле аванса — 0.01 (2 знака, без биллиардных дробей).
         $resp->assertSee('step="1"', false);
+        $resp->assertSee('step="0.01"', false);
     }
 
     public function test_worse_offer_still_rejected_with_hidden_results(): void
