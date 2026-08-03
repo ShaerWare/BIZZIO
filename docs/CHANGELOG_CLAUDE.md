@@ -2454,3 +2454,33 @@ read-only — смена организатора ломала бы пригла
 попали классы из скомпилированных вью прошлых версий. После `artisan view:clear` сборка вернулась
 к исходному хэшу. Вывод: перед проверкой Assets freshness всегда чистим кэш вью, иначе
 закоммитим ложный дифф `public/build`.
+
+---
+
+## 2026-08-03 — feat #237: результаты коммерческого аукциона скрыты по умолчанию
+
+**Задача:** у коммерческих аукционов результаты должны быть скрыты всегда — их видят только
+администраторы/модераторы компании-организатора и компаний-участников. Галочку «Скрыть результаты»
+из формы убрать.
+
+**Сделано:**
+- `RfqController::store` — при `procedure=commercial` флаг `is_results_hidden` ставится принудительно.
+- `UpdateRfqRequest::prepareForValidation` — у коммерческой процедуры флаг нельзя снять даже
+  подделанным запросом (галочки в форме нет, поэтому отсутствие поля не должно раскрывать торги).
+- `CommercialAuctionLauncherService` — этап 2 создаётся со скрытыми результатами всегда (раньше
+  копировал флаг с этапа 1).
+- Формы создания и редактирования: галочка показывается только для обычного Запроса цен, для
+  коммерческого — поясняющая строка.
+- `AuctionController::show` — проверка видимости итогов переведена на `Auction::resultsHiddenFor()`.
+  Раньше участником считался только тот, кто подал ставку; теперь — приглашённая компания. Это важно
+  для этапа 2: участники приходят с этапа 1 приглашениями, но торговать могли не все, и «молчавший»
+  участник итогов не видел.
+- Миграция `2026_08_03_120000_hide_results_for_commercial_procedures` — проставляет флаг уже
+  созданным коммерческим RFQ и аукционам.
+
+**Файлы:** `app/Http/Controllers/RfqController.php`, `app/Http/Controllers/AuctionController.php`,
+`app/Http/Requests/UpdateRfqRequest.php`, `app/Services/CommercialAuctionLauncherService.php`,
+`resources/views/rfqs/create.blade.php`, `resources/views/rfqs/edit.blade.php`,
+`database/migrations/2026_08_03_120000_hide_results_for_commercial_procedures.php`,
+`tests/Feature/CommercialHiddenResultsTest.php` (+5 тестов).
+Прогон: весь набор 347/347. Pint чист, ассеты без изменений.
