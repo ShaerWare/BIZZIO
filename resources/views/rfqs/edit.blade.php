@@ -1,32 +1,44 @@
 @extends('layouts.app')
 
-@section('title', 'Редактировать Запрос цен')
+@php
+    // #216 Редактировать можно только черновик (RfqPolicy::update) — доступен весь набор полей.
+    $isCommercial = $rfq->isCommercial();
+@endphp
+
+@section('title', $isCommercial ? 'Редактировать коммерческий аукцион' : 'Редактировать Запрос цен')
 
 @section('content')
 <div class="py-12">
     <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-        
+
         <!-- Заголовок -->
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Редактировать Запрос цен</h1>
+            <h1 class="text-3xl font-bold text-gray-900">{{ $isCommercial ? 'Редактировать коммерческий аукцион' : 'Редактировать Запрос цен' }}</h1>
             <p class="mt-2 text-sm text-gray-600">{{ $rfq->number }} — {{ $rfq->title }}</p>
         </div>
 
         <!-- Форма -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
-                <form method="POST" action="{{ route('rfqs.update', $rfq) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('rfqs.update', $rfq) }}" enctype="multipart/form-data" id="rfq-edit-form">
                     @csrf
                     @method('PUT')
+
+                    <!-- Компания-организатор (не меняется после создания) -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Компания-организатор</label>
+                        <input type="text" value="{{ $rfq->company->name }}" disabled
+                               class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-600 shadow-sm">
+                    </div>
 
                     <!-- Название -->
                     <div class="mb-6">
                         <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
                             Название <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" 
-                               name="title" 
-                               id="title" 
+                        <input type="text"
+                               name="title"
+                               id="title"
                                required
                                value="{{ old('title', $rfq->title) }}"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('title') border-red-500 @enderror">
@@ -40,8 +52,8 @@
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
                             Описание
                         </label>
-                        <textarea name="description" 
-                                  id="description" 
+                        <textarea name="description"
+                                  id="description"
                                   rows="5"
                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-red-500 @enderror">{{ old('description', $rfq->description) }}</textarea>
                         @error('description')
@@ -49,20 +61,193 @@
                         @enderror
                     </div>
 
-                    <!-- Дата окончания -->
+                    <!-- Тип процедуры -->
                     <div class="mb-6">
-                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Дата окончания приёма заявок <span class="text-red-500">*</span>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Тип процедуры <span class="text-red-500">*</span>
                         </label>
-                        <x-datetime-input name="end_date"
-                                          :value="old('end_date', $rfq->end_date->format('Y-m-d\TH:i'))"
-                                          :required="true"
-                                          :error="$errors->has('end_date')" />
-                        @error('end_date')
+                        <div class="space-y-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="type" value="open"
+                                       {{ old('type', $rfq->type) === 'open' ? 'checked' : '' }}
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <span class="ml-2 text-sm text-gray-700">
+                                    <strong>Открытая</strong> — любая компания может подать заявку
+                                </span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="type" value="closed"
+                                       {{ old('type', $rfq->type) === 'closed' ? 'checked' : '' }}
+                                       class="rounded-full border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <span class="ml-2 text-sm text-gray-700">
+                                    <strong>Закрытая</strong> — только приглашённые компании
+                                </span>
+                            </label>
+                        </div>
+                        @error('type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $rfq->end_date->format('d.m.Y H:i') }}</p>
                     </div>
+
+                    <!-- Валюта -->
+                    <div class="mb-6">
+                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
+                            Валюта <span class="text-red-500">*</span>
+                        </label>
+                        <select name="currency" id="currency" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('currency') border-red-500 @enderror">
+                            @foreach(\App\Models\Rfq::CURRENCIES as $code => $symbol)
+                                <option value="{{ $code }}" {{ old('currency', $rfq->currency) === $code ? 'selected' : '' }}>
+                                    {{ $code }} ({{ $symbol }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('currency')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Даты -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ $isCommercial ? 'Дата начала приёма предложений' : 'Дата начала приёма заявок' }} <span class="text-red-500">*</span>
+                            </label>
+                            <x-datetime-input name="start_date"
+                                              :value="old('start_date', $rfq->start_date?->format('Y-m-d\TH:i'))"
+                                              :required="true"
+                                              :error="$errors->has('start_date')" />
+                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
+                            @error('start_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ $isCommercial ? 'Дата окончания приёма предложений' : 'Дата окончания приёма заявок' }} <span class="text-red-500">*</span>
+                            </label>
+                            <x-datetime-input name="end_date"
+                                              :value="old('end_date', $rfq->end_date->format('Y-m-d\TH:i'))"
+                                              :required="true"
+                                              :error="$errors->has('end_date')" />
+                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва). Текущее значение: {{ $rfq->end_date->format('d.m.Y H:i') }}</p>
+                            @error('end_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        @if($isCommercial)
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Начало торгов (этап 2)</label>
+                                <x-datetime-input name="trading_start"
+                                                  :value="old('trading_start', $rfq->trading_start?->format('Y-m-d\TH:i'))"
+                                                  :error="$errors->has('trading_start')" />
+                                <p class="mt-1 text-xs text-gray-500">Должно быть позже окончания приёма предложений. UTC +3</p>
+                                @error('trading_start')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Критерии оценки -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Критерии оценки (веса в %)</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Сумма весов должна быть равна 100%{{ $isCommercial ? ' — применяются на этапе 2 (коммерческий аукцион)' : '' }}
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="weight_price" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Цена <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" name="weight_price" id="weight_price" required
+                                       value="{{ old('weight_price', (int) $rfq->weight_price) }}"
+                                       min="0" max="100" step="1"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_price') border-red-500 @enderror">
+                                @error('weight_price')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="weight_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Срок выполнения <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" name="weight_deadline" id="weight_deadline" required
+                                       value="{{ old('weight_deadline', (int) $rfq->weight_deadline) }}"
+                                       min="0" max="100" step="1"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_deadline') border-red-500 @enderror">
+                                @error('weight_deadline')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="weight_advance" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Размер аванса <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" name="weight_advance" id="weight_advance" required
+                                       value="{{ old('weight_advance', (int) $rfq->weight_advance) }}"
+                                       min="0" max="100" step="1"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('weight_advance') border-red-500 @enderror">
+                                @error('weight_advance')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        @error('weights')
+                            <div class="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
+
+                    @if($isCommercial)
+                        <!-- #179/#210 Параметры этапа 2 -->
+                        <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Параметры коммерческого аукциона (Этап 2)</h3>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Торги продолжаются, пока не пройдёт 20 минут с момента подачи последнего предложения.
+                            </p>
+
+                            <h4 class="text-sm font-semibold text-gray-900 mb-2">Шаги изменения критериев</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Шаг цены (%)</label>
+                                    <input type="number" name="step_price" value="{{ old('step_price', $rfq->step_price) }}"
+                                           min="0.01" max="100" step="0.01"
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_price') border-red-500 @enderror">
+                                    @error('step_price')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Шаг срока (дни)</label>
+                                    <input type="number" name="step_deadline" value="{{ old('step_deadline', $rfq->step_deadline) }}"
+                                           min="1" step="1"
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_deadline') border-red-500 @enderror">
+                                    @error('step_deadline')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Шаг аванса (%)</label>
+                                    <input type="number" name="step_advance" value="{{ old('step_advance', $rfq->step_advance) }}"
+                                           min="0.01" max="100" step="0.01"
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('step_advance') border-red-500 @enderror">
+                                    @error('step_advance')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            <h4 class="text-sm font-semibold text-gray-900 mb-2">Максимальные значения критериев (этап 2)</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Макс. срок выполнения (дни)</label>
+                                    <input type="number" name="max_deadline" value="{{ old('max_deadline', $rfq->max_deadline) }}"
+                                           min="1" step="1"
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('max_deadline') border-red-500 @enderror">
+                                    @error('max_deadline')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Макс. размер аванса (%)</label>
+                                    <input type="number" name="max_advance" value="{{ old('max_advance', $rfq->max_advance) }}"
+                                           min="0.01" max="100" step="0.01"
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 @error('max_advance') border-red-500 @enderror">
+                                    @error('max_advance')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- #185 Конкурсная документация: Извещение / ТЗ / Проект договора / Прочие файлы --}}
                     <p class="text-sm text-gray-500 mb-2">Загрузите новый файл, чтобы заменить текущий; пустое поле оставляет файл без изменений.</p>
@@ -235,6 +420,33 @@
             }
         };
     }
+
+    // #216 Подсветка суммы весов ≠ 100% (как в форме создания)
+    (function () {
+        const weightInputs = ['weight_price', 'weight_deadline', 'weight_advance'];
+        weightInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', function () {
+                const sum = weightInputs.reduce((acc, i) => {
+                    const input = document.getElementById(i);
+                    return acc + (input ? parseFloat(input.value) || 0 : 0);
+                }, 0);
+
+                weightInputs.forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (!input) return;
+                    if (Math.abs(sum - 100) > 0.01) {
+                        input.classList.add('border-red-500');
+                        input.classList.remove('border-gray-300');
+                    } else {
+                        input.classList.remove('border-red-500');
+                        input.classList.add('border-gray-300');
+                    }
+                });
+            });
+        });
+    })();
 </script>
 @endpush
 @endsection
