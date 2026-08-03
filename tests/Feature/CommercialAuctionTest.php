@@ -626,6 +626,38 @@ class CommercialAuctionTest extends TestCase
     }
 
     // =========================================================
+    // #222 — предустановка времени этапов
+    // =========================================================
+
+    public function test_commercial_create_form_prefills_stage_times(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+
+        $start = now()->addHour();                 // 10:00 сегодня
+        $end = $start->copy()->addDay();           // 10:00 завтра
+        $tradingStart = $end->copy()->addMinutes(10); // 10:10 завтра
+
+        $response = $this->actingAs($this->user)
+            ->get(route('rfqs.create', ['procedure' => 'commercial']))
+            ->assertOk();
+
+        $response->assertSee("date: '{$start->format('Y-m-d')}',", false);
+        $response->assertSee("time: '{$start->format('H:i')}',", false);
+        $response->assertSee("time: '{$end->format('H:i')}',", false);
+        $response->assertSee("time: '{$tradingStart->format('H:i')}',", false);
+    }
+
+    public function test_standard_rfq_create_form_leaves_dates_empty(): void
+    {
+        // #222 Предустановка — только для коммерческого аукциона.
+        $this->actingAs($this->user)
+            ->get(route('rfqs.create'))
+            ->assertOk()
+            ->assertSee("date: '',", false)
+            ->assertSee("time: '',", false);
+    }
+
+    // =========================================================
     // #216 — полноценное редактирование черновика
     // =========================================================
 
