@@ -225,4 +225,130 @@ class CommercialHiddenResultsTest extends TestCase
 
         $this->assertSame($bestBefore, $auction->fresh()->best_bid_id);
     }
+
+    // =========================================================
+    // #237 — у коммерческой процедуры результаты скрыты по умолчанию
+    // =========================================================
+
+    public function test_commercial_rfq_is_created_with_hidden_results_without_checkbox(): void
+    {
+        $this->actingAs($this->organizer)
+            ->post(route('rfqs.store'), [
+                'title' => 'КА без галочки',
+                'company_id' => $this->company->id,
+                'type' => 'open',
+                'procedure' => 'commercial',
+                'currency' => 'RUB',
+                'status' => 'draft',
+                'start_date' => now()->format('Y-m-d H:i:s'),
+                'end_date' => now()->addDay()->format('Y-m-d H:i:s'),
+                'weight_price' => 70, 'weight_deadline' => 20, 'weight_advance' => 10,
+                'trading_start' => now()->addDay()->addHour()->format('Y-m-d H:i:s'),
+                'step_price' => 0.5, 'step_deadline' => 1, 'step_advance' => 5,
+                'max_deadline' => 90, 'max_advance' => 100,
+                'technical_specification' => \Illuminate\Http\UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test'),
+                // Галочка НЕ передаётся — в форме коммерческого аукциона её нет.
+            ])
+            ->assertRedirect();
+
+        $rfq = \App\Models\Rfq::where('title', 'КА без галочки')->firstOrFail();
+
+        $this->assertTrue($rfq->is_results_hidden);
+    }
+
+    public function test_standard_rfq_keeps_checkbox_behaviour(): void
+    {
+        $this->actingAs($this->organizer)
+            ->post(route('rfqs.store'), [
+                'title' => 'Обычный запрос цен',
+                'company_id' => $this->company->id,
+                'type' => 'open',
+                'procedure' => 'standard',
+                'currency' => 'RUB',
+                'status' => 'draft',
+                'start_date' => now()->format('Y-m-d H:i:s'),
+                'end_date' => now()->addDay()->format('Y-m-d H:i:s'),
+                'weight_price' => 50, 'weight_deadline' => 30, 'weight_advance' => 20,
+                'technical_specification' => \Illuminate\Http\UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test'),
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse(\App\Models\Rfq::where('title', 'Обычный запрос цен')->firstOrFail()->is_results_hidden);
+    }
+
+    public function test_commercial_draft_edit_cannot_unhide_results(): void
+    {
+        $rfq = \App\Models\Rfq::create([
+            'number' => \App\Models\Rfq::generateNumber(),
+            'title' => 'КА черновик',
+            'company_id' => $this->company->id,
+            'created_by' => $this->organizer->id,
+            'type' => 'open',
+            'procedure' => \App\Models\Rfq::PROCEDURE_COMMERCIAL,
+            'currency' => 'RUB',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+            'trading_start' => now()->addDays(2)->addHour(),
+            'weight_price' => 70, 'weight_deadline' => 20, 'weight_advance' => 10,
+            'step_price' => 0.5, 'step_deadline' => 1, 'step_advance' => 5,
+            'max_deadline' => 90, 'max_advance' => 100,
+            'is_results_hidden' => true,
+            'status' => 'draft',
+        ]);
+
+        // Форма коммерческого аукциона галочку не выводит...
+        $this->actingAs($this->organizer)
+            ->get(route('rfqs.edit', $rfq))
+            ->assertOk()
+            ->assertDontSee('name="is_results_hidden"', false);
+
+        // ...и подделанный запрос без неё флаг не снимает.
+        $this->actingAs($this->organizer)
+            ->put(route('rfqs.update', $rfq), ['title' => 'КА черновик'])
+            ->assertRedirect();
+
+        $this->assertTrue($rfq->fresh()->is_results_hidden);
+    }
+
+    public function test_closed_commercial_auction_hides_results_from_outsider_but_not_participant(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['type' => 'open']); // чтобы посторонний мог открыть страницу
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $auction->update(['status' => 'closed', 'winner_bid_id' => $auction->fresh()->best_bid_id]);
+
+        // Посторонний — результаты скрыты.
+        $outsider = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($outsider)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Результаты скрыты организатором');
+
+        // Организатор и участник — видят.
+        $this->actingAs($this->organizer)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Результаты скрыты организатором');
+
+        $this->actingAs($leadUser)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Результаты скрыты организатором');
+    }
+
+    public function test_closed_commercial_auction_visible_to_invited_company_without_offers(): void
+    {
+        // #237 Участник этапа 1, не подавший ставку на этапе 2, всё равно видит итоги.
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        [$silentUser] = $this->participant($auction);
+        $auction->update(['status' => 'closed', 'winner_bid_id' => $auction->fresh()->best_bid_id]);
+
+        $this->actingAs($silentUser)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Результаты скрыты организатором');
+    }
 }

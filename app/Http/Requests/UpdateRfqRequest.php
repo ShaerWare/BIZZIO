@@ -64,8 +64,9 @@ class UpdateRfqRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        // #237 У коммерческого аукциона результаты скрыты всегда — снять флаг нельзя.
         $this->merge([
-            'is_results_hidden' => $this->boolean('is_results_hidden'),
+            'is_results_hidden' => $this->route('rfq')?->isCommercial() || $this->boolean('is_results_hidden'),
         ]);
     }
 

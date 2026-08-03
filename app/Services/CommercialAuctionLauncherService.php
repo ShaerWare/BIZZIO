@@ -74,7 +74,8 @@ class CommercialAuctionLauncherService
                 // #210 Референсы нормировки (100% шкалы) задаёт организатор на этапе 1 — переносим в аукцион.
                 'max_deadline' => $rfq->max_deadline,
                 'max_advance' => $rfq->max_advance,
-                'is_results_hidden' => $rfq->is_results_hidden,
+                // #237 Ход и итоги коммерческих торгов видны только организатору и участникам.
+                'is_results_hidden' => true,
                 // #222 До trading_start аукцион ждёт в статусе 'active' (участники известны, приёма
                 // заявок нет). UpdateAuctionStatuses переведёт его в 'trading' в назначенное время.
                 'status' => $startsTradingNow ? 'trading' : 'active',

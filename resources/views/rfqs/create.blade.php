@@ -429,7 +429,8 @@
                     </div>
 
                     <!-- Скрытие результатов после завершения -->
-                    <div class="mb-6">
+                    {{-- #237 У коммерческого аукциона результаты скрыты всегда — выбора нет. --}}
+                    <div class="mb-6" x-show="procedure !== 'commercial'" x-cloak>
                         <label class="inline-flex items-center">
                             <input type="checkbox"
                                    name="is_results_hidden"
@@ -441,6 +442,9 @@
                                 <span class="text-gray-500">(видны только организатору и участникам)</span>
                             </span>
                         </label>
+                    </div>
+                    <div class="mb-6 text-sm text-gray-600" x-show="procedure === 'commercial'" x-cloak>
+                        Ход торгов и итоги коммерческого аукциона видны только организатору и компаниям-участникам.
                     </div>
 
                     <!-- Кнопки -->

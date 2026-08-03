@@ -207,12 +207,11 @@ class AuctionController extends Controller
         $stepRange = $auction->getStepRange();
 
         // #115: Определяем, может ли пользователь видеть результаты
+        // #237 Участником считаем и приглашённую компанию без ставок: на этапе 2 коммерческого
+        // аукциона участники приходят с этапа 1 приглашениями, а торговать могли не все.
         $canSeeResults = true;
-        if ($auction->is_results_hidden && in_array($auction->status, ['closed', 'cancelled'])) {
-            $isManager = auth()->check() && $auction->canManage(auth()->user());
-            $isParticipant = auth()->check() && $auction->bids->pluck('company_id')
-                ->intersect($userCompanies->pluck('id'))->isNotEmpty();
-            $canSeeResults = $isManager || $isParticipant;
+        if (in_array($auction->status, ['closed', 'cancelled'])) {
+            $canSeeResults = ! $auction->resultsHiddenFor(auth()->user());
         }
 
         // #119: При торгах показываем только компанию, от которой подана заявка текущим пользователем
