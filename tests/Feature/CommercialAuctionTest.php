@@ -625,6 +625,234 @@ class CommercialAuctionTest extends TestCase
         $this->assertNotNull($auction->getFirstMedia('protocol'), 'Протокол коммерческого аукциона должен быть сгенерирован');
     }
 
+    // =========================================================
+    // #259 — опубликовано, но приём ещё не начался
+    // =========================================================
+
+    public function test_stage1_before_start_counts_down_to_start_and_explains_absence_of_form(): void
+    {
+        // #222 по умолчанию старт через час, поэтому «активна, но приём не начался» — обычное
+        // состояние. Раньше страница считала до окончания ещё не начавшегося приёма, а формы
+        // подачи не было без объяснений.
+        $rfq = $this->draftCommercialRfq([
+            'status' => 'active',
+            'start_date' => now()->addHour(),
+            'end_date' => now()->addDay(),
+            'trading_start' => now()->addDay()->addMinutes(10),
+        ]);
+
+        $viewer = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($viewer)
+            ->get(route('rfqs.show', $rfq))
+            ->assertOk()
+            ->assertSee('До начала приёма предложений (этап 1)')
+            ->assertDontSee('До окончания приёма предложений (этап 1)')
+            ->assertSee('Приём предложений начнётся')
+            ->assertDontSee('Подать заявку');
+    }
+
+    public function test_stage1_after_start_counts_down_to_end(): void
+    {
+        $rfq = $this->draftCommercialRfq([
+            'status' => 'active',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+            'trading_start' => now()->addDay()->addMinutes(10),
+        ]);
+
+        $viewer = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($viewer)
+            ->get(route('rfqs.show', $rfq))
+            ->assertOk()
+            ->assertSee('До окончания приёма предложений (этап 1)')
+            ->assertDontSee('До начала приёма предложений (этап 1)')
+            ->assertDontSee('Приём предложений начнётся');
+    }
+
+    // =========================================================
+    // #222 — предустановка времени этапов
+    // =========================================================
+
+    public function test_commercial_create_form_prefills_stage_times(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+
+        $start = now()->addHour();                 // 10:00 сегодня
+        $end = $start->copy()->addDay();           // 10:00 завтра
+        $tradingStart = $end->copy()->addMinutes(10); // 10:10 завтра
+
+        $response = $this->actingAs($this->user)
+            ->get(route('rfqs.create', ['procedure' => 'commercial']))
+            ->assertOk();
+
+        $response->assertSee("date: '{$start->format('Y-m-d')}',", false);
+        $response->assertSee("time: '{$start->format('H:i')}',", false);
+        $response->assertSee("time: '{$end->format('H:i')}',", false);
+        $response->assertSee("time: '{$tradingStart->format('H:i')}',", false);
+    }
+
+    public function test_standard_rfq_create_form_leaves_dates_empty(): void
+    {
+        // #222 Предустановка — только для коммерческого аукциона.
+        $this->actingAs($this->user)
+            ->get(route('rfqs.create'))
+            ->assertOk()
+            ->assertSee("date: '',", false)
+            ->assertSee("time: '',", false);
+    }
+
+    // =========================================================
+    // #216 — полноценное редактирование черновика
+    // =========================================================
+
+    /** Черновик коммерческого RFQ для тестов редактирования. */
+    private function draftCommercialRfq(array $overrides = []): Rfq
+    {
+        return Rfq::create(array_merge([
+            'number' => Rfq::generateNumber(),
+            'title' => 'Черновик КА',
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'type' => 'open',
+            'procedure' => Rfq::PROCEDURE_COMMERCIAL,
+            'currency' => 'RUB',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+            'trading_start' => now()->addDays(2)->addHour(),
+            'weight_price' => 70,
+            'weight_deadline' => 20,
+            'weight_advance' => 10,
+            'step_price' => 0.5,
+            'step_deadline' => 1,
+            'step_advance' => 5,
+            'max_deadline' => 90,
+            'max_advance' => 100,
+            'status' => 'draft',
+        ], $overrides));
+    }
+
+    public function test_draft_commercial_rfq_allows_editing_all_fields(): void
+    {
+        $rfq = $this->draftCommercialRfq();
+
+        $this->actingAs($this->user)
+            ->put(route('rfqs.update', $rfq), [
+                'title' => 'Обновлённый КА',
+                'description' => 'Новое описание',
+                'type' => 'closed',
+                'currency' => 'USD',
+                'start_date' => now()->addDays(3)->format('Y-m-d H:i:s'),
+                'end_date' => now()->addDays(4)->format('Y-m-d H:i:s'),
+                'trading_start' => now()->addDays(4)->addHours(2)->format('Y-m-d H:i:s'),
+                'weight_price' => 50,
+                'weight_deadline' => 30,
+                'weight_advance' => 20,
+                'step_price' => 1.5,
+                'step_deadline' => 3,
+                'step_advance' => 7,
+                'max_deadline' => 120,
+                'max_advance' => 60,
+            ])
+            ->assertRedirect(route('rfqs.show', $rfq));
+
+        $rfq->refresh();
+
+        $this->assertSame('Обновлённый КА', $rfq->title);
+        $this->assertSame('closed', $rfq->type);
+        $this->assertSame('USD', $rfq->currency);
+        $this->assertEqualsWithDelta(50.0, (float) $rfq->weight_price, 1e-9);
+        $this->assertEqualsWithDelta(1.5, (float) $rfq->step_price, 1e-9);
+        $this->assertSame(3, (int) $rfq->step_deadline);
+        $this->assertSame(120, (int) $rfq->max_deadline);
+        $this->assertEqualsWithDelta(60.0, (float) $rfq->max_advance, 1e-9);
+        $this->assertTrue($rfq->trading_start->greaterThan($rfq->end_date));
+    }
+
+    public function test_draft_edit_rejects_weights_not_summing_to_100(): void
+    {
+        $rfq = $this->draftCommercialRfq();
+
+        $this->actingAs($this->user)
+            ->put(route('rfqs.update', $rfq), [
+                'title' => 'Обновлённый КА',
+                'weight_price' => 50,
+                'weight_deadline' => 30,
+                'weight_advance' => 30,
+            ])
+            ->assertSessionHasErrors('weights');
+
+        $this->assertEqualsWithDelta(70.0, (float) $rfq->fresh()->weight_price, 1e-9);
+    }
+
+    public function test_draft_edit_rejects_trading_start_before_end_date(): void
+    {
+        $rfq = $this->draftCommercialRfq();
+
+        $this->actingAs($this->user)
+            ->put(route('rfqs.update', $rfq), [
+                'title' => 'Обновлённый КА',
+                'start_date' => now()->addDay()->format('Y-m-d H:i:s'),
+                'end_date' => now()->addDays(4)->format('Y-m-d H:i:s'),
+                'trading_start' => now()->addDays(3)->format('Y-m-d H:i:s'),
+            ])
+            ->assertSessionHasErrors('trading_start');
+    }
+
+    public function test_active_rfq_cannot_be_updated(): void
+    {
+        // #216 PUT подчиняется той же политике, что и форма: после активации правки запрещены.
+        $rfq = $this->draftCommercialRfq(['status' => 'active']);
+
+        $this->actingAs($this->user)
+            ->put(route('rfqs.update', $rfq), [
+                'title' => 'Активный КА',
+                'step_price' => 4.5,
+                'max_deadline' => 365,
+            ])
+            ->assertForbidden();
+
+        $rfq->refresh();
+
+        $this->assertSame('Черновик КА', $rfq->title);
+        $this->assertEqualsWithDelta(0.5, (float) $rfq->step_price, 1e-9);
+        $this->assertSame(90, (int) $rfq->max_deadline);
+    }
+
+    public function test_edit_page_shows_all_stage_2_fields_for_draft(): void
+    {
+        $draft = $this->draftCommercialRfq();
+
+        $this->actingAs($this->user)
+            ->get(route('rfqs.edit', $draft))
+            ->assertOk()
+            ->assertSee('name="step_price"', false)
+            ->assertSee('name="step_deadline"', false)
+            ->assertSee('name="step_advance"', false)
+            ->assertSee('name="max_deadline"', false)
+            ->assertSee('name="max_advance"', false)
+            ->assertSee('name="weight_price"', false)
+            ->assertSee('name="trading_start"', false)
+            ->assertSee('name="currency"', false)
+            ->assertSee('name="type"', false);
+    }
+
+    public function test_edit_page_hides_stage_2_fields_for_standard_rfq(): void
+    {
+        $draft = $this->draftCommercialRfq([
+            'procedure' => Rfq::PROCEDURE_STANDARD,
+            'trading_start' => null,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('rfqs.edit', $draft))
+            ->assertOk()
+            ->assertSee('name="weight_price"', false)
+            ->assertDontSee('name="step_price"', false)
+            ->assertDontSee('name="max_advance"', false);
+    }
+
     /** Коммерческий аукцион в статусе trading. */
     private function tradingCommercialAuction(array $overrides = []): Auction
     {

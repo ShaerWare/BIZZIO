@@ -2,6 +2,13 @@
 
 @php
     $isCommercial = old('procedure', request('procedure', 'standard')) === 'commercial';
+
+    // #222 Предустановка времени этапов коммерческого аукциона:
+    // начало приёма предложений — через час, окончание — через сутки после начала,
+    // начало торгов (этап 2) — через 10 минут после окончания приёма.
+    $defaultStart = $isCommercial ? now()->addHour()->startOfMinute() : null;
+    $defaultEnd = $defaultStart?->copy()->addDay();
+    $defaultTradingStart = $defaultEnd?->copy()->addMinutes(10);
 @endphp
 
 @section('title', $isCommercial ? 'Создать коммерческий аукцион' : 'Разместить Запрос цен')
@@ -246,10 +253,10 @@
                                 {{ $isCommercial ? 'Дата начала приёма предложений' : 'Дата начала приёма заявок' }} <span class="text-red-500">*</span>
                             </label>
                             <x-datetime-input name="start_date"
-                                              :value="old('start_date', '')"
+                                              :value="old('start_date', $defaultStart?->format('Y-m-d\TH:i') ?? '')"
                                               :required="true"
                                               :error="$errors->has('start_date')" />
-                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
+                            <p class="mt-1 text-xs text-gray-500">{{ $isCommercial ? 'Предзаполнено: через 1 час от текущего времени. Можно изменить. UTC +3 (Москва)' : 'UTC +3 (Москва)' }}</p>
                             @error('start_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -259,10 +266,10 @@
                                 {{ $isCommercial ? 'Дата окончания приёма предложений' : 'Дата окончания приёма заявок' }} <span class="text-red-500">*</span>
                             </label>
                             <x-datetime-input name="end_date"
-                                              :value="old('end_date', '')"
+                                              :value="old('end_date', $defaultEnd?->format('Y-m-d\TH:i') ?? '')"
                                               :required="true"
                                               :error="$errors->has('end_date')" />
-                            <p class="mt-1 text-xs text-gray-500">UTC +3 (Москва)</p>
+                            <p class="mt-1 text-xs text-gray-500">{{ $isCommercial ? 'Предзаполнено: через 24 часа после начала приёма. Можно изменить. UTC +3 (Москва)' : 'UTC +3 (Москва)' }}</p>
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -271,9 +278,9 @@
                         <div x-show="procedure === 'commercial'" x-cloak>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Начало торгов (этап 2)</label>
                             <x-datetime-input name="trading_start"
-                                              :value="old('trading_start', '')"
+                                              :value="old('trading_start', $defaultTradingStart?->format('Y-m-d\TH:i') ?? '')"
                                               :error="$errors->has('trading_start')" />
-                            <p class="mt-1 text-xs text-gray-500">По умолчанию — через 1 час после окончания приёма предложений. UTC +3</p>
+                            <p class="mt-1 text-xs text-gray-500">Предзаполнено: через 10 минут после окончания приёма предложений. Можно изменить. UTC +3</p>
                             @error('trading_start')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -429,7 +436,8 @@
                     </div>
 
                     <!-- Скрытие результатов после завершения -->
-                    <div class="mb-6">
+                    {{-- #237 У коммерческого аукциона результаты скрыты всегда — выбора нет. --}}
+                    <div class="mb-6" x-show="procedure !== 'commercial'" x-cloak>
                         <label class="inline-flex items-center">
                             <input type="checkbox"
                                    name="is_results_hidden"
@@ -441,6 +449,9 @@
                                 <span class="text-gray-500">(видны только организатору и участникам)</span>
                             </span>
                         </label>
+                    </div>
+                    <div class="mb-6 text-sm text-gray-600" x-show="procedure === 'commercial'" x-cloak>
+                        Ход торгов и итоги коммерческого аукциона видны только организатору и компаниям-участникам.
                     </div>
 
                     <!-- Кнопки -->

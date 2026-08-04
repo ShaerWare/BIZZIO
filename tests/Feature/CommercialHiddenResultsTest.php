@@ -225,4 +225,302 @@ class CommercialHiddenResultsTest extends TestCase
 
         $this->assertSame($bestBefore, $auction->fresh()->best_bid_id);
     }
+
+    // =========================================================
+    // #257 — шаг как минимальное улучшение и запрет самоперебивания
+    // =========================================================
+
+    public function test_company_cannot_outbid_its_own_leading_offer(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$user, $company] = $this->participant($auction);
+        $this->seedLeader($auction, $company, $user);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        // Заведомо лучше собственного лидера — всё равно отклоняется.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 700_000, 'deadline' => 30, 'advance_percent' => 5,
+        ])->assertSessionHas('error');
+
+        $this->assertSame($bestBefore, $auction->fresh()->best_bid_id);
+        $this->assertSame(1, $auction->fresh()->offerBids()->count());
+    }
+
+    public function test_improvement_smaller_than_step_is_rejected(): void
+    {
+        // Шаги аукциона: цена 0.5% от НМЦ 1 200 000 = 6 000, срок 1 дн., аванс 5 %.
+        // Лидер: 900 000 / 50 дн. / 20 %. Улучшаем аванс всего на 1 п.п. — меньше шага.
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 50, 'advance_percent' => 19,
+        ])->assertSessionHas('error');
+
+        $this->assertSame($bestBefore, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_improvement_of_exactly_one_step_is_accepted(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        [$user, $company] = $this->participant($auction);
+
+        // Аванс 20 % → 15 % (ровно один шаг), остальное как у лидера.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 50, 'advance_percent' => 15,
+        ])->assertRedirect();
+
+        $this->assertNotSame($bestBefore, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_price_improvement_smaller_than_step_is_rejected(): void
+    {
+        // Шаг цены = 0.5 % от НМЦ 1 200 000 = 6 000. Снижение на 1 000 — меньше шага.
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 899_000, 'deadline' => 50, 'advance_percent' => 20,
+        ])->assertSessionHas('error');
+    }
+
+    public function test_worsening_a_criterion_is_not_limited_by_step(): void
+    {
+        // Шаг ограничивает только улучшение: аванс можно ухудшить на 1 п.п.,
+        // компенсировав это ценой (снижение больше шага).
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 850_000, 'deadline' => 50, 'advance_percent' => 21,
+        ])->assertRedirect();
+
+        $this->assertNotSame($bestBefore, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_first_offer_is_not_limited_by_step(): void
+    {
+        // Лидера нет — сравнивать не с чем, любое корректное предложение принимается.
+        $auction = $this->hiddenTradingAuction();
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 1_199_999, 'deadline' => 99, 'advance_percent' => 49,
+        ])->assertRedirect();
+
+        $this->assertNotNull($auction->fresh()->best_bid_id);
+    }
+
+    public function test_one_price_step_is_accepted_when_step_lands_on_half_a_kopeck(): void
+    {
+        // #261 Аукцион 74 с теста: НМЦ 388 888,50, шаг цены 5 % = 19 444,425.
+        // PHP округляет до 19 444,43, JS toFixed(2) — до 19 444,42, поэтому одно нажатие «−»
+        // снижало цену на копейку меньше требуемого и сервер отклонял предложение.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['starting_price' => 388_888.50, 'step_price' => 5]);
+
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $leader = $this->seedLeader($auction, $leadCompany, $leadUser);
+        $leader->update(['price' => 388_888.50]);
+        $auction->refresh();
+
+        [$user, $company] = $this->participant($auction);
+
+        // Ровно один шаг в клиентском (заниженном) округлении — должно приниматься.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id,
+            'price' => 388_888.50 - 19_444.42,
+            'deadline' => 50,
+            'advance_percent' => 20,
+        ])->assertRedirect()->assertSessionMissing('error');
+
+        $this->assertNotSame($leader->id, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_price_step_comes_from_server_in_trading_form(): void
+    {
+        // #261 Шаг цены в конфиге компонента — серверный, до копейки тот же, что в проверке.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['starting_price' => 388_888.50, 'step_price' => 5]);
+        [$user] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('priceStepAbs: 19444.43', false);
+    }
+
+    public function test_improvement_short_by_more_than_a_kopeck_is_still_rejected(): void
+    {
+        // Допуск в копейку не должен превращаться в лазейку: недобор в рубль отклоняется.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['starting_price' => 388_888.50, 'step_price' => 5]);
+
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $leader = $this->seedLeader($auction, $leadCompany, $leadUser);
+        $leader->update(['price' => 388_888.50]);
+        $auction->refresh();
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id,
+            'price' => 388_888.50 - 19_443.43,
+            'deadline' => 50,
+            'advance_percent' => 20,
+        ])->assertSessionHas('error');
+    }
+
+    public function test_trading_form_shows_participant_code_next_to_history(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$user] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Ваш код участника:')
+            ->assertSee('x-text="myCode"', false);
+    }
+
+    // =========================================================
+    // #237 — у коммерческой процедуры результаты скрыты по умолчанию
+    // =========================================================
+
+    public function test_commercial_rfq_is_created_with_hidden_results_without_checkbox(): void
+    {
+        $this->actingAs($this->organizer)
+            ->post(route('rfqs.store'), [
+                'title' => 'КА без галочки',
+                'company_id' => $this->company->id,
+                'type' => 'open',
+                'procedure' => 'commercial',
+                'currency' => 'RUB',
+                'status' => 'draft',
+                'start_date' => now()->format('Y-m-d H:i:s'),
+                'end_date' => now()->addDay()->format('Y-m-d H:i:s'),
+                'weight_price' => 70, 'weight_deadline' => 20, 'weight_advance' => 10,
+                'trading_start' => now()->addDay()->addHour()->format('Y-m-d H:i:s'),
+                'step_price' => 0.5, 'step_deadline' => 1, 'step_advance' => 5,
+                'max_deadline' => 90, 'max_advance' => 100,
+                'technical_specification' => \Illuminate\Http\UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test'),
+                // Галочка НЕ передаётся — в форме коммерческого аукциона её нет.
+            ])
+            ->assertRedirect();
+
+        $rfq = \App\Models\Rfq::where('title', 'КА без галочки')->firstOrFail();
+
+        $this->assertTrue($rfq->is_results_hidden);
+    }
+
+    public function test_standard_rfq_keeps_checkbox_behaviour(): void
+    {
+        $this->actingAs($this->organizer)
+            ->post(route('rfqs.store'), [
+                'title' => 'Обычный запрос цен',
+                'company_id' => $this->company->id,
+                'type' => 'open',
+                'procedure' => 'standard',
+                'currency' => 'RUB',
+                'status' => 'draft',
+                'start_date' => now()->format('Y-m-d H:i:s'),
+                'end_date' => now()->addDay()->format('Y-m-d H:i:s'),
+                'weight_price' => 50, 'weight_deadline' => 30, 'weight_advance' => 20,
+                'technical_specification' => \Illuminate\Http\UploadedFile::fake()->createWithContent('tz.pdf', '%PDF-1.4 test'),
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse(\App\Models\Rfq::where('title', 'Обычный запрос цен')->firstOrFail()->is_results_hidden);
+    }
+
+    public function test_commercial_draft_edit_cannot_unhide_results(): void
+    {
+        $rfq = \App\Models\Rfq::create([
+            'number' => \App\Models\Rfq::generateNumber(),
+            'title' => 'КА черновик',
+            'company_id' => $this->company->id,
+            'created_by' => $this->organizer->id,
+            'type' => 'open',
+            'procedure' => \App\Models\Rfq::PROCEDURE_COMMERCIAL,
+            'currency' => 'RUB',
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+            'trading_start' => now()->addDays(2)->addHour(),
+            'weight_price' => 70, 'weight_deadline' => 20, 'weight_advance' => 10,
+            'step_price' => 0.5, 'step_deadline' => 1, 'step_advance' => 5,
+            'max_deadline' => 90, 'max_advance' => 100,
+            'is_results_hidden' => true,
+            'status' => 'draft',
+        ]);
+
+        // Форма коммерческого аукциона галочку не выводит...
+        $this->actingAs($this->organizer)
+            ->get(route('rfqs.edit', $rfq))
+            ->assertOk()
+            ->assertDontSee('name="is_results_hidden"', false);
+
+        // ...и подделанный запрос без неё флаг не снимает.
+        $this->actingAs($this->organizer)
+            ->put(route('rfqs.update', $rfq), ['title' => 'КА черновик'])
+            ->assertRedirect();
+
+        $this->assertTrue($rfq->fresh()->is_results_hidden);
+    }
+
+    public function test_closed_commercial_auction_hides_results_from_outsider_but_not_participant(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['type' => 'open']); // чтобы посторонний мог открыть страницу
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $auction->update(['status' => 'closed', 'winner_bid_id' => $auction->fresh()->best_bid_id]);
+
+        // Посторонний — результаты скрыты.
+        $outsider = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($outsider)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Результаты скрыты организатором');
+
+        // Организатор и участник — видят.
+        $this->actingAs($this->organizer)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Результаты скрыты организатором');
+
+        $this->actingAs($leadUser)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Результаты скрыты организатором');
+    }
+
+    public function test_closed_commercial_auction_visible_to_invited_company_without_offers(): void
+    {
+        // #237 Участник этапа 1, не подавший ставку на этапе 2, всё равно видит итоги.
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        [$silentUser] = $this->participant($auction);
+        $auction->update(['status' => 'closed', 'winner_bid_id' => $auction->fresh()->best_bid_id]);
+
+        $this->actingAs($silentUser)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Результаты скрыты организатором');
+    }
 }

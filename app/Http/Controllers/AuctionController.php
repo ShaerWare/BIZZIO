@@ -207,12 +207,11 @@ class AuctionController extends Controller
         $stepRange = $auction->getStepRange();
 
         // #115: Определяем, может ли пользователь видеть результаты
+        // #237 Участником считаем и приглашённую компанию без ставок: на этапе 2 коммерческого
+        // аукциона участники приходят с этапа 1 приглашениями, а торговать могли не все.
         $canSeeResults = true;
-        if ($auction->is_results_hidden && in_array($auction->status, ['closed', 'cancelled'])) {
-            $isManager = auth()->check() && $auction->canManage(auth()->user());
-            $isParticipant = auth()->check() && $auction->bids->pluck('company_id')
-                ->intersect($userCompanies->pluck('id'))->isNotEmpty();
-            $canSeeResults = $isManager || $isParticipant;
+        if (in_array($auction->status, ['closed', 'cancelled'])) {
+            $canSeeResults = ! $auction->resultsHiddenFor(auth()->user());
         }
 
         // #119: При торгах показываем только компанию, от которой подана заявка текущим пользователем
@@ -684,13 +683,25 @@ class AuctionController extends Controller
             $result = DB::transaction(function () use ($auction, $company, $price, $deadline, $advance, $scoring) {
                 // Блокируем строку аукциона — сериализуем одновременные предложения.
                 $locked = Auction::whereKey($auction->id)->lockForUpdate()->first();
+                $best = $locked->bestBid;
+
+                // #257 Перебивать собственное предложение нельзя: лидерство уже за этой компанией,
+                // а самоперебивание только ухудшает её же условия и накручивает историю.
+                if ($best && $best->company_id === $company->id) {
+                    return ['ok' => false, 'error' => 'Ваша компания уже лидирует. Дождитесь предложения конкурента — перебивать собственное предложение нельзя.'];
+                }
+
+                // #257 Шаг = минимальное улучшение относительно лидера.
+                if ($best && ($stepError = $scoring->stepViolation($locked, $best, $price, $deadline, $advance))) {
+                    return ['ok' => false, 'error' => $stepError];
+                }
 
                 // #210 Референсы нормировки (max_deadline/max_advance) заданы организатором на этапе 1 —
                 // не меняются в ходе торгов. Строгое превосходство над текущим лидером (перечитан под локом).
                 if (! $scoring->wouldBeat($locked, $price, $deadline, $advance)) {
                     $analysis = $scoring->analyze($locked, $price, $deadline, $advance);
 
-                    return ['ok' => false, 'deficit' => $analysis['deficit']];
+                    return ['ok' => false, 'error' => 'Предложение не принято: до лучшего предложения не хватает '.number_format($analysis['deficit'], 2, '.', ' ').' баллов.'];
                 }
 
                 // Код участника: переиспользуем существующий код компании либо генерируем.
@@ -731,8 +742,7 @@ class AuctionController extends Controller
         }
 
         if (! $result['ok']) {
-            return back()->withInput()->with('error',
-                'Предложение не принято: до лучшего предложения не хватает '.number_format($result['deficit'], 2, '.', ' ').' баллов.');
+            return back()->withInput()->with('error', $result['error']);
         }
 
         return redirect()->route('auctions.show', $auction)

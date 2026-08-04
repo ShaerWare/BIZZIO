@@ -107,7 +107,9 @@ class RfqController extends Controller
                 'weight_deadline' => $request->weight_deadline,
                 'weight_advance' => $request->weight_advance,
                 'status' => $request->status ?? 'draft', // ✅ ИСПОЛЬЗУЕМ СТАТУС ИЗ ФОРМЫ
-                'is_results_hidden' => $request->boolean('is_results_hidden'),
+                // #237 У коммерческого аукциона результаты скрыты всегда (галочки в форме нет):
+                // их видят только организатор и участники процедуры.
+                'is_results_hidden' => $procedure === Rfq::PROCEDURE_COMMERCIAL || $request->boolean('is_results_hidden'),
             ];
 
             // #179 Параметры этапа 2 для коммерческого аукциона.

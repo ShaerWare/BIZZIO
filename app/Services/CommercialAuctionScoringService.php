@@ -247,6 +247,91 @@ class CommercialAuctionScoringService
     }
 
     /**
+     * Абсолютный шаг цены: организатор задаёт его в процентах от НМЦ.
+     */
+    public function priceStep(Auction $auction): float
+    {
+        return round((float) $auction->starting_price * (float) $auction->step_price / 100, 2);
+    }
+
+    /**
+     * Шаги критериев в единицах самих критериев (цена — в валюте, срок — дни, аванс — п.п.).
+     *
+     * @return array{price: float, deadline: float, advance: float}
+     */
+    public function steps(Auction $auction): array
+    {
+        return [
+            'price' => $this->priceStep($auction),
+            'deadline' => (float) $auction->step_deadline,
+            'advance' => (float) $auction->step_advance,
+        ];
+    }
+
+    /**
+     * Шаг = МИНИМАЛЬНОЕ УЛУЧШЕНИЕ относительно текущего лидера. Критерий можно оставить как
+     * у лидера или ухудшить (компенсируя другими), но если участник его улучшает — не меньше
+     * чем на один шаг. Мелкие «подрезания» на копейку запрещены.
+     *
+     * @return string|null Текст ошибки либо null, если нарушений нет
+     */
+    public function stepViolation(Auction $auction, AuctionBid $best, float $price, float $deadline, float $advance): ?string
+    {
+        $steps = $this->steps($auction);
+
+        // #261 Сравниваем в целых единицах последнего разряда (копейки / сотые процента / дни).
+        // На float сравнение давало ложные срабатывания: 388 888,50 − 369 444,08 = 19 444,42, а
+        // «шаг минус допуск» в двоичном виде оказывался чуть больше этой разности.
+        // $tolerance — допуск в тех же единицах: шаг цены производный (процент от НМЦ), и клиент
+        // с сервером округляют его независимо (19 444,425 → PHP 19 444,43, JS 19 444,42), поэтому
+        // копеечное расхождение не должно отклонять честное снижение ровно на один шаг.
+        $checks = [
+            ['цену', (float) $best->price, $price, $steps['price'], 2, '', 1],
+            ['срок', (float) $best->deadline, $deadline, $steps['deadline'], 0, ' дн.', 0],
+            ['аванс', (float) $best->advance_percent, $advance, $steps['advance'], 2, '%', 1],
+        ];
+
+        foreach ($checks as [$label, $bestValue, $value, $step, $precision, $unit, $tolerance]) {
+            if ($step <= 0) {
+                continue;
+            }
+
+            $factor = 10 ** $precision;
+            $improvement = (int) round(($bestValue - $value) * $factor);
+            $stepUnits = (int) round($step * $factor);
+
+            // Улучшения нет (значение как у лидера или хуже) — шаг не применяется.
+            if ($improvement <= 0) {
+                continue;
+            }
+
+            if ($improvement < $stepUnits - $tolerance) {
+                $allowed = max(0.0, $bestValue - $step);
+
+                return sprintf(
+                    'Улучшение по критерию «%s» должно быть не меньше шага (%s%s). Оставьте значение как у лидера (%s%s) или улучшите минимум до %s%s.',
+                    $label,
+                    $this->formatValue($step, $precision),
+                    $unit,
+                    $this->formatValue($bestValue, $precision),
+                    $unit,
+                    $this->formatValue($allowed, $precision),
+                    $unit,
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private function formatValue(float $value, int $precision): string
+    {
+        $formatted = number_format($value, $precision, '.', ' ');
+
+        return $precision > 0 ? rtrim(rtrim($formatted, '0'), '.') : $formatted;
+    }
+
+    /**
      * Записать вычисленные баллы в предложение (без сохранения).
      */
     public function fillScores(Auction $auction, AuctionBid $offer): void
