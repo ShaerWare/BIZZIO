@@ -149,8 +149,18 @@
                                 {{ $rfqStatusLabel }}
                             </span>
 
-                            {{-- #189 Живой таймер до окончания приёма заявок/предложений (между статусом и типом) --}}
-                            @if($rfq->status === 'active' && $rfq->end_date->isFuture())
+                            {{-- #189 Живой таймер до окончания приёма заявок/предложений (между статусом и типом).
+                                 #259 Пока приём не начался, считаем до его НАЧАЛА: процедура может быть
+                                 опубликована заранее (по умолчанию старт через час, #222), и таймер до
+                                 окончания ещё не начавшегося приёма читался как сбой. --}}
+                            @if($rfq->status === 'active' && $rfq->start_date->isFuture())
+                                @include('partials.countdown', [
+                                    'target' => $rfq->start_date,
+                                    'label' => $rfq->isCommercial() ? 'До начала приёма предложений (этап 1)' : 'До начала приёма заявок',
+                                    'color' => 'bg-blue-100 text-blue-800',
+                                    'reload' => true,
+                                ])
+                            @elseif($rfq->status === 'active' && $rfq->end_date->isFuture())
                                 @include('partials.countdown', ['target' => $rfq->end_date, 'label' => $rfq->isCommercial() ? 'До окончания приёма предложений (этап 1)' : 'До окончания приёма заявок'])
                             @endif
 
@@ -595,6 +605,15 @@
     @elseif($rfq->status === 'draft')
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-center">
             <p class="text-yellow-800">Приём {{ $rfq->isCommercial() ? 'предложений' : 'заявок' }} ещё не начат — процедура находится в статусе «Черновик».</p>
+        </div>
+    {{-- #259 Опубликована, но приём ещё не начался: формы подачи нет — объясняем, когда она появится. --}}
+    @elseif($rfq->status === 'active' && $rfq->start_date->isFuture())
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+            <p class="text-blue-800">
+                Приём {{ $rfq->isCommercial() ? 'предложений' : 'заявок' }} начнётся
+                {{ $rfq->start_date->format('d.m.Y в H:i') }} (МСК).
+            </p>
+            <p class="text-blue-600 text-sm mt-1">Форма подачи откроется автоматически — страницу обновлять не нужно.</p>
         </div>
     @elseif($rfq->isActive() && !$rfq->isExpired() && auth()->user()->moderatedCompanies->contains('id', $rfq->company_id))
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-center">
