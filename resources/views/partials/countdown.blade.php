@@ -3,11 +3,15 @@
      $color (опц., tailwind-классы фона/текста). Самодостаточный (inline Alpine) — можно включать несколько раз. --}}
 @php
     $cdColor = $color ?? 'bg-orange-100 text-orange-800';
+    // #259 reload=true — перезагрузить страницу в момент наступления события (например, начала
+    // приёма заявок), чтобы форма подачи появилась без ручного обновления.
+    $cdReload = $reload ?? false;
 @endphp
 <div x-data="{
         target: new Date('{{ $target->toIso8601String() }}').getTime(),
         now: Date.now(),
         timer: null,
+        reloadOnExpire: {{ $cdReload ? 'true' : 'false' }},
         get expired() { return this.now >= this.target; },
         get display() {
             let s = Math.max(0, Math.floor((this.target - this.now) / 1000));
@@ -16,7 +20,12 @@
             const m = Math.floor(s / 60); const sec = s % 60;
             return (d > 0 ? d + ' дн ' : '') + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
         },
-        init() { this.timer = setInterval(() => { this.now = Date.now(); }, 1000); }
+        init() {
+            this.timer = setInterval(() => {
+                this.now = Date.now();
+                if (this.reloadOnExpire && this.expired) { clearInterval(this.timer); location.reload(); }
+            }, 1000);
+        }
      }"
      x-init="init()"
      x-show="!expired"

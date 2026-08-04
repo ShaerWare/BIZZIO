@@ -626,6 +626,52 @@ class CommercialAuctionTest extends TestCase
     }
 
     // =========================================================
+    // #259 — опубликовано, но приём ещё не начался
+    // =========================================================
+
+    public function test_stage1_before_start_counts_down_to_start_and_explains_absence_of_form(): void
+    {
+        // #222 по умолчанию старт через час, поэтому «активна, но приём не начался» — обычное
+        // состояние. Раньше страница считала до окончания ещё не начавшегося приёма, а формы
+        // подачи не было без объяснений.
+        $rfq = $this->draftCommercialRfq([
+            'status' => 'active',
+            'start_date' => now()->addHour(),
+            'end_date' => now()->addDay(),
+            'trading_start' => now()->addDay()->addMinutes(10),
+        ]);
+
+        $viewer = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($viewer)
+            ->get(route('rfqs.show', $rfq))
+            ->assertOk()
+            ->assertSee('До начала приёма предложений (этап 1)')
+            ->assertDontSee('До окончания приёма предложений (этап 1)')
+            ->assertSee('Приём предложений начнётся')
+            ->assertDontSee('Подать заявку');
+    }
+
+    public function test_stage1_after_start_counts_down_to_end(): void
+    {
+        $rfq = $this->draftCommercialRfq([
+            'status' => 'active',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+            'trading_start' => now()->addDay()->addMinutes(10),
+        ]);
+
+        $viewer = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($viewer)
+            ->get(route('rfqs.show', $rfq))
+            ->assertOk()
+            ->assertSee('До окончания приёма предложений (этап 1)')
+            ->assertDontSee('До начала приёма предложений (этап 1)')
+            ->assertDontSee('Приём предложений начнётся');
+    }
+
+    // =========================================================
     // #222 — предустановка времени этапов
     // =========================================================
 
