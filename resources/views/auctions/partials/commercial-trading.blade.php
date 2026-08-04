@@ -6,6 +6,12 @@
             ->whereIn('id', $auction->invitations->pluck('company_id'))
             ->values()
         : collect();
+
+    // #261 Абсолютный шаг цены считает сервер — он же проверяет предложение. Раньше клиент
+    // пересчитывал его сам, и на «половинке копейки» (388 888,50 × 5 % = 19 444,425) PHP и JS
+    // округляли в разные стороны: одно нажатие «−» давало снижение на копейку меньше требуемого
+    // и сервер отклонял предложение.
+    $priceStepAbs = app(\App\Services\CommercialAuctionScoringService::class)->priceStep($auction);
 @endphp
 
 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6"
@@ -16,6 +22,7 @@
         weights: { p: {{ (float) $auction->weight_price }}, d: {{ (float) $auction->weight_deadline }}, a: {{ (float) $auction->weight_advance }} },
         refs: { d: {{ (int) $auction->max_deadline }}, a: {{ (float) $auction->max_advance }} },
         steps: { p: {{ (float) $auction->step_price }}, d: {{ (int) $auction->step_deadline }}, a: {{ (float) $auction->step_advance }} },
+        priceStepAbs: {{ $priceStepAbs }},
         canOffer: {{ $myCompanies->isNotEmpty() ? 'true' : 'false' }},
         resultsHidden: {{ $auction->resultsHiddenFor(auth()->user()) ? 'true' : 'false' }},
      })"
@@ -122,12 +129,13 @@
                                 {{-- #232 step="1" (любое целое), а НЕ организаторский шаг: иначе дефолт срока (=max_deadline)
                                      мог не совпасть с шагом при базе min=1 и HTML5-валидация молча блокировала сабмит формы.
                                      Кнопки −/+ шагают организаторским шагом через stepDeadline(). --}}
-                                <input type="number" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" step="1"
+                                {{-- #261 @change (уход из поля) приводит значение к сетке шага — во время набора не мешаем. --}}
+                                <input type="number" x-model.number="d" @input="recalc()" @change="snapDeadline()" min="1" :max="maxDeadline" step="1"
                                        class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <button type="button" @click="stepDeadline(1)" aria-label="Увеличить срок"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
                             </div>
-                            <input type="range" x-model.number="d" @input="recalc()" min="1" :max="maxDeadline" step="1" class="w-full mt-2">
+                            <input type="range" x-model.number="d" @input="snapDeadline()" min="1" :max="maxDeadline" step="1" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 1…<span x-text="maxDeadline"></span> дн.</p>
                         </div>
 
@@ -144,12 +152,14 @@
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">−</button>
                                 {{-- #232/аванс: step="0.01" — 2 знака после запятой (без «кучи цифр» от слайдера)
                                      и без бага валидации: max_advance — decimal(5,2), кратен 0.01. Кнопки −/+ шагают через stepAdvance(). --}}
-                                <input type="number" x-model.number="a" @input="a = round2(a); recalc()" min="0" :max="maxAdvance" step="0.01"
+                                {{-- #261 @change (уход из поля) приводит значение к сетке шага — во время набора не мешаем. --}}
+                                <input type="number" x-model.number="a" @input="a = round2(a); recalc()" @change="snapAdvance()" min="0" :max="maxAdvance" step="0.01"
                                        class="ca-no-spin flex-1 w-full text-center rounded-md border-gray-300 shadow-sm text-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <button type="button" @click="stepAdvance(1)" aria-label="Увеличить аванс"
                                         class="flex-none w-12 h-11 rounded-md border border-gray-300 bg-gray-50 text-3xl leading-none text-gray-700 hover:bg-gray-100 select-none">+</button>
                             </div>
-                            <input type="range" x-model.number="a" @input="a = round2(a); recalc()" min="0" :max="maxAdvance" step="0.01" class="w-full mt-2">
+                            {{-- #261 Слайдер шагает сеткой сразу при перетаскивании — иначе появлялись десятые доли. --}}
+                            <input type="range" x-model.number="a" @input="snapAdvance()" min="0" :max="maxAdvance" step="0.01" class="w-full mt-2">
                             <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="maxAdvance"></span>%</p>
                         </div>
 
@@ -266,6 +276,9 @@ function commercialAuction(cfg) {
         weights: cfg.weights,
         refs: cfg.refs,
         steps: cfg.steps,
+        // #261 Абсолютный шаг цены приходит с сервера — тот же, по которому сервер проверяет
+        // предложение. Собственный пересчёт расходился с ним на копейку.
+        priceStepAbs: cfg.priceStepAbs,
         canOffer: cfg.canOffer,
         // #232 Скрытые результаты: детали лидера скрыты, известен только целевой балл (bestScore).
         resultsHidden: cfg.resultsHidden,
@@ -294,8 +307,9 @@ function commercialAuction(cfg) {
         polling: null,
 
         get priceStep() {
-            // Шаг цены задан в процентах от НМЦ.
-            return Math.max(0.01, +(this.nmc * this.steps.p / 100).toFixed(2));
+            // #261 Шаг цены берём с сервера (он задан в процентах от НМЦ, но округление
+            // должно совпадать с серверным до копейки).
+            return Math.max(0.01, Number(this.priceStepAbs) || +(this.nmc * this.steps.p / 100).toFixed(2));
         },
 
         // #257 Лидирует ваша же компания — перебивать себя нельзя (сервер тоже это отклоняет).
@@ -386,6 +400,33 @@ function commercialAuction(cfg) {
         stepAdvance(dir) {
             const v = (Number(this.a) || 0) + dir * (this.steps.a || 1);
             this.a = Math.min(this.maxAdvance, Math.max(0, +v.toFixed(2)));
+            this.recalc();
+        },
+
+        // #261 База сетки шага: значение лидера (от него участник улучшает), а до первого
+        // предложения — организаторский максимум.
+        get advanceBase() { return this.best ? this.round2(this.best.advance) : this.refs.a; },
+        get deadlineBase() { return this.best ? Math.round(this.best.deadline) : this.refs.d; },
+
+        // #261 Ручной ввод и перетаскивание слайдера давали произвольные значения («вылезали
+        // десятые доли»). Приводим значение к ближайшему узлу сетки шага, отсчитанной от базы.
+        snapToStep(value, base, step, min, max) {
+            const s = Number(step) || 0;
+            if (s <= 0) return value;
+
+            const k = Math.round((Number(base) - (Number(value) || 0)) / s);
+            const snapped = Number(base) - k * s;
+
+            return +Math.min(max, Math.max(min, snapped)).toFixed(2);
+        },
+
+        snapAdvance() {
+            this.a = this.snapToStep(this.a, this.advanceBase, this.steps.a, 0, this.maxAdvance);
+            this.recalc();
+        },
+
+        snapDeadline() {
+            this.d = Math.round(this.snapToStep(this.d, this.deadlineBase, this.steps.d, 1, this.maxDeadline));
             this.recalc();
         },
 

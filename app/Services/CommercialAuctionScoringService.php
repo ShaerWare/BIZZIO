@@ -279,25 +279,33 @@ class CommercialAuctionScoringService
     {
         $steps = $this->steps($auction);
 
+        // #261 Сравниваем в целых единицах последнего разряда (копейки / сотые процента / дни).
+        // На float сравнение давало ложные срабатывания: 388 888,50 − 369 444,08 = 19 444,42, а
+        // «шаг минус допуск» в двоичном виде оказывался чуть больше этой разности.
+        // $tolerance — допуск в тех же единицах: шаг цены производный (процент от НМЦ), и клиент
+        // с сервером округляют его независимо (19 444,425 → PHP 19 444,43, JS 19 444,42), поэтому
+        // копеечное расхождение не должно отклонять честное снижение ровно на один шаг.
         $checks = [
-            ['цену', (float) $best->price, $price, $steps['price'], 2, ''],
-            ['срок', (float) $best->deadline, $deadline, $steps['deadline'], 0, ' дн.'],
-            ['аванс', (float) $best->advance_percent, $advance, $steps['advance'], 2, '%'],
+            ['цену', (float) $best->price, $price, $steps['price'], 2, '', 1],
+            ['срок', (float) $best->deadline, $deadline, $steps['deadline'], 0, ' дн.', 0],
+            ['аванс', (float) $best->advance_percent, $advance, $steps['advance'], 2, '%', 1],
         ];
 
-        foreach ($checks as [$label, $bestValue, $value, $step, $precision, $unit]) {
+        foreach ($checks as [$label, $bestValue, $value, $step, $precision, $unit, $tolerance]) {
             if ($step <= 0) {
                 continue;
             }
 
-            $improvement = $bestValue - $value;
+            $factor = 10 ** $precision;
+            $improvement = (int) round(($bestValue - $value) * $factor);
+            $stepUnits = (int) round($step * $factor);
 
             // Улучшения нет (значение как у лидера или хуже) — шаг не применяется.
-            if ($improvement <= self::EPSILON) {
+            if ($improvement <= 0) {
                 continue;
             }
 
-            if ($improvement < $step - self::EPSILON) {
+            if ($improvement < $stepUnits - $tolerance) {
                 $allowed = max(0.0, $bestValue - $step);
 
                 return sprintf(
