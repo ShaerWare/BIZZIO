@@ -326,6 +326,66 @@ class CommercialHiddenResultsTest extends TestCase
         $this->assertNotNull($auction->fresh()->best_bid_id);
     }
 
+    public function test_one_price_step_is_accepted_when_step_lands_on_half_a_kopeck(): void
+    {
+        // #261 Аукцион 74 с теста: НМЦ 388 888,50, шаг цены 5 % = 19 444,425.
+        // PHP округляет до 19 444,43, JS toFixed(2) — до 19 444,42, поэтому одно нажатие «−»
+        // снижало цену на копейку меньше требуемого и сервер отклонял предложение.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['starting_price' => 388_888.50, 'step_price' => 5]);
+
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $leader = $this->seedLeader($auction, $leadCompany, $leadUser);
+        $leader->update(['price' => 388_888.50]);
+        $auction->refresh();
+
+        [$user, $company] = $this->participant($auction);
+
+        // Ровно один шаг в клиентском (заниженном) округлении — должно приниматься.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id,
+            'price' => 388_888.50 - 19_444.42,
+            'deadline' => 50,
+            'advance_percent' => 20,
+        ])->assertRedirect()->assertSessionMissing('error');
+
+        $this->assertNotSame($leader->id, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_price_step_comes_from_server_in_trading_form(): void
+    {
+        // #261 Шаг цены в конфиге компонента — серверный, до копейки тот же, что в проверке.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['starting_price' => 388_888.50, 'step_price' => 5]);
+        [$user] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('priceStepAbs: 19444.43', false);
+    }
+
+    public function test_improvement_short_by_more_than_a_kopeck_is_still_rejected(): void
+    {
+        // Допуск в копейку не должен превращаться в лазейку: недобор в рубль отклоняется.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['starting_price' => 388_888.50, 'step_price' => 5]);
+
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $leader = $this->seedLeader($auction, $leadCompany, $leadUser);
+        $leader->update(['price' => 388_888.50]);
+        $auction->refresh();
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id,
+            'price' => 388_888.50 - 19_443.43,
+            'deadline' => 50,
+            'advance_percent' => 20,
+        ])->assertSessionHas('error');
+    }
+
     public function test_trading_form_shows_participant_code_next_to_history(): void
     {
         $auction = $this->hiddenTradingAuction();
