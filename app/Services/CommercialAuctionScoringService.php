@@ -247,6 +247,83 @@ class CommercialAuctionScoringService
     }
 
     /**
+     * Абсолютный шаг цены: организатор задаёт его в процентах от НМЦ.
+     */
+    public function priceStep(Auction $auction): float
+    {
+        return round((float) $auction->starting_price * (float) $auction->step_price / 100, 2);
+    }
+
+    /**
+     * Шаги критериев в единицах самих критериев (цена — в валюте, срок — дни, аванс — п.п.).
+     *
+     * @return array{price: float, deadline: float, advance: float}
+     */
+    public function steps(Auction $auction): array
+    {
+        return [
+            'price' => $this->priceStep($auction),
+            'deadline' => (float) $auction->step_deadline,
+            'advance' => (float) $auction->step_advance,
+        ];
+    }
+
+    /**
+     * Шаг = МИНИМАЛЬНОЕ УЛУЧШЕНИЕ относительно текущего лидера. Критерий можно оставить как
+     * у лидера или ухудшить (компенсируя другими), но если участник его улучшает — не меньше
+     * чем на один шаг. Мелкие «подрезания» на копейку запрещены.
+     *
+     * @return string|null Текст ошибки либо null, если нарушений нет
+     */
+    public function stepViolation(Auction $auction, AuctionBid $best, float $price, float $deadline, float $advance): ?string
+    {
+        $steps = $this->steps($auction);
+
+        $checks = [
+            ['цену', (float) $best->price, $price, $steps['price'], 2, ''],
+            ['срок', (float) $best->deadline, $deadline, $steps['deadline'], 0, ' дн.'],
+            ['аванс', (float) $best->advance_percent, $advance, $steps['advance'], 2, '%'],
+        ];
+
+        foreach ($checks as [$label, $bestValue, $value, $step, $precision, $unit]) {
+            if ($step <= 0) {
+                continue;
+            }
+
+            $improvement = $bestValue - $value;
+
+            // Улучшения нет (значение как у лидера или хуже) — шаг не применяется.
+            if ($improvement <= self::EPSILON) {
+                continue;
+            }
+
+            if ($improvement < $step - self::EPSILON) {
+                $allowed = max(0.0, $bestValue - $step);
+
+                return sprintf(
+                    'Улучшение по критерию «%s» должно быть не меньше шага (%s%s). Оставьте значение как у лидера (%s%s) или улучшите минимум до %s%s.',
+                    $label,
+                    $this->formatValue($step, $precision),
+                    $unit,
+                    $this->formatValue($bestValue, $precision),
+                    $unit,
+                    $this->formatValue($allowed, $precision),
+                    $unit,
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private function formatValue(float $value, int $precision): string
+    {
+        $formatted = number_format($value, $precision, '.', ' ');
+
+        return $precision > 0 ? rtrim(rtrim($formatted, '0'), '.') : $formatted;
+    }
+
+    /**
      * Записать вычисленные баллы в предложение (без сохранения).
      */
     public function fillScores(Auction $auction, AuctionBid $offer): void

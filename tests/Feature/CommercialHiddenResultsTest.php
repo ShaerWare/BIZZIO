@@ -227,6 +227,118 @@ class CommercialHiddenResultsTest extends TestCase
     }
 
     // =========================================================
+    // #257 — шаг как минимальное улучшение и запрет самоперебивания
+    // =========================================================
+
+    public function test_company_cannot_outbid_its_own_leading_offer(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$user, $company] = $this->participant($auction);
+        $this->seedLeader($auction, $company, $user);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        // Заведомо лучше собственного лидера — всё равно отклоняется.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 700_000, 'deadline' => 30, 'advance_percent' => 5,
+        ])->assertSessionHas('error');
+
+        $this->assertSame($bestBefore, $auction->fresh()->best_bid_id);
+        $this->assertSame(1, $auction->fresh()->offerBids()->count());
+    }
+
+    public function test_improvement_smaller_than_step_is_rejected(): void
+    {
+        // Шаги аукциона: цена 0.5% от НМЦ 1 200 000 = 6 000, срок 1 дн., аванс 5 %.
+        // Лидер: 900 000 / 50 дн. / 20 %. Улучшаем аванс всего на 1 п.п. — меньше шага.
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 50, 'advance_percent' => 19,
+        ])->assertSessionHas('error');
+
+        $this->assertSame($bestBefore, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_improvement_of_exactly_one_step_is_accepted(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        [$user, $company] = $this->participant($auction);
+
+        // Аванс 20 % → 15 % (ровно один шаг), остальное как у лидера.
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 900_000, 'deadline' => 50, 'advance_percent' => 15,
+        ])->assertRedirect();
+
+        $this->assertNotSame($bestBefore, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_price_improvement_smaller_than_step_is_rejected(): void
+    {
+        // Шаг цены = 0.5 % от НМЦ 1 200 000 = 6 000. Снижение на 1 000 — меньше шага.
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 899_000, 'deadline' => 50, 'advance_percent' => 20,
+        ])->assertSessionHas('error');
+    }
+
+    public function test_worsening_a_criterion_is_not_limited_by_step(): void
+    {
+        // Шаг ограничивает только улучшение: аванс можно ухудшить на 1 п.п.,
+        // компенсировав это ценой (снижение больше шага).
+        $auction = $this->hiddenTradingAuction();
+        [$leadUser, $leadCompany] = $this->participant($auction);
+        $this->seedLeader($auction, $leadCompany, $leadUser);
+        $bestBefore = $auction->fresh()->best_bid_id;
+
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 850_000, 'deadline' => 50, 'advance_percent' => 21,
+        ])->assertRedirect();
+
+        $this->assertNotSame($bestBefore, $auction->fresh()->best_bid_id);
+    }
+
+    public function test_first_offer_is_not_limited_by_step(): void
+    {
+        // Лидера нет — сравнивать не с чем, любое корректное предложение принимается.
+        $auction = $this->hiddenTradingAuction();
+        [$user, $company] = $this->participant($auction);
+
+        $this->actingAs($user)->post(route('auctions.offers.store', $auction), [
+            'company_id' => $company->id, 'price' => 1_199_999, 'deadline' => 99, 'advance_percent' => 49,
+        ])->assertRedirect();
+
+        $this->assertNotNull($auction->fresh()->best_bid_id);
+    }
+
+    public function test_trading_form_shows_participant_code_next_to_history(): void
+    {
+        $auction = $this->hiddenTradingAuction();
+        [$user] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertSee('Ваш код участника:')
+            ->assertSee('x-text="myCode"', false);
+    }
+
+    // =========================================================
     // #237 — у коммерческой процедуры результаты скрыты по умолчанию
     // =========================================================
 
