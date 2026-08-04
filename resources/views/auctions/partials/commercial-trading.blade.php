@@ -72,7 +72,7 @@
                 @if($myCompanies->isNotEmpty())
                     <h4 class="text-sm font-semibold text-gray-900 mb-2">Настройка предложения</h4>
                     <form method="POST" action="{{ route('auctions.offers.store', $auction) }}" class="space-y-4"
-                          @submit="if (!wouldBeat) $event.preventDefault()">
+                          @submit="if (!canSubmit) $event.preventDefault()">
                         @csrf
                         @if($myCompanies->count() > 1)
                             <div>
@@ -153,16 +153,24 @@
                             <p class="text-xs text-gray-400">Допустимо: 0…<span x-text="maxAdvance"></span>%</p>
                         </div>
 
-                        {{-- Общий вердикт --}}
+                        {{-- Общий вердикт.
+                             #257 Три причины отказа разведены: лидируете вы сами / улучшение меньше шага /
+                             не хватает баллов. Раньше в первых двух случаях показывалось
+                             «не хватает 0 баллов» — сообщение, из которого причина не читалась. --}}
                         <div class="rounded-lg p-3 text-sm font-medium"
-                             :class="wouldBeat ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'">
-                            <span x-show="wouldBeat">✔ Лучшее предложение — можно подавать (рейтинг <span x-text="round2(total)"></span>)</span>
-                            <span x-show="!wouldBeat">До лучшего предложения не хватает <span x-text="round2(deficit)"></span> баллов</span>
+                             :class="canSubmit ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'">
+                            <span x-show="isLeading">Ваша компания лидирует. Перебивать собственное предложение нельзя — дождитесь предложения конкурента.</span>
+                            <span x-show="!isLeading && stepIssue" x-text="stepIssue"></span>
+                            <span x-show="!isLeading && !stepIssue && canSubmit">✔ Лучшее предложение — можно подавать (рейтинг <span x-text="round2(total)"></span>)</span>
+                            {{-- Поля предзаполнены цифрами лидера: пока ничего не изменили, дефицит ≈ 0
+                                 и прежнее «не хватает 0 баллов» читалось как сбой. --}}
+                            <span x-show="!isLeading && !stepIssue && !canSubmit && round2(deficit) === 0">Пока ваше предложение совпадает с лучшим — улучшите хотя бы один критерий (минимум на шаг).</span>
+                            <span x-show="!isLeading && !stepIssue && !canSubmit && round2(deficit) > 0">До лучшего предложения не хватает <span x-text="round2(deficit)"></span> баллов</span>
                         </div>
 
-                        <button type="submit" :disabled="!wouldBeat"
+                        <button type="submit" :disabled="!canSubmit"
                                 class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition"
-                                :class="wouldBeat ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'">
+                                :class="canSubmit ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'">
                             Подать предложение
                         </button>
                     </form>
@@ -192,6 +200,14 @@
                 <h4 class="text-sm font-semibold text-gray-900 mb-2" x-show="!resultsHidden">
                     История лучших предложений (<span x-text="history.length"></span>)
                 </h4>
+                {{-- #257 Код участника — рядом с историей, а не только во всплывающем сообщении после подачи:
+                     так участник видит, какие строки его, прямо во время торгов. --}}
+                <div x-show="!resultsHidden && myCode" x-cloak
+                     class="mb-2 flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                    <span>Ваш код участника:</span>
+                    <span class="font-mono font-bold text-base" x-text="myCode"></span>
+                    <span class="text-emerald-700 text-xs">— ваши предложения выделены в таблице</span>
+                </div>
                 <div class="border border-gray-200 rounded-lg overflow-hidden" x-show="!resultsHidden">
                     <table class="min-w-full text-xs">
                         <thead class="bg-gray-50 text-gray-500">
@@ -206,8 +222,12 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             <template x-for="o in [...history].reverse()" :key="o.id">
-                                <tr :class="o.is_mine ? 'bg-emerald-50' : ''">
-                                    <td class="px-2 py-2 font-mono" x-text="o.anonymous_code"></td>
+                                <tr :class="o.is_mine ? 'bg-emerald-50 font-semibold text-emerald-900' : ''">
+                                    <td class="px-2 py-2 font-mono"
+                                        :class="o.is_mine ? 'border-l-4 border-emerald-500' : 'border-l-4 border-transparent'">
+                                        <span x-text="o.anonymous_code"></span>
+                                        <span x-show="o.is_mine" class="ml-1 text-emerald-600 text-[10px] uppercase">вы</span>
+                                    </td>
                                     <td class="px-2 py-2 text-right" x-text="fmt(o.price)"></td>
                                     <td class="px-2 py-2 text-right" x-text="o.deadline"></td>
                                     <td class="px-2 py-2 text-right" x-text="round2(o.advance) + '%'"></td>
@@ -268,6 +288,7 @@ function commercialAuction(cfg) {
         total: 0,
         deficit: 0,
         wouldBeat: true,
+        stepIssue: null, // #257 текст нарушения шага (улучшение меньше шага)
         criteria: { price: {}, deadline: {}, advance: {} },
 
         polling: null,
@@ -275,6 +296,18 @@ function commercialAuction(cfg) {
         get priceStep() {
             // Шаг цены задан в процентах от НМЦ.
             return Math.max(0.01, +(this.nmc * this.steps.p / 100).toFixed(2));
+        },
+
+        // #257 Лидирует ваша же компания — перебивать себя нельзя (сервер тоже это отклоняет).
+        get isLeading() { return !!(this.best && this.best.is_mine); },
+
+        // #257 Кнопка активна только когда предложение реально можно подать.
+        get canSubmit() { return this.wouldBeat && !this.isLeading && !this.stepIssue; },
+
+        // #257 Код участника берём из истории — он одинаков для всех предложений компании.
+        get myCode() {
+            const mine = this.history.filter(o => o.is_mine);
+            return mine.length ? mine[mine.length - 1].anonymous_code : null;
         },
 
         // #210 Верхние границы полей — организаторские максимумы (100% шкалы критерия).
@@ -322,9 +355,11 @@ function commercialAuction(cfg) {
         // #206 Значения полей = текущее лучшее предложение (или НМЦ/организаторские максимумы, если предложений нет).
         seedFromBest() {
             if (this.best) {
-                this.p = this.best.price;
-                this.d = this.best.deadline;
-                this.a = this.best.advance;
+                // #257 Округляем: у предложений, поданных до валидации шага, аванс мог прийти
+                // с длинным хвостом дробей и попадал в поле «как есть».
+                this.p = this.round2(this.best.price);
+                this.d = Math.round(this.best.deadline);
+                this.a = this.round2(this.best.advance);
             } else {
                 this.p = this.nmc;
                 this.d = this.refs.d;
@@ -385,9 +420,38 @@ function commercialAuction(cfg) {
             return { price: sp, deadline: sd, advance: sa, total };
         },
 
+        // #257 Шаг = минимальное улучшение относительно лидера. Критерий можно оставить как у
+        // лидера или ухудшить (компенсируя другими), но улучшать — минимум на один шаг.
+        // Зеркалит CommercialAuctionScoringService::stepViolation() на сервере.
+        checkSteps() {
+            if (!this.best) return null;
+
+            const checks = [
+                ['цену', this.best.price, this.p, this.priceStep, v => this.fmt(v), ''],
+                ['срок', this.best.deadline, this.d, this.steps.d, v => Math.round(v), ' дн.'],
+                ['аванс', this.best.advance, this.a, this.steps.a, v => this.round2(v), '%'],
+            ];
+
+            for (const [label, bestValue, value, step, fmtFn, unit] of checks) {
+                if (!step || step <= 0) continue;
+
+                const improvement = Number(bestValue) - Number(value);
+                if (improvement <= EPS) continue;          // не улучшение — шаг не применяется
+                if (improvement >= step - EPS) continue;   // улучшение не меньше шага
+
+                const allowed = Math.max(0, Number(bestValue) - step);
+                return 'Улучшение по критерию «' + label + '» должно быть не меньше шага ('
+                    + fmtFn(step) + unit + '). Оставьте значение как у лидера (' + fmtFn(bestValue) + unit
+                    + ') или улучшите минимум до ' + fmtFn(allowed) + unit + '.';
+            }
+
+            return null;
+        },
+
         recalc() {
             const sc = this.scores(this.p, this.d, this.a);
             this.total = sc.total;
+            this.stepIssue = this.checkSteps();
 
             // #206 Балл лидера пересчитываем из его критериев на той же точности, что и sc.total.
             // Если брать округлённое best.total_score (decimal(8,4) с сервера), идентичное
