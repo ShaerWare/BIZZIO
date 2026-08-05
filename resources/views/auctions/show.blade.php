@@ -244,7 +244,12 @@
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
                                 <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
-                                <li>• Шаг снижения — <strong>{{ rtrim(rtrim(number_format($auction->step_percent, 2, '.', ''), '0'), '.') }}% — 5%</strong> от текущей цены</li>
+                                {{-- #256 У коммерческого аукциона шаг снижения цены не применяется: шаги трёх
+                                     критериев задаёт организатор, они показаны в панели торгов. Диапазон
+                                     «X% — 5%» относится только к обычному аукциону. --}}
+                                @unless($auction->isCommercial())
+                                    <li>• Шаг снижения — <strong>{{ rtrim(rtrim(number_format($auction->step_percent, 2, '.', ''), '0'), '.') }}% — 5%</strong> от текущей цены</li>
+                                @endunless
                                 {{-- #188 Количество поданных заявок в карточке процедуры (обычный аукцион) --}}
                                 @unless($auction->isCommercial())
                                     <li>• Подано заявок — <strong>{{ $auction->initialBids->count() }}</strong></li>
