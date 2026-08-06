@@ -61,6 +61,9 @@ class Rfq extends Model implements HasMedia
         'step_price' => 'decimal:2',
         'step_advance' => 'decimal:2',
         'is_results_hidden' => 'boolean',
+        // #195 Отметки об отправленных уведомлениях о старте этапов.
+        'stage1_notified_at' => 'datetime',
+        'stage2_notified_at' => 'datetime',
     ];
 
     public const PROCEDURE_STANDARD = 'standard';

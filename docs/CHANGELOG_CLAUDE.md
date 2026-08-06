@@ -2607,3 +2607,34 @@ read-only — смена организатора ломала бы пригла
 **Файлы:** `resources/views/auctions/show.blade.php`,
 `tests/Feature/CommercialHiddenResultsTest.php` (+1 тест).
 Прогон: весь набор 362/362. Pint чист, ассеты без изменений.
+
+---
+
+## 2026-08-06 — feat #195: уведомления о начале этапов коммерческого аукциона
+
+**Задача:** уведомлять администраторов и модераторов приглашённых компаний в момент начала приёма
+предложений (этап 1) и пользователей, подавших предложения, — за 30 минут до начала торгов (этап 2).
+
+**Сделано:** команда `commercial:notify-stages` (в планировщике каждую минуту, `withoutOverlapping`)
+и два уведомления (`database` + `mail`):
+- `CommercialStageOneStartedNotification` — при наступлении `start_date` активной коммерческой
+  процедуры уходит модераторам всех приглашённых компаний;
+- `CommercialStageTwoSoonNotification` — когда до `trading_start` осталось не больше 30 минут,
+  уходит пользователям, подавшим предложения на этапе 1.
+
+**Почему отметки на запросе цен, а не на аукционе.** Аукцион этапа 2 рождается только при закрытии
+этапа 1, а по умолчанию (#222) торги начинаются через 10 минут после окончания приёма — то есть
+момент «за 30 минут» наступает, когда аукциона ещё не существует. Поэтому и получатели, и время
+берутся с запроса цен, а ссылка ведёт на аукцион, если он уже создан, иначе на страницу этапа 1
+(она сама откроет торги при старте, #205).
+
+Повторные запуски безопасны: отметки `rfqs.stage1_notified_at` / `stage2_notified_at`. Миграция
+проставляет их существующим процедурам, у которых событие уже прошло, — чтобы при выкатке не ушла
+пачка уведомлений задним числом.
+
+**Файлы:** `app/Console/Commands/NotifyCommercialStages.php`,
+`app/Notifications/CommercialStageOneStartedNotification.php`,
+`app/Notifications/CommercialStageTwoSoonNotification.php`, `bootstrap/app.php`, `app/Models/Rfq.php`,
+`database/migrations/2026_08_06_100000_add_stage_notification_marks_to_rfqs_table.php`,
+`CLAUDE.md`, `tests/Feature/CommercialStageNotificationsTest.php` (новый, 9 тестов).
+Прогон: весь набор 371/371. Pint чист, ассеты без изменений.
