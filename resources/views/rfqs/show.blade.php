@@ -280,10 +280,12 @@
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
                         @include('partials.procurement-documents-list', ['model' => $rfq])
 
-                        {{-- T1: Кнопка копирования ссылки --}}
-                        @can('update', $rfq)
+                        {{-- T1: Кнопка копирования ссылки.
+                             #193 Видимость — по canBeSharedBy(), а не по политике `update`: та разрешает
+                             правки только черновику, поэтому блок пропадал сразу после публикации. --}}
+                        @if($rfq->canBeSharedBy(auth()->user()))
                             <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                <h3 class="text-sm font-semibold text-gray-900 mb-2">Поделиться RFQ</h3>
+                                <h3 class="text-sm font-semibold text-gray-900 mb-2">Поделиться</h3>
                                 <div class="flex items-center space-x-2">
                                     <input type="text" readonly
                                            id="rfq-link"
@@ -301,7 +303,7 @@
 
                             {{-- #193 Приглашение сторонней (незарегистрированной) компании — готовый текст --}}
                             @include('partials.share-invite', ['model' => $rfq])
-                        @endcan
+                        @endif
 
                         {{-- T8: Блок приглашения компаний --}}
                         @can('update', $rfq)
