@@ -114,8 +114,8 @@ class CompanyController extends Controller
      */
     public function edit(Company $company)
     {
-        // Проверка прав доступа
-        if ($company->created_by !== auth()->id() && ! $company->isModerator(auth()->user())) {
+        // #187 Профиль редактируют модераторы компании (не рядовые участники)
+        if (! $company->canEditProfile(auth()->user())) {
             abort(403, 'У вас нет прав для редактирования этой компании');
         }
 
@@ -180,7 +180,7 @@ class CompanyController extends Controller
     public function uploadPhotos(Request $request, Company $company)
     {
         // Проверка прав доступа
-        if (! $company->isModerator(auth()->user())) {
+        if (! $company->canEditProfile(auth()->user())) {
             abort(403, 'У вас нет прав для загрузки фото');
         }
 
@@ -203,7 +203,7 @@ class CompanyController extends Controller
     public function deletePhoto(Request $request, Company $company, int $mediaId)
     {
         // Проверка прав доступа
-        if (! $company->isModerator(auth()->user())) {
+        if (! $company->canEditProfile(auth()->user())) {
             abort(403, 'У вас нет прав для удаления фото');
         }
 
@@ -229,7 +229,7 @@ class CompanyController extends Controller
     public function deleteDocument(Request $request, Company $company, int $mediaId)
     {
         // Проверка прав доступа
-        if (! $company->isModerator(auth()->user())) {
+        if (! $company->canEditProfile(auth()->user())) {
             abort(403, 'У вас нет прав для удаления документа');
         }
 

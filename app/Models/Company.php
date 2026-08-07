@@ -174,6 +174,29 @@ class Company extends Model implements HasMedia
     }
 
     /**
+     * #187 Кто может редактировать профиль компании: реквизиты, логотип, фотографии и документы.
+     *
+     * Создатель, администратор платформы и участники с ролью owner/admin/moderator. Обычный
+     * «Участник» (member) — не может: `isModerator()` возвращает true для ЛЮБОЙ записи в
+     * company_user, включая member (роль по умолчанию с #144), поэтому опираться на неё здесь нельзя.
+     * Управление составом участников — отдельное, более узкое право (`canManageModerators`).
+     */
+    public function canEditProfile(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasAccess('platform.systems.users') || $this->created_by === $user->id) {
+            return true;
+        }
+
+        $membership = $this->moderators()->where('user_id', $user->id)->first();
+
+        return $membership && in_array($membership->pivot->role, ['owner', 'admin', 'moderator'], true);
+    }
+
+    /**
      * Проверка: может ли пользователь управлять модераторами
      */
     public function canManageModerators(User $user): bool
