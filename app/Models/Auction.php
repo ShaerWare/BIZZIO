@@ -280,6 +280,26 @@ class Auction extends Model implements HasMedia
     }
 
     /**
+     * #193 Кому доступен блок «Поделиться» (готовый текст приглашения сторонней компании).
+     *
+     * Пока идёт приём заявок: организатору — с черновика, остальным — только у открытой процедуры.
+     * У коммерческого аукциона (этап 2) блока нет вовсе: состав участников зафиксирован на этапе 1,
+     * приглашать со стороны уже некого — приглашение уместно на странице этапа 1.
+     */
+    public function canBeSharedBy(?User $user): bool
+    {
+        if (! $user || $this->isCommercial() || ! in_array($this->status, ['draft', 'active'], true)) {
+            return false;
+        }
+
+        if ($this->canManage($user)) {
+            return true;
+        }
+
+        return $this->type === 'open' && $this->status === 'active';
+    }
+
+    /**
      * #148: можно ли отменить аукцион — только до начала торгов (черновик или приём заявок).
      */
     public function canBeCancelled(): bool
