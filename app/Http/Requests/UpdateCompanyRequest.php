@@ -9,13 +9,9 @@ class UpdateCompanyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $company = $this->route('company');
-
-        // Только создатель или модератор компании может её редактировать
-        return auth()->check() && (
-            $company->created_by === auth()->id() ||
-            $company->isModerator(auth()->user())
-        );
+        // #187 Профиль редактируют создатель и участники с ролью owner/admin/moderator.
+        // Рядовой «Участник» (member) — не может, хотя и числится в company_user.
+        return $this->route('company')->canEditProfile($this->user());
     }
 
     public function rules(): array

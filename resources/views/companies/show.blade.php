@@ -88,8 +88,9 @@
                                 @include('components.subscribe-button', ['target' => $company])
                             @endunless
 
-                            @if($company->canManageModerators(auth()->user()))
-                                <!-- Кнопка редактирования (для модераторов) -->
+                            @if($company->canEditProfile(auth()->user()))
+                                {{-- #187 Кнопка редактирования — всем модераторам компании, а не только
+                                     владельцу/админу: раньше условие было canManageModerators(). --}}
                                 <a href="{{ route('companies.edit', $company) }}" 
                                    class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,7 +223,7 @@
                 <div id="content-photos" class="tab-content hidden">
                     <!-- Форма загрузки фото (только для модераторов) -->
                     @auth
-                        @if($company->isModerator(auth()->user()))
+                        @if($company->canEditProfile(auth()->user()))
                             <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                                 <form action="{{ route('companies.photos.upload', $company) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                                     @csrf
@@ -270,7 +271,7 @@
                                         >
                                     </a>
                                     @auth
-                                        @if($company->isModerator(auth()->user()))
+                                        @if($company->canEditProfile(auth()->user()))
                                             <form action="{{ route('companies.photos.delete', [$company, $photo->id]) }}" method="POST" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 @csrf
                                                 @method('DELETE')
@@ -293,7 +294,7 @@
                             <h3 class="mt-2 text-sm font-medium text-gray-900">Нет фотографий</h3>
                             <p class="mt-1 text-sm text-gray-500">
                                 @auth
-                                    @if($company->isModerator(auth()->user()))
+                                    @if($company->canEditProfile(auth()->user()))
                                         Загрузите фотографии компании выше.
                                     @else
                                         Компания пока не добавила фотографии.

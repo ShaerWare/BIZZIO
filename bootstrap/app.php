@@ -45,6 +45,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt('03:00')
             ->withoutOverlapping();
 
+        // #195 Уведомления о старте этапа 1 и о начале торгов этапа 2 (за 30 минут)
+        $schedule->command('commercial:notify-stages')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground();
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // 419 CSRF token expired → redirect to login instead of error page

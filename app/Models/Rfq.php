@@ -61,6 +61,9 @@ class Rfq extends Model implements HasMedia
         'step_price' => 'decimal:2',
         'step_advance' => 'decimal:2',
         'is_results_hidden' => 'boolean',
+        // #195 Отметки об отправленных уведомлениях о старте этапов.
+        'stage1_notified_at' => 'datetime',
+        'stage2_notified_at' => 'datetime',
     ];
 
     public const PROCEDURE_STANDARD = 'standard';
@@ -187,6 +190,27 @@ class Rfq extends Model implements HasMedia
         return $this->created_by === $user->id
             || $this->company->isModerator($user)
             || $user->hasAccess('platform.systems.rfqs');
+    }
+
+    /**
+     * #193 Кому доступен блок «Поделиться» (готовый текст приглашения сторонней компании).
+     *
+     * Организатору — с момента создания и до окончания приёма (у коммерческой процедуры это
+     * окончание этапа 1): приглашать новых участников имеет смысл, пока приём открыт. Раньше блок
+     * был закрыт политикой `update`, разрешающей правки только черновику, и пропадал сразу после
+     * публикации. Остальным пользователям — только у открытой процедуры, идущей сейчас.
+     */
+    public function canBeSharedBy(?User $user): bool
+    {
+        if (! $user || in_array($this->status, ['closed', 'cancelled'], true)) {
+            return false;
+        }
+
+        if ($this->canManage($user)) {
+            return true;
+        }
+
+        return $this->type === 'open' && $this->status === 'active';
     }
 
     /**

@@ -386,6 +386,20 @@ class CommercialHiddenResultsTest extends TestCase
         ])->assertSessionHas('error');
     }
 
+    public function test_commercial_auction_page_hides_price_step_range_line(): void
+    {
+        // #256 Диапазон «шаг снижения X% — 5%» относится к обычному аукциону; у коммерческого
+        // шаги трёх критериев задаёт организатор, и старое поле step_percent вводило в заблуждение.
+        $auction = $this->hiddenTradingAuction();
+        $auction->update(['step_percent' => 1]);
+        [$user] = $this->participant($auction);
+
+        $this->actingAs($user)
+            ->get(route('auctions.show', $auction))
+            ->assertOk()
+            ->assertDontSee('Шаг снижения');
+    }
+
     public function test_trading_form_shows_participant_code_next_to_history(): void
     {
         $auction = $this->hiddenTradingAuction();
