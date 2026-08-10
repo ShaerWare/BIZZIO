@@ -433,9 +433,9 @@ class RfqController extends Controller
             return response()->json(['error' => 'Недостаточно прав'], 403);
         }
 
-        // Проверка: RFQ не завершён
-        if ($rfq->status === 'closed') {
-            return response()->json(['error' => 'RFQ уже завершён'], 422);
+        // #268 Приглашать можно, пока идёт приём заявок (этап 1) — та же проверка, что и в UI.
+        if (! $rfq->canInviteCompanies(auth()->user())) {
+            return response()->json(['error' => 'Приём заявок по этой процедуре завершён'], 422);
         }
 
         $request->validate([

@@ -2694,3 +2694,11 @@ read-only — смена организатора ломала бы пригла
 `app/Http/Requests/UpdateCompanyRequest.php`, `resources/views/companies/show.blade.php`,
 `tests/Feature/CompanyProfileEditRightsTest.php` (новый, 11 тестов).
 Прогон: весь набор 392/392. Pint чист, ассеты без изменений.
+
+## #268 — Приглашение компании во время этапа 1 (2026-08-10)
+
+**Проблема:** блок «Пригласить компании» на странице процедуры был закрыт `@can('update', $rfq)`, а политика `update` разрешает правки только черновику. Сразу после публикации процедуры организатор терял возможность пригласить компанию — в том числе во время этапа 1 коммерческого аукциона, до старта этапа 2.
+
+**Решение:** новый метод `Rfq::canInviteCompanies()` — организатор + статус `draft`/`active` + приём заявок не истёк. По нему теперь работают и UI-блок, и серверная проверка в `RfqController::storeInvitation()`. Форма приглашения (поиск с выпадающим списком) уже была реализована — менялась только видимость.
+
+**Изменённые файлы:** `app/Models/Rfq.php`, `app/Http/Controllers/RfqController.php`, `resources/views/rfqs/show.blade.php`, `tests/Feature/InviteDuringStageOneTest.php` (новый, 5 кейсов).

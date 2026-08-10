@@ -214,6 +214,22 @@ class Rfq extends Model implements HasMedia
     }
 
     /**
+     * #268 Может ли организатор приглашать компании прямо сейчас.
+     *
+     * Приглашать нужно и во время приёма заявок (этап 1 коммерческого аукциона — до старта
+     * этапа 2), поэтому проверка идёт НЕ по политике `update`: та разрешает правки только
+     * черновику, и блок приглашения пропадал сразу после публикации процедуры.
+     */
+    public function canInviteCompanies(?User $user): bool
+    {
+        if (! $user || ! in_array($this->status, ['draft', 'active'], true)) {
+            return false;
+        }
+
+        return $this->canManage($user) && ! $this->isExpired();
+    }
+
+    /**
      * #148: можно ли отменить запрос цен — пока он черновик или активен (до закрытия).
      */
     public function canBeCancelled(): bool
