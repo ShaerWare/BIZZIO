@@ -2694,3 +2694,15 @@ read-only — смена организатора ломала бы пригла
 `app/Http/Requests/UpdateCompanyRequest.php`, `resources/views/companies/show.blade.php`,
 `tests/Feature/CompanyProfileEditRightsTest.php` (новый, 11 тестов).
 Прогон: весь набор 392/392. Pint чист, ассеты без изменений.
+
+## #218 — Чат внутри процедуры с обезличиванием и отстранением участников (2026-08-10)
+
+Чат вопросов-ответов на этапе 1: страница Запроса цен коммерческого аукциона и страница обычного аукциона в период приёма заявок. Виден только организатору и участникам.
+
+- Участники обезличены: коды вида `У-01` — умышленно другого формата, чем `anonymous_code` торгов этапа 2 (2 буквы + 2 цифры), чтобы переписку нельзя было сопоставить со ставками. Названия компаний видит только организатор.
+- Организатор может отстранить компанию с обязательной причиной. Отстранение: блокирует чат и подачу заявок, аннулирует уже поданные заявки (`status=rejected`), снимает приглашение и публикует обезличенную системную запись в чате. Отстранённый видит баннер с причиной.
+- Аннулированные заявки исключены из расчёта баллов и определения победителя (`RfqScoringService`, `AuctionWinnerService`), из расчёта НМЦ этапа 2 и списка приглашённых на торги (`CommercialAuctionLauncherService`).
+- Лента обновляется коротким поллингом (7 с) с докачкой по `after_id` — тот же приём, что в панели торгов.
+
+**Новые файлы:** миграции `procedure_participants` / `procedure_chat_messages`, модели `ProcedureParticipant`, `ProcedureChatMessage`, трейт `HasProcedureChat`, `ProcedureChatController`, партиал `partials/procedure-chat.blade.php`, тест `tests/Feature/ProcedureChatTest.php` (10 кейсов).
+**Изменены:** `Rfq`, `Auction`, `RfqController::storeBid`, `AuctionController::storeBid/storeOffer`, `RfqScoringService`, `AuctionWinnerService`, `CommercialAuctionLauncherService`, `routes/web.php`, `rfqs/show.blade.php`, `auctions/show.blade.php`.

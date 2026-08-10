@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasProcedureChat;
 use App\Traits\HasProcurementDocuments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Auction extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'number',
@@ -193,6 +194,36 @@ class Auction extends Model implements HasMedia
             ->where('type', 'offer')
             ->whereNotNull('became_best_at')
             ->orderBy('became_best_at', 'asc');
+    }
+
+    /**
+     * #218 Компании — участники процедуры: подали заявку либо приглашены организатором.
+     *
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    public function chatParticipantCompanyIds(): \Illuminate\Support\Collection
+    {
+        return $this->bids()->pluck('company_id')
+            ->merge($this->invitations()->pluck('company_id'))
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * #218 Чат работает на этапе приёма заявок обычного аукциона.
+     * У коммерческого этап 1 — это связанный Запрос цен, там же живёт и его чат.
+     */
+    public function isChatOpen(): bool
+    {
+        return ! $this->isCommercial() && $this->isAcceptingApplications();
+    }
+
+    /**
+     * #218 Показывать ли блок чата на странице аукциона.
+     */
+    public function hasChat(): bool
+    {
+        return ! $this->isCommercial();
     }
 
     // ========================

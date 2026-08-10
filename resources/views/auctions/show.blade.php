@@ -936,6 +936,13 @@
             </div>
         </div>
 
+        {{-- #218 Чат аукциона: вопросы участников и ответы организатора на этапе приёма заявок --}}
+        @if($auction->hasChat())
+            <div class="mt-6">
+                @include('partials.procedure-chat', ['procedure' => $auction])
+            </div>
+        @endif
+
     </div>
 </div>
 

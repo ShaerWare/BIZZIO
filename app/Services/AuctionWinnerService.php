@@ -16,9 +16,14 @@ class AuctionWinnerService
     {
         // #179 Коммерческий аукцион: победитель — текущее «Лучшее предложение»
         // (лидер по совокупной оценке), а не последняя ставка.
+        // #218 Ставки отстранённых компаний аннулированы (status=rejected) — победителем не становятся.
         $winnerBid = $auction->isCommercial()
             ? $auction->bestBid
-            : $auction->tradingBids()->first(); // Первая = последняя = минимальная цена
+            : $auction->tradingBids()->where('status', '!=', 'rejected')->first(); // Первая = последняя = минимальная цена
+
+        if ($winnerBid && $winnerBid->status === 'rejected') {
+            $winnerBid = null;
+        }
 
         if (! $winnerBid) {
             Log::warning("Аукцион {$auction->number}: нет ставок в торгах.");

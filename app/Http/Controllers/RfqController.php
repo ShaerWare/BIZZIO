@@ -379,6 +379,11 @@ class RfqController extends Controller
             return back()->withInput()->with('error', 'Организатор не может подать заявку на собственный запрос цен.');
         }
 
+        // #218 Компания, отстранённая организатором, к участию не допускается
+        if ($rfq->isCompanyBanned($company->id)) {
+            return back()->withInput()->with('error', 'Ваша компания отстранена организатором от участия в этой процедуре.');
+        }
+
         // Для закрытого RFQ компания должна быть приглашена
         if ($rfq->type !== 'open') {
             $isInvited = $rfq->invitations()->where('company_id', $company->id)->exists();
