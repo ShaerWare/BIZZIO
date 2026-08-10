@@ -546,7 +546,8 @@ class AuctionController extends Controller
             'status' => 'trading',
             'auction_status' => $auction->status,
             'current_price' => number_format($currentPrice, 2, '.', ''),
-            'current_price_formatted' => number_format($currentPrice, 2, '.', ' ').' '.$auction->currency_symbol,
+            // #269 Неразрывные пробелы: цена, обновляемая поллингом, не должна рваться на две строки.
+            'current_price_formatted' => number_format($currentPrice, 2, ',', "\u{00A0}")."\u{00A0}".$auction->currency_symbol,
             'bids_count' => $bids->count(),
             'bids' => $bids,
             'time_remaining' => $timeRemaining,
