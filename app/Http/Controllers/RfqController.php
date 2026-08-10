@@ -68,6 +68,10 @@ class RfqController extends Controller
     {
         $this->authorize('create', Rfq::class);
 
+        // #185 Чистое открытие формы — сбрасываем документы недоделанной процедуры,
+        // иначе они «прилипают» к следующей. После ошибки валидации файлы сохраняются.
+        \App\Support\ProcurementDocuments::clearTempOnFreshForm();
+
         // Компании, где пользователь является модератором
         $companies = auth()->user()->moderatedCompanies;
 
@@ -154,6 +158,9 @@ class RfqController extends Controller
             }
 
             DB::commit();
+
+            // #185 Temp-документы больше не нужны — чистим только после успешного commit.
+            \App\Support\ProcurementDocuments::clearTemp();
 
             // ✅ РАЗНЫЕ СООБЩЕНИЯ В ЗАВИСИМОСТИ ОТ СТАТУСА
             $message = $rfq->status === 'active'
@@ -297,6 +304,9 @@ class RfqController extends Controller
     {
         $this->authorize('update', $rfq);
 
+        // #185 см. create()
+        \App\Support\ProcurementDocuments::clearTempOnFreshForm();
+
         $rfq->load('invitations.company');
 
         return view('rfqs.edit', compact('rfq'));
@@ -316,6 +326,9 @@ class RfqController extends Controller
             app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($rfq, $request);
 
             DB::commit();
+
+            // #185 см. store()
+            \App\Support\ProcurementDocuments::clearTemp();
 
             return redirect()->route('rfqs.show', $rfq)
                 ->with('success', 'Запрос цен обновлён');
