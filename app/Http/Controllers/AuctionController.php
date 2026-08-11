@@ -72,6 +72,10 @@ class AuctionController extends Controller
     {
         $this->authorize('create', Auction::class);
 
+        // #185 Чистое открытие формы — сбрасываем документы недоделанной процедуры,
+        // иначе они «прилипают» к следующей. После ошибки валидации файлы сохраняются.
+        \App\Support\ProcurementDocuments::clearTempOnFreshForm();
+
         $companies = auth()->user()->moderatedCompanies;
 
         return view('auctions.create', compact('companies'));
@@ -112,6 +116,9 @@ class AuctionController extends Controller
             }
 
             DB::commit();
+
+            // #185 Temp-документы больше не нужны — чистим только после успешного commit.
+            \App\Support\ProcurementDocuments::clearTemp();
 
             if ($auction->status === 'active') {
                 return redirect()->route('auctions.show', $auction)
@@ -237,6 +244,9 @@ class AuctionController extends Controller
     {
         $this->authorize('update', $auction);
 
+        // #185 см. create()
+        \App\Support\ProcurementDocuments::clearTempOnFreshForm();
+
         return view('auctions.edit', compact('auction'));
     }
 
@@ -251,6 +261,9 @@ class AuctionController extends Controller
             app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($auction, $request);
 
             DB::commit();
+
+            // #185 см. store()
+            \App\Support\ProcurementDocuments::clearTemp();
 
             return redirect()->route('auctions.show', $auction)
                 ->with('success', 'Аукцион успешно обновлён.');
@@ -553,7 +566,8 @@ class AuctionController extends Controller
             'status' => 'trading',
             'auction_status' => $auction->status,
             'current_price' => number_format($currentPrice, 2, '.', ''),
-            'current_price_formatted' => number_format($currentPrice, 2, '.', ' ').' '.$auction->currency_symbol,
+            // #269 Неразрывные пробелы: цена, обновляемая поллингом, не должна рваться на две строки.
+            'current_price_formatted' => number_format($currentPrice, 2, ',', "\u{00A0}")."\u{00A0}".$auction->currency_symbol,
             'bids_count' => $bids->count(),
             'bids' => $bids,
             'time_remaining' => $timeRemaining,
