@@ -277,6 +277,11 @@
                             </details>
                         </div>
 
+                        {{-- #270 Шаги и максимумы этапа 2 — видны уже во время этапа 1 --}}
+                        @if($rfq->isCommercial())
+                            @include('partials.commercial-stage2-parameters', ['procedure' => $rfq])
+                        @endif
+
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
                         @include('partials.procurement-documents-list', ['model' => $rfq])
 
@@ -305,62 +310,63 @@
                             @include('partials.share-invite', ['model' => $rfq])
                         @endif
 
-                        {{-- T8: Блок приглашения компаний --}}
-                        @can('update', $rfq)
-                            @if($rfq->status !== 'closed')
-                                <div class="bg-gray-50 rounded-lg p-4 mb-4" x-data="companyInviter()">
-                                    <h3 class="text-sm font-semibold text-gray-900 mb-2">Пригласить компании</h3>
+                        {{-- T8: Блок приглашения компаний.
+                             #268 Видимость — по canInviteCompanies(), а не по политике `update`:
+                             та разрешает правки только черновику, поэтому организатор терял
+                             возможность пригласить компанию во время этапа 1 (до старта этапа 2). --}}
+                        @if($rfq->canInviteCompanies(auth()->user()))
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4" x-data="companyInviter()">
+                                <h3 class="text-sm font-semibold text-gray-900 mb-2">Пригласить компании</h3>
 
-                                    {{-- Поиск --}}
-                                    <div class="relative">
-                                        <input type="text"
-                                               x-model="query"
-                                               @input.debounce.300ms="search()"
-                                               @click.away="showResults = false"
-                                               placeholder="Поиск по названию или ИНН..."
-                                               class="block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                {{-- Поиск --}}
+                                <div class="relative">
+                                    <input type="text"
+                                           x-model="query"
+                                           @input.debounce.300ms="search()"
+                                           @click.away="showResults = false"
+                                           placeholder="Поиск по названию или ИНН..."
+                                           class="block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
 
-                                        {{-- Результаты --}}
-                                        <div x-show="showResults && results.length > 0" x-cloak
-                                             class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                            <template x-for="company in results" :key="company.id">
-                                                <button type="button"
-                                                        @click="invite(company)"
-                                                        class="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-100 last:border-0">
-                                                    <p class="text-sm font-medium text-gray-900" x-text="company.title"></p>
-                                                    <p class="text-xs text-gray-500" x-text="company.subtitle"></p>
-                                                </button>
-                                            </template>
-                                        </div>
-
-                                        {{-- Загрузка --}}
-                                        <div x-show="searching" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg p-3 text-center text-xs text-gray-500">
-                                            Поиск...
-                                        </div>
+                                    {{-- Результаты --}}
+                                    <div x-show="showResults && results.length > 0" x-cloak
+                                         class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                        <template x-for="company in results" :key="company.id">
+                                            <button type="button"
+                                                    @click="invite(company)"
+                                                    class="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-100 last:border-0">
+                                                <p class="text-sm font-medium text-gray-900" x-text="company.title"></p>
+                                                <p class="text-xs text-gray-500" x-text="company.subtitle"></p>
+                                            </button>
+                                        </template>
                                     </div>
 
-                                    {{-- Сообщения --}}
-                                    <p x-show="message" x-cloak x-text="message" class="text-xs mt-2"
-                                       :class="messageType === 'success' ? 'text-green-600' : 'text-red-600'"></p>
-
-                                    {{-- Список приглашённых --}}
-                                    @if($rfq->invitations->count() > 0)
-                                        <div class="mt-3 space-y-1">
-                                            <p class="text-xs text-gray-500 font-medium">Приглашённые ({{ $rfq->invitations->count() }}):</p>
-                                            @foreach($rfq->invitations as $inv)
-                                                <div class="flex items-center justify-between text-xs">
-                                                    <span class="text-gray-700 truncate">{{ $inv->company->name }}</span>
-                                                    <span class="ml-1 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium
-                                                        {{ $inv->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : ($inv->status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') }}">
-                                                        {{ $inv->status === 'pending' ? 'Ожидает' : ($inv->status === 'accepted' ? 'Принято' : 'Отклонено') }}
-                                                    </span>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endif
+                                    {{-- Загрузка --}}
+                                    <div x-show="searching" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg p-3 text-center text-xs text-gray-500">
+                                        Поиск...
+                                    </div>
                                 </div>
-                            @endif
-                        @endcan
+
+                                {{-- Сообщения --}}
+                                <p x-show="message" x-cloak x-text="message" class="text-xs mt-2"
+                                   :class="messageType === 'success' ? 'text-green-600' : 'text-red-600'"></p>
+
+                                {{-- Список приглашённых --}}
+                                @if($rfq->invitations->count() > 0)
+                                    <div class="mt-3 space-y-1">
+                                        <p class="text-xs text-gray-500 font-medium">Приглашённые ({{ $rfq->invitations->count() }}):</p>
+                                        @foreach($rfq->invitations as $inv)
+                                            <div class="flex items-center justify-between text-xs">
+                                                <span class="text-gray-700 truncate">{{ $inv->company->name }}</span>
+                                                <span class="ml-1 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium
+                                                    {{ $inv->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : ($inv->status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') }}">
+                                                    {{ $inv->status === 'pending' ? 'Ожидает' : ($inv->status === 'accepted' ? 'Принято' : 'Отклонено') }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
 
                         {{-- T3: Кнопка «Подать заявку» — переключает на вкладку «Заявки» и скроллит к форме --}}
                         @auth
@@ -727,7 +733,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ number_format($bid->price, 2, ',', ' ') }}
+                                                <x-money :value="$bid->price" />
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $bid->deadline }}
@@ -847,6 +853,13 @@
                 @endif
             </div>
         </div>
+
+        {{-- #218 Чат этапа 1 коммерческого аукциона: вопросы участников и ответы организатора --}}
+        @if($rfq->isCommercial())
+            <div class="mt-6">
+                @include('partials.procedure-chat', ['procedure' => $rfq])
+            </div>
+        @endif
 
         {{-- T4: Служба поддержки (перенесена вниз страницы) --}}
         <div class="bg-gray-50 rounded-lg p-4 mt-6">

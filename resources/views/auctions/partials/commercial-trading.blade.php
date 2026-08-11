@@ -30,8 +30,13 @@
     <div class="p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-1">Коммерческий аукцион — торги</h3>
         <p class="text-sm text-gray-500 mb-2">
-            НМЦ: {{ number_format((float) $auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }} ·
+            НМЦ: <x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /> ·
             Веса: цена {{ (float) $auction->weight_price }}% / срок {{ (float) $auction->weight_deadline }}% / аванс {{ (float) $auction->weight_advance }}%
+        </p>
+        {{-- #270 Шаги и максимумы, заданные организатором — прямо в панели торгов --}}
+        <p class="text-sm text-gray-500 mb-2">
+            Шаг: цена {{ (float) $auction->step_price }}% / срок {{ (int) $auction->step_deadline }} дн. / аванс {{ (float) $auction->step_advance }}% ·
+            Макс.: срок {{ (int) $auction->max_deadline }} дн. / аванс {{ (float) $auction->max_advance }}%
         </p>
         {{-- #198 Количество компаний-участников, сделавших ставку --}}
         <p class="text-sm mb-4">
@@ -238,9 +243,24 @@
                                         <span x-text="o.anonymous_code"></span>
                                         <span x-show="o.is_mine" class="ml-1 text-emerald-600 text-[10px] uppercase">вы</span>
                                     </td>
-                                    <td class="px-2 py-2 text-right" x-text="fmt(o.price)"></td>
-                                    <td class="px-2 py-2 text-right" x-text="o.deadline"></td>
-                                    <td class="px-2 py-2 text-right" x-text="round2(o.advance) + '%'"></td>
+                                    {{-- #271 Рядом со значением критерия — процент изменения относительно
+                                         стартового ориентира: НМЦ для цены, макс. срок и макс. аванс для
+                                         остальных. Снижение показывается со знаком «−», рост — «+». --}}
+                                    <td class="px-2 py-2 text-right">
+                                        <span x-text="fmt(o.price)"></span>
+                                        <span class="ml-1 text-[10px]" :class="deltaClass(o.price, nmc)"
+                                              x-text="deltaLabel(o.price, nmc)"></span>
+                                    </td>
+                                    <td class="px-2 py-2 text-right">
+                                        <span x-text="o.deadline"></span>
+                                        <span class="ml-1 text-[10px]" :class="deltaClass(o.deadline, refs.d)"
+                                              x-text="deltaLabel(o.deadline, refs.d)"></span>
+                                    </td>
+                                    <td class="px-2 py-2 text-right">
+                                        <span x-text="round2(o.advance) + '%'"></span>
+                                        <span class="ml-1 text-[10px]" :class="deltaClass(o.advance, refs.a)"
+                                              x-text="deltaLabel(o.advance, refs.a)"></span>
+                                    </td>
                                     <td class="px-2 py-2 text-right" x-text="round2(o.total_score)"></td>
                                     <td class="px-2 py-2 text-right text-gray-400" x-text="o.time"></td>
                                 </tr>
@@ -544,6 +564,26 @@ function commercialAuction(cfg) {
             return Number(n).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         },
         round2(n) { return Math.round(Number(n) * 100) / 100; },
+
+        // #271 Процент изменения значения критерия относительно стартового ориентира
+        // (НМЦ / макс. срок / макс. аванс). Возвращает null, если ориентир нулевой.
+        delta(value, base) {
+            const b = Number(base);
+            if (!isFinite(b) || Math.abs(b) < EPS) return null;
+            return (Number(value) - b) / b * 100;
+        },
+        deltaLabel(value, base) {
+            const d = this.delta(value, base);
+            if (d === null) return '';
+            const rounded = Math.round(d * 10) / 10;
+            const sign = rounded > 0 ? '+' : (rounded < 0 ? '−' : '');
+            return '(' + sign + Math.abs(rounded).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%)';
+        },
+        deltaClass(value, base) {
+            const d = this.delta(value, base);
+            if (d === null || Math.abs(d) < EPS) return 'text-gray-400';
+            return d < 0 ? 'text-emerald-600' : 'text-red-500';
+        },
     };
 }
 </script>

@@ -243,7 +243,7 @@
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
-                                <li>• Начальная максимальная цена (НМЦ) — <strong>{{ number_format($auction->starting_price, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
+                                <li>• Начальная максимальная цена (НМЦ) — <strong><x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /></strong></li>
                                 {{-- #256 У коммерческого аукциона шаг снижения цены не применяется: шаги трёх
                                      критериев задаёт организатор, они показаны в панели торгов. Диапазон
                                      «X% — 5%» относится только к обычному аукциону. --}}
@@ -255,10 +255,15 @@
                                     <li>• Подано заявок — <strong>{{ $auction->initialBids->count() }}</strong></li>
                                 @endunless
                                 @if($auction->isTrading())
-                                    <li>• Текущая цена — <strong class="text-green-600">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</strong></li>
+                                    <li>• Текущая цена — <strong class="text-green-600"><x-money :value="$currentPrice" :currency="$auction->currency_symbol" class="current-price" /></strong></li>
                                 @endif
                             </ul>
                         </div>
+
+                        {{-- #270 Шаги и максимумы, заданные организатором (коммерческий аукцион) --}}
+                        @if($auction->isCommercial())
+                            @include('partials.commercial-stage2-parameters', ['procedure' => $auction])
+                        @endif
 
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
                         @include('partials.procurement-documents-list', ['model' => $auction])
@@ -379,7 +384,7 @@
 
                             <div class="bg-emerald-50 rounded-lg p-4 mb-4">
                                 <p class="text-sm text-gray-600">Текущая цена:</p>
-                                <p class="text-3xl font-bold text-emerald-600 current-price">{{ number_format($currentPrice, 2, ',', ' ') }} {{ $auction->currency_symbol }}</p>
+                                <p class="text-3xl font-bold text-emerald-600"><x-money :value="$currentPrice" :currency="$auction->currency_symbol" class="current-price" /></p>
                                 @if($auction->last_bid_at)
                                     <p class="text-xs text-gray-500 mt-1">
                                         Последняя ставка: {{ $auction->last_bid_at->format('H:i:s') }}
@@ -935,6 +940,13 @@
                 @endif
             </div>
         </div>
+
+        {{-- #218 Чат аукциона: вопросы участников и ответы организатора на этапе приёма заявок --}}
+        @if($auction->hasChat())
+            <div class="mt-6">
+                @include('partials.procedure-chat', ['procedure' => $auction])
+            </div>
+        @endif
 
     </div>
 </div>

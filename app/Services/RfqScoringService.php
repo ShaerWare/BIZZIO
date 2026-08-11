@@ -13,7 +13,8 @@ class RfqScoringService
      */
     public function calculateScores(Rfq $rfq): void
     {
-        $bids = $rfq->bids()->get();
+        // #218 Заявки отстранённых компаний аннулированы (status=rejected) и в оценке не участвуют.
+        $bids = $rfq->bids()->where('status', '!=', 'rejected')->get();
 
         if ($bids->isEmpty()) {
             return;
@@ -94,7 +95,9 @@ class RfqScoringService
      */
     public function determineWinner(Rfq $rfq): ?RfqBid
     {
+        // #218 Победителем не может стать отстранённая компания.
         return $rfq->bids()
+            ->where('status', '!=', 'rejected')
             ->orderBy('total_score', 'desc')
             ->first();
     }
