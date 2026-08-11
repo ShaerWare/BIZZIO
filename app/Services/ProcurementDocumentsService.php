@@ -24,6 +24,9 @@ class ProcurementDocumentsService
      * Прикрепить документы из запроса к модели (Rfq|Auction).
      * Одиночные коллекции заменяются при наличии нового файла; «Прочие» — добавляются.
      *
+     * Temp-хранилище здесь НЕ очищается: это делает контроллер после DB::commit(),
+     * иначе при откате транзакции пользователь терял и процедуру, и приложенные файлы.
+     *
      * @param  HasMedia&\Illuminate\Database\Eloquent\Model  $model
      */
     public function attachFromRequest(HasMedia $model, Request $request): void
@@ -60,8 +63,6 @@ class ProcurementDocumentsService
             }
         }
 
-        // Очищаем temp-хранилище после успешного прикрепления.
-        ProcurementDocuments::clearTemp();
     }
 
     /**

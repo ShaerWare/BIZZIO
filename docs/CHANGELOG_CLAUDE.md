@@ -2694,3 +2694,20 @@ read-only — смена организатора ломала бы пригла
 `app/Http/Requests/UpdateCompanyRequest.php`, `resources/views/companies/show.blade.php`,
 `tests/Feature/CompanyProfileEditRightsTest.php` (новый, 11 тестов).
 Прогон: весь набор 392/392. Pint чист, ассеты без изменений.
+
+## #185 — Конкурсная документация терялась/блокировала повторную отправку формы (2026-08-10)
+
+**Проблема (с тестов):** при ошибке валидации формы создания процедуры файлы приходилось прикладывать заново; после исправления ошибки процедура не создавалась, серверные ошибки «зависали», а на новой форме оказывались приложены файлы прошлой попытки.
+
+**Причины:**
+1. JS-обработчик submit в `rfqs/create.blade.php` требовал файл именно в `input[type=file]`. После ошибки валидации ТЗ восстанавливается только во временном хранилище, input пуст → форма молча не уходила на сервер («Загрузите техническое задание» + другие ошибки не обнаруживались).
+2. Temp-хранилище не сбрасывалось при «чистом» открытии формы → документы недоделанной процедуры прилипали к следующей.
+3. `ProcurementDocumentsService::attachFromRequest()` чистил temp внутри транзакции → при откате пользователь терял и процедуру, и файлы.
+
+**Изменённые файлы:**
+- `resources/views/partials/procurement-documents.blade.php` — скрытые маркеры `data-procurement-attached` (реактивные от Alpine) для JS-валидации
+- `resources/views/rfqs/create.blade.php` — JS-проверка ТЗ учитывает файл из temp-хранилища, старая ошибка снимается при повторной отправке
+- `app/Support/ProcurementDocuments.php` — `clearTempOnFreshForm()`
+- `app/Http/Controllers/RfqController.php`, `app/Http/Controllers/AuctionController.php` — сброс temp при открытии create/edit, очистка temp только после `DB::commit()`
+- `app/Services/ProcurementDocumentsService.php` — убрана очистка temp из сервиса
+- `tests/Feature/ProcurementTempRestoreTest.php` — новый тест (4 кейса)

@@ -118,6 +118,12 @@
             } catch (e) {}
         }
      }">
+    {{-- #185 Маркеры «файл уже приложен» (из temp-хранилища) для JS-валидации формы:
+         после ошибки валидации файл живёт только в temp, а input[type=file] пуст. --}}
+    @foreach(ProcurementDocuments::SINGLE_COLLECTIONS as $c)
+        <input type="hidden" data-procurement-attached="{{ $c }}" :value="{{ $c }} ? '1' : ''">
+    @endforeach
+
     <h3 class="text-lg font-semibold text-gray-900 mb-1">Конкурсная документация</h3>
     <p class="text-sm text-gray-600 mb-4">Только формат PDF. Общий объём всех файлов — не более 20 МБ. Файлы сохраняются при ошибке заполнения формы — повторно прикреплять не нужно.</p>
 
