@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasProcedureChat;
 use App\Traits\HasProcurementDocuments;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Rfq extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
 
     protected $fillable = [
         'number',
@@ -152,6 +153,28 @@ class Rfq extends Model implements HasMedia
             && $this->status === 'closed'
             && $this->linkedAuction
             && in_array($this->linkedAuction->status, ['active', 'trading'], true);
+    }
+
+    /**
+     * #218 Компании — участники процедуры: подали заявку либо приглашены организатором.
+     *
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    public function chatParticipantCompanyIds(): \Illuminate\Support\Collection
+    {
+        return $this->bids()->pluck('company_id')
+            ->merge($this->invitations()->pluck('company_id'))
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * #218 Открыт ли чат для новых сообщений — только пока идёт приём заявок (этап 1).
+     * История остаётся доступной организатору и участникам и после закрытия.
+     */
+    public function isChatOpen(): bool
+    {
+        return $this->status === 'active';
     }
 
     // ========================

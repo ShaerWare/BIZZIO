@@ -853,6 +853,13 @@
             </div>
         </div>
 
+        {{-- #218 Чат этапа 1 коммерческого аукциона: вопросы участников и ответы организатора --}}
+        @if($rfq->isCommercial())
+            <div class="mt-6">
+                @include('partials.procedure-chat', ['procedure' => $rfq])
+            </div>
+        @endif
+
         {{-- T4: Служба поддержки (перенесена вниз страницы) --}}
         <div class="bg-gray-50 rounded-lg p-4 mt-6">
             <div class="flex items-center justify-between">

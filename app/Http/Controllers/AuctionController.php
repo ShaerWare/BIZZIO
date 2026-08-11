@@ -345,6 +345,13 @@ class AuctionController extends Controller
                 return back()->withInput()->with('error', 'Организатор не может участвовать в собственном аукционе.');
             }
 
+            // #218 Компания, отстранённая организатором, к участию не допускается
+            if ($auction->isCompanyBanned($company->id)) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'Ваша компания отстранена организатором от участия в этом аукционе.');
+            }
+
             // Аукцион должен принимать заявки или идти торги
             if (! $auction->isAcceptingApplications() && ! $auction->isTrading()) {
                 DB::rollBack();
@@ -674,6 +681,13 @@ class AuctionController extends Controller
         }
         if (! $auction->invitations()->where('company_id', $company->id)->exists()) {
             return back()->withInput()->with('error', 'Ваша компания не является участником этого аукциона.');
+        }
+
+        // #218 Отстранённая организатором компания предложений не подаёт.
+        // На этапе 2 бан мог быть наложен ещё в чате этапа 1 — проверяем и связанный Запрос цен.
+        if ($auction->isCompanyBanned($company->id)
+            || ($auction->rfq && $auction->rfq->isCompanyBanned($company->id))) {
+            return back()->withInput()->with('error', 'Ваша компания отстранена организатором от участия в этой процедуре.');
         }
 
         $price = (float) $request->price;

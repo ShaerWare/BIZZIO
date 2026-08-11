@@ -32,7 +32,9 @@ class CommercialAuctionLauncherService
             return Auction::find($rfq->linked_auction_id);
         }
 
-        $bids = $rfq->bids()->get();
+        // #218 Предложения отстранённых компаний аннулированы: они не влияют на НМЦ
+        // этапа 2 и такие компании не приглашаются к торгам.
+        $bids = $rfq->bids()->where('status', '!=', 'rejected')->get();
 
         // Нет участников — процедура несостоялась.
         if ($bids->isEmpty()) {
