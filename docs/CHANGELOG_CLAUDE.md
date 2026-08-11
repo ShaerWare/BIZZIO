@@ -2695,6 +2695,50 @@ read-only — смена организатора ломала бы пригла
 `tests/Feature/CompanyProfileEditRightsTest.php` (новый, 11 тестов).
 Прогон: весь набор 392/392. Pint чист, ассеты без изменений.
 
+## #185 — Конкурсная документация терялась/блокировала повторную отправку формы (2026-08-10)
+
+**Проблема (с тестов):** при ошибке валидации формы создания процедуры файлы приходилось прикладывать заново; после исправления ошибки процедура не создавалась, серверные ошибки «зависали», а на новой форме оказывались приложены файлы прошлой попытки.
+
+**Причины:**
+1. JS-обработчик submit в `rfqs/create.blade.php` требовал файл именно в `input[type=file]`. После ошибки валидации ТЗ восстанавливается только во временном хранилище, input пуст → форма молча не уходила на сервер («Загрузите техническое задание» + другие ошибки не обнаруживались).
+2. Temp-хранилище не сбрасывалось при «чистом» открытии формы → документы недоделанной процедуры прилипали к следующей.
+3. `ProcurementDocumentsService::attachFromRequest()` чистил temp внутри транзакции → при откате пользователь терял и процедуру, и файлы.
+
+**Изменённые файлы:**
+- `resources/views/partials/procurement-documents.blade.php` — скрытые маркеры `data-procurement-attached` (реактивные от Alpine) для JS-валидации
+- `resources/views/rfqs/create.blade.php` — JS-проверка ТЗ учитывает файл из temp-хранилища, старая ошибка снимается при повторной отправке
+- `app/Support/ProcurementDocuments.php` — `clearTempOnFreshForm()`
+- `app/Http/Controllers/RfqController.php`, `app/Http/Controllers/AuctionController.php` — сброс temp при открытии create/edit, очистка temp только после `DB::commit()`
+- `app/Services/ProcurementDocumentsService.php` — убрана очистка temp из сервиса
+- `tests/Feature/ProcurementTempRestoreTest.php` — новый тест (4 кейса)
+
+## #269 / #270 / #271 — Отображение параметров торгов коммерческого аукциона (2026-08-10)
+
+**#269** НМЦ и другие суммы рвались посреди цифр при переносе строки. Добавлен общий blade-компонент `<x-money>`: разряды и символ валюты соединены неразрывными пробелами + `whitespace-nowrap`. Применён во всех местах вывода сумм (аукционы, запросы цен, мои заявки, дашборд, карточки). Формат цены, приходящей поллингом (`current_price_formatted`), приведён к тому же виду.
+
+**#270** Шаги изменения цены/срока/аванса и максимумы срока/аванса, заданные организатором, теперь показываются явно — на этапе 1 (страница Запроса цен) и во время торгов (страница Аукциона + панель торгов). Новый партиал `partials/commercial-stage2-parameters.blade.php`.
+
+**#271** В таблице предложений рядом с каждым критерием выводится процент изменения относительно стартового ориентира (НМЦ / макс. срок / макс. аванс): снижение зелёным со знаком «−», рост красным «+».
+
+**Изменённые файлы:**
+- `resources/views/components/money.blade.php` (новый), `resources/views/partials/commercial-stage2-parameters.blade.php` (новый)
+- `resources/views/auctions/show.blade.php`, `resources/views/auctions/partials/commercial-trading.blade.php`, `resources/views/auctions/my-bids.blade.php`, `resources/views/components/auction-card.blade.php`
+- `resources/views/rfqs/show.blade.php`, `resources/views/rfqs/my-bids.blade.php`, `resources/views/tenders/my-bids.blade.php`, `resources/views/partials/dashboard/bids-widget.blade.php`
+- `app/Http/Controllers/AuctionController.php` — формат `current_price_formatted`
+- `tests/Feature/AuctionTradingDisplayTest.php` — новый тест (4 кейса)
+
+## #218 — Чат внутри процедуры с обезличиванием и отстранением участников (2026-08-10)
+
+Чат вопросов-ответов на этапе 1: страница Запроса цен коммерческого аукциона и страница обычного аукциона в период приёма заявок. Виден только организатору и участникам.
+
+- Участники обезличены: коды вида `У-01` — умышленно другого формата, чем `anonymous_code` торгов этапа 2 (2 буквы + 2 цифры), чтобы переписку нельзя было сопоставить со ставками. Названия компаний видит только организатор.
+- Организатор может отстранить компанию с обязательной причиной. Отстранение: блокирует чат и подачу заявок, аннулирует уже поданные заявки (`status=rejected`), снимает приглашение и публикует обезличенную системную запись в чате. Отстранённый видит баннер с причиной.
+- Аннулированные заявки исключены из расчёта баллов и определения победителя (`RfqScoringService`, `AuctionWinnerService`), из расчёта НМЦ этапа 2 и списка приглашённых на торги (`CommercialAuctionLauncherService`).
+- Лента обновляется коротким поллингом (7 с) с докачкой по `after_id` — тот же приём, что в панели торгов.
+
+**Новые файлы:** миграции `procedure_participants` / `procedure_chat_messages`, модели `ProcedureParticipant`, `ProcedureChatMessage`, трейт `HasProcedureChat`, `ProcedureChatController`, партиал `partials/procedure-chat.blade.php`, тест `tests/Feature/ProcedureChatTest.php` (10 кейсов).
+**Изменены:** `Rfq`, `Auction`, `RfqController::storeBid`, `AuctionController::storeBid/storeOffer`, `RfqScoringService`, `AuctionWinnerService`, `CommercialAuctionLauncherService`, `routes/web.php`, `rfqs/show.blade.php`, `auctions/show.blade.php`.
+
 ## #268 — Приглашение компании во время этапа 1 (2026-08-10)
 
 **Проблема:** блок «Пригласить компании» на странице процедуры был закрыт `@can('update', $rfq)`, а политика `update` разрешает правки только черновику. Сразу после публикации процедуры организатор терял возможность пригласить компанию — в том числе во время этапа 1 коммерческого аукциона, до старта этапа 2.

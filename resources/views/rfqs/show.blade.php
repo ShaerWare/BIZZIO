@@ -277,6 +277,11 @@
                             </details>
                         </div>
 
+                        {{-- #270 Шаги и максимумы этапа 2 — видны уже во время этапа 1 --}}
+                        @if($rfq->isCommercial())
+                            @include('partials.commercial-stage2-parameters', ['procedure' => $rfq])
+                        @endif
+
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
                         @include('partials.procurement-documents-list', ['model' => $rfq])
 
@@ -728,7 +733,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ number_format($bid->price, 2, ',', ' ') }}
+                                                <x-money :value="$bid->price" />
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $bid->deadline }}
@@ -848,6 +853,13 @@
                 @endif
             </div>
         </div>
+
+        {{-- #218 Чат этапа 1 коммерческого аукциона: вопросы участников и ответы организатора --}}
+        @if($rfq->isCommercial())
+            <div class="mt-6">
+                @include('partials.procedure-chat', ['procedure' => $rfq])
+            </div>
+        @endif
 
         {{-- T4: Служба поддержки (перенесена вниз страницы) --}}
         <div class="bg-gray-50 rounded-lg p-4 mt-6">
