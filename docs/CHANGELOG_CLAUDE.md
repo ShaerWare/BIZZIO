@@ -2694,3 +2694,15 @@ read-only — смена организатора ломала бы пригла
 `app/Http/Requests/UpdateCompanyRequest.php`, `resources/views/companies/show.blade.php`,
 `tests/Feature/CompanyProfileEditRightsTest.php` (новый, 11 тестов).
 Прогон: весь набор 392/392. Pint чист, ассеты без изменений.
+
+## #176 — Документы компании: ограничение общего объёма (2026-08-11)
+
+Поочерёдная загрузка нескольких PDF (компонент `x-pdf-documents-input`) и выборочное удаление ранее загруженных файлов уже были реализованы ранее (коммит f62d750). Не хватало заявленного в задаче ограничения общего объёма.
+
+- Новый трейт `App\Http\Requests\Concerns\ValidatesCompanyDocuments`: только PDF, не более 10 файлов, каждый ≤ 10 МБ, суммарный объём ≤ 10 МБ **с учётом уже загруженных** документов (при редактировании).
+- Подключён в `StoreCompanyRequest` и `UpdateCompanyRequest`.
+- Подсказки в формах приведены в соответствие (было противоречие: «10 файлов по 20MB» в вебе против «по 10MB» в Orchid).
+
+**Изменённые файлы:** `app/Http/Requests/Concerns/ValidatesCompanyDocuments.php` (новый), `StoreCompanyRequest`, `UpdateCompanyRequest`, `resources/views/components/pdf-documents-input.blade.php`, `resources/views/companies/create.blade.php`, `resources/views/companies/edit.blade.php`, `tests/Feature/CompanyDocumentsTest.php` (новый, 6 кейсов).
+
+**Заметка по тестам:** `UploadedFile::fake()->create()` создаёт файл нулевого размера с mime `application/x-empty` — media library такой файл в PDF-коллекцию не принимает. Для тестов размера нужен `createWithContent()` с сигнатурой `%PDF-1.4`.

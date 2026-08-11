@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesCompanyDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreCompanyRequest extends FormRequest
 {
+    use ValidatesCompanyDocuments;
+
     public function authorize(): bool
     {
         // Только авторизованные пользователи могут создавать компании
@@ -15,7 +18,7 @@ class StoreCompanyRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        return array_merge([
             'name' => ['required', 'string', 'max:255'],
             'inn' => ['required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies', 'inn')->whereNull('deleted_at')],
             'legal_form' => ['nullable', 'string', 'max:255'],
@@ -23,8 +26,17 @@ class StoreCompanyRequest extends FormRequest
             'short_description' => ['nullable', 'string', 'max:500'],
             'full_description' => ['nullable', 'string'],
             'industry_id' => ['nullable', 'exists:industries,id'],
-            'documents.*' => ['nullable', 'file', 'mimes:pdf', 'max:20480'], // max 20MB
-        ];
+        ], $this->companyDocumentRules());
+    }
+
+    /**
+     * #176 Суммарный объём документов компании — не более 10 МБ.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $this->validateCompanyDocumentsTotalSize($validator);
+        });
     }
 
     public function messages(): array
@@ -37,8 +49,7 @@ class StoreCompanyRequest extends FormRequest
             'logo.image' => 'Логотип должен быть изображением',
             'logo.max' => 'Размер логотипа не должен превышать 2MB',
             'industry_id.exists' => 'Выбранная отрасль не существует',
-            'documents.*.mimes' => 'Документы должны быть в формате PDF',
-            'documents.*.max' => 'Размер документа не должен превышать 20MB',
+            ...$this->companyDocumentMessages(),
         ];
     }
 }
