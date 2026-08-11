@@ -2711,3 +2711,18 @@ read-only — смена организатора ломала бы пригла
 - `app/Http/Controllers/RfqController.php`, `app/Http/Controllers/AuctionController.php` — сброс temp при открытии create/edit, очистка temp только после `DB::commit()`
 - `app/Services/ProcurementDocumentsService.php` — убрана очистка temp из сервиса
 - `tests/Feature/ProcurementTempRestoreTest.php` — новый тест (4 кейса)
+
+## #269 / #270 / #271 — Отображение параметров торгов коммерческого аукциона (2026-08-10)
+
+**#269** НМЦ и другие суммы рвались посреди цифр при переносе строки. Добавлен общий blade-компонент `<x-money>`: разряды и символ валюты соединены неразрывными пробелами + `whitespace-nowrap`. Применён во всех местах вывода сумм (аукционы, запросы цен, мои заявки, дашборд, карточки). Формат цены, приходящей поллингом (`current_price_formatted`), приведён к тому же виду.
+
+**#270** Шаги изменения цены/срока/аванса и максимумы срока/аванса, заданные организатором, теперь показываются явно — на этапе 1 (страница Запроса цен) и во время торгов (страница Аукциона + панель торгов). Новый партиал `partials/commercial-stage2-parameters.blade.php`.
+
+**#271** В таблице предложений рядом с каждым критерием выводится процент изменения относительно стартового ориентира (НМЦ / макс. срок / макс. аванс): снижение зелёным со знаком «−», рост красным «+».
+
+**Изменённые файлы:**
+- `resources/views/components/money.blade.php` (новый), `resources/views/partials/commercial-stage2-parameters.blade.php` (новый)
+- `resources/views/auctions/show.blade.php`, `resources/views/auctions/partials/commercial-trading.blade.php`, `resources/views/auctions/my-bids.blade.php`, `resources/views/components/auction-card.blade.php`
+- `resources/views/rfqs/show.blade.php`, `resources/views/rfqs/my-bids.blade.php`, `resources/views/tenders/my-bids.blade.php`, `resources/views/partials/dashboard/bids-widget.blade.php`
+- `app/Http/Controllers/AuctionController.php` — формат `current_price_formatted`
+- `tests/Feature/AuctionTradingDisplayTest.php` — новый тест (4 кейса)

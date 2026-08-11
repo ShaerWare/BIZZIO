@@ -76,13 +76,13 @@
         <div class="space-y-2 text-sm text-gray-600 mb-4">
             <div class="flex justify-between">
                 <span>НМЦ:</span>
-                <span class="font-semibold text-gray-900">{{ number_format($auction->starting_price, 2, '.', ' ') }} {{ $auction->currency_symbol }}</span>
+                <x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" class="font-semibold text-gray-900 whitespace-nowrap" />
             </div>
             
             @if($auction->isTrading())
                 <div class="flex justify-between">
                     <span>Текущая цена:</span>
-                    <span class="font-semibold text-green-600">{{ number_format($auction->getCurrentPrice(), 2, '.', ' ') }} {{ $auction->currency_symbol }}</span>
+                    <x-money :value="$auction->getCurrentPrice()" :currency="$auction->currency_symbol" class="font-semibold text-green-600 whitespace-nowrap" />
                 </div>
             @endif
 
