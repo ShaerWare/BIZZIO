@@ -277,9 +277,18 @@
                             </details>
                         </div>
 
-                        {{-- #270 Шаги и максимумы этапа 2 — видны уже во время этапа 1 --}}
+                        {{-- #270 Максимумы и шаги этапа 2 — видны уже во время этапа 1, компактным блоком --}}
                         @if($rfq->isCommercial())
-                            @include('partials.commercial-stage2-parameters', ['procedure' => $rfq])
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры торгов (этап 2):</h3>
+                                <ul class="text-sm text-gray-700 space-y-1">
+                                    @include('partials.commercial-stage2-parameters', ['procedure' => $rfq])
+                                </ul>
+                                <p class="mt-2 text-xs text-gray-500">
+                                    Каждое следующее предложение улучшает хотя бы один критерий не менее чем на его шаг.
+                                    Срок и аванс оцениваются от указанных максимумов.
+                                </p>
+                            </div>
                         @endif
 
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}

@@ -51,6 +51,9 @@
             <p class="text-sm text-gray-500 mb-4">
                 Вопросы по процедуре и ответы организатора. Переписка видна только организатору и участникам;
                 участники не видят названий компаний друг друга.
+                @isset($chatNote)
+                    <span class="block mt-1">{{ $chatNote }}</span>
+                @endisset
             </p>
 
             @if($bannedParticipant)

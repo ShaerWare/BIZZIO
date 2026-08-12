@@ -237,33 +237,30 @@
                         </div>
                     </div>
 
-                    <!-- Боковая панель -->
-                    <div class="w-full md:w-80">
+                    {{-- Боковая панель. #270 Колонка расширена: параметры аукциона и торгов
+                         собраны в один компактный блок и должны помещаться без длинного столбца. --}}
+                    <div class="w-full md:w-96">
                         <!-- Параметры аукциона -->
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
-                                <li>• Начальная максимальная цена (НМЦ) — <strong><x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /></strong></li>
+                                <li>• НМЦ: <strong><x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /></strong></li>
                                 {{-- #256 У коммерческого аукциона шаг снижения цены не применяется: шаги трёх
-                                     критериев задаёт организатор, они показаны в панели торгов. Диапазон
-                                     «X% — 5%» относится только к обычному аукциону. --}}
+                                     критериев задаёт организатор. Диапазон «X% — 5%» — только обычный аукцион. --}}
                                 @unless($auction->isCommercial())
                                     <li>• Шаг снижения — <strong>{{ rtrim(rtrim(number_format($auction->step_percent, 2, '.', ''), '0'), '.') }}% — 5%</strong> от текущей цены</li>
-                                @endunless
-                                {{-- #188 Количество поданных заявок в карточке процедуры (обычный аукцион) --}}
-                                @unless($auction->isCommercial())
+                                    {{-- #188 Количество поданных заявок в карточке процедуры (обычный аукцион) --}}
                                     <li>• Подано заявок — <strong>{{ $auction->initialBids->count() }}</strong></li>
                                 @endunless
-                                @if($auction->isTrading())
-                                    <li>• Текущая цена — <strong class="text-green-600"><x-money :value="$currentPrice" :currency="$auction->currency_symbol" class="current-price" /></strong></li>
+                                {{-- #270 Веса, максимумы и шаги критериев — здесь же, одной колонкой.
+                                     Строка «Текущая цена» убрана: у коммерческого аукциона она дублировала
+                                     панель торгов и затиралась поллингом (#269). --}}
+                                @if($auction->isCommercial())
+                                    <li>• Веса: цена {{ (float) $auction->weight_price }}% / срок {{ (float) $auction->weight_deadline }}% / аванс {{ (float) $auction->weight_advance }}%</li>
+                                    @include('partials.commercial-stage2-parameters', ['procedure' => $auction])
                                 @endif
                             </ul>
                         </div>
-
-                        {{-- #270 Шаги и максимумы, заданные организатором (коммерческий аукцион) --}}
-                        @if($auction->isCommercial())
-                            @include('partials.commercial-stage2-parameters', ['procedure' => $auction])
-                        @endif
 
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}
                         @include('partials.procurement-documents-list', ['model' => $auction])
@@ -941,10 +938,20 @@
             </div>
         </div>
 
-        {{-- #218 Чат аукциона: вопросы участников и ответы организатора на этапе приёма заявок --}}
+        {{-- #218 Чат аукциона: вопросы участников и ответы организатора на этапе приёма заявок.
+             У коммерческого аукциона этап 1 — связанный Запрос цен, поэтому здесь показываем
+             историю его чата: она должна оставаться доступной организатору и участникам торгов
+             (посторонним чат не виден — проверка внутри партиала). --}}
         @if($auction->hasChat())
             <div class="mt-6">
                 @include('partials.procedure-chat', ['procedure' => $auction])
+            </div>
+        @elseif($auction->isCommercial() && $auction->rfq)
+            <div class="mt-6">
+                @include('partials.procedure-chat', [
+                    'procedure' => $auction->rfq,
+                    'chatNote' => 'История переписки этапа 1 («'.$auction->rfq->number.'»). Приём сообщений завершён вместе с этапом 1.',
+                ])
             </div>
         @endif
 

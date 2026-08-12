@@ -149,6 +149,8 @@ class AuctionController extends Controller
         }
 
         $auction->load([
+            // #218 Связанный Запрос цен — на его чат этапа 1 ссылается страница коммерческого аукциона.
+            'rfq',
             'company.industry',
             'creator.badges',
             'bids.company',

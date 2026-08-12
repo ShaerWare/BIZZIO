@@ -114,9 +114,8 @@ class AuctionTradingDisplayTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Параметры торгов (этап 2)');
-        $response->assertSee('Шаг изменения срока');
-        $response->assertSee('Макс. срок выполнения');
-        $response->assertSee('Макс. размер аванса');
+        $response->assertSee('Макс.: срок 90 дн. / аванс 100%');
+        $response->assertSee('Шаг: цена 0,5% / срок 3 дн. / аванс 5%');
     }
 
     public function test_auction_page_shows_steps_and_maximums(): void
@@ -126,9 +125,10 @@ class AuctionTradingDisplayTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('auctions.show', $auction));
 
         $response->assertOk();
-        $response->assertSee('Параметры торгов (этап 2)');
-        $response->assertSee('Шаг изменения цены');
-        $response->assertSee('Макс. срок выполнения');
+        // #270 Параметры собраны в один блок правой колонки.
+        $response->assertSee('Параметры аукциона:');
+        $response->assertSee('Макс.: срок 90 дн. / аванс 100%');
+        $response->assertSee('Шаг: цена 0,5% / срок 3 дн. / аванс 5%');
     }
 
     public function test_standard_auction_does_not_show_commercial_parameters(): void
@@ -139,6 +139,7 @@ class AuctionTradingDisplayTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('auctions.show', $auction));
 
         $response->assertOk();
-        $response->assertDontSee('Параметры торгов (этап 2)');
+        $response->assertDontSee('Макс.: срок');
+        $response->assertDontSee('Шаг: цена');
     }
 }

@@ -28,16 +28,9 @@
      })"
      x-init="init()">
     <div class="p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-1">Коммерческий аукцион — торги</h3>
-        <p class="text-sm text-gray-500 mb-2">
-            НМЦ: <x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /> ·
-            Веса: цена {{ (float) $auction->weight_price }}% / срок {{ (float) $auction->weight_deadline }}% / аванс {{ (float) $auction->weight_advance }}%
-        </p>
-        {{-- #270 Шаги и максимумы, заданные организатором — прямо в панели торгов --}}
-        <p class="text-sm text-gray-500 mb-2">
-            Шаг: цена {{ (float) $auction->step_price }}% / срок {{ (int) $auction->step_deadline }} дн. / аванс {{ (float) $auction->step_advance }}% ·
-            Макс.: срок {{ (int) $auction->max_deadline }} дн. / аванс {{ (float) $auction->max_advance }}%
-        </p>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Коммерческий аукцион — торги</h3>
+        {{-- #270 НМЦ, веса, максимумы и шаги вынесены в блок «Параметры аукциона» правой колонки —
+             здесь не дублируем, чтобы панель торгов не росла по вертикали. --}}
         {{-- #198 Количество компаний-участников, сделавших ставку --}}
         <p class="text-sm mb-4">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium">
