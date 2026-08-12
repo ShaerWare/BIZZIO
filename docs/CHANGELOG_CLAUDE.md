@@ -2758,3 +2758,13 @@ read-only — смена организатора ломала бы пригла
 **Изменённые файлы:** `app/Http/Requests/Concerns/ValidatesCompanyDocuments.php` (новый), `StoreCompanyRequest`, `UpdateCompanyRequest`, `resources/views/components/pdf-documents-input.blade.php`, `resources/views/companies/create.blade.php`, `resources/views/companies/edit.blade.php`, `tests/Feature/CompanyDocumentsTest.php` (новый, 6 кейсов).
 
 **Заметка по тестам:** `UploadedFile::fake()->create()` создаёт файл нулевого размера с mime `application/x-empty` — media library такой файл в PDF-коллекцию не принимает. Для тестов размера нужен `createWithContent()` с сигнатурой `%PDF-1.4`.
+
+## Правки после тестов: #269 / #270 / #218 (2026-08-12)
+
+**#269** Строка «Текущая цена» в блоке параметров аукциона удалена по просьбе заказчика. Заодно устранена причина, по которой она стала пустой: при вводе `<x-money>` я повесил на неё класс `current-price`, а поллинг коммерческого аукциона (`commercialState()`) не возвращает `current_price_formatted` — и JS затирал содержимое. Большой блок «Текущая цена» в панели торгов обычного аукциона не затронут.
+
+**#270** Правая колонка страницы аукциона расширена (`md:w-80` → `md:w-96`), блоки перекомпонованы: НМЦ, веса, максимумы и шаги собраны в один блок «Параметры аукциона» компактными строками (`Макс.: срок 30 дн. / аванс 40%`, `Шаг: цена 1% / срок 2 дн. / аванс 10%`). Дублирующие строки убраны из шапки панели торгов. На странице Запроса цен (этап 1) параметры показываются тем же компактным блоком.
+
+**#218** История чата этапа 1 теперь доступна на странице коммерческого аукциона (этап 2): показывается чат связанного Запроса цен — только организатору и участникам, посторонним блок не рендерится, а API ленты отдаёт 403. Приём новых сообщений завершается вместе с этапом 1, история доступна только для чтения.
+
+**Изменённые файлы:** `resources/views/auctions/show.blade.php`, `resources/views/rfqs/show.blade.php`, `resources/views/auctions/partials/commercial-trading.blade.php`, `resources/views/partials/commercial-stage2-parameters.blade.php`, `resources/views/partials/procedure-chat.blade.php`, `app/Http/Controllers/AuctionController.php` (eager load `rfq`), `tests/Feature/AuctionReviewFixesTest.php` (новый, 5 кейсов), `tests/Feature/AuctionTradingDisplayTest.php` (обновлён под новую компоновку), `public/build`.
