@@ -474,22 +474,30 @@
 
 @push('scripts')
 <script>
-    // #91/#185: JS-валидация обязательного файла ТЗ при submit формы
+    // #91/#185: JS-валидация обязательного файла ТЗ при submit формы.
+    // Файл считается приложенным и когда он лежит только во временном хранилище
+    // (после ошибки валидации input[type=file] пуст — раньше это намертво блокировало
+    // повторную отправку формы, и серверные ошибки уже не показывались).
     document.getElementById('rfq-create-form').addEventListener('submit', function(e) {
         const fileInput = this.querySelector('input[name="technical_specification"]');
-        const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+        const attachedFlag = this.querySelector('[data-procurement-attached="technical_specification"]');
 
-        if (!hasNewFile) {
+        const hasNewFile = fileInput && fileInput.files && fileInput.files.length > 0;
+        const hasTempFile = attachedFlag && attachedFlag.value !== '';
+
+        const errorEl = document.getElementById('ts-error');
+        if (errorEl) errorEl.remove();
+
+        if (!hasNewFile && !hasTempFile) {
             e.preventDefault();
-            let errorEl = document.getElementById('ts-error');
-            if (!errorEl && fileInput) {
-                errorEl = document.createElement('p');
-                errorEl.id = 'ts-error';
-                errorEl.className = 'mt-1 text-sm text-red-600';
-                errorEl.textContent = 'Загрузите техническое задание (PDF)';
-                fileInput.parentElement.appendChild(errorEl);
+            if (fileInput) {
+                const el = document.createElement('p');
+                el.id = 'ts-error';
+                el.className = 'mt-1 text-sm text-red-600';
+                el.textContent = 'Загрузите техническое задание (PDF)';
+                fileInput.parentElement.appendChild(el);
+                fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-            if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
     });

@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesCompanyDocuments;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateCompanyRequest extends FormRequest
 {
+    use ValidatesCompanyDocuments;
+
     public function authorize(): bool
     {
         // #187 Профиль редактируют создатель и участники с ролью owner/admin/moderator.
@@ -18,7 +21,7 @@ class UpdateCompanyRequest extends FormRequest
     {
         $companyId = $this->route('company')->id;
 
-        return [
+        return array_merge([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'inn' => ['sometimes', 'required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies', 'inn')->ignore($companyId)->whereNull('deleted_at')],
             'legal_form' => ['nullable', 'string', 'max:255'],
@@ -26,8 +29,17 @@ class UpdateCompanyRequest extends FormRequest
             'short_description' => ['nullable', 'string', 'max:500'],
             'full_description' => ['nullable', 'string'],
             'industry_id' => ['nullable', 'exists:industries,id'],
-            'documents.*' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
-        ];
+        ], $this->companyDocumentRules());
+    }
+
+    /**
+     * #176 Суммарный объём документов компании (с учётом уже загруженных) — не более 10 МБ.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $this->validateCompanyDocumentsTotalSize($validator, $this->route('company'));
+        });
     }
 
     public function messages(): array
@@ -40,8 +52,7 @@ class UpdateCompanyRequest extends FormRequest
             'logo.image' => 'Логотип должен быть изображением',
             'logo.max' => 'Размер логотипа не должен превышать 2MB',
             'industry_id.exists' => 'Выбранная отрасль не существует',
-            'documents.*.mimes' => 'Документы должны быть в формате PDF',
-            'documents.*.max' => 'Размер документа не должен превышать 20MB',
+            ...$this->companyDocumentMessages(),
         ];
     }
 }

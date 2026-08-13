@@ -2694,3 +2694,77 @@ read-only — смена организатора ломала бы пригла
 `app/Http/Requests/UpdateCompanyRequest.php`, `resources/views/companies/show.blade.php`,
 `tests/Feature/CompanyProfileEditRightsTest.php` (новый, 11 тестов).
 Прогон: весь набор 392/392. Pint чист, ассеты без изменений.
+
+## #185 — Конкурсная документация терялась/блокировала повторную отправку формы (2026-08-10)
+
+**Проблема (с тестов):** при ошибке валидации формы создания процедуры файлы приходилось прикладывать заново; после исправления ошибки процедура не создавалась, серверные ошибки «зависали», а на новой форме оказывались приложены файлы прошлой попытки.
+
+**Причины:**
+1. JS-обработчик submit в `rfqs/create.blade.php` требовал файл именно в `input[type=file]`. После ошибки валидации ТЗ восстанавливается только во временном хранилище, input пуст → форма молча не уходила на сервер («Загрузите техническое задание» + другие ошибки не обнаруживались).
+2. Temp-хранилище не сбрасывалось при «чистом» открытии формы → документы недоделанной процедуры прилипали к следующей.
+3. `ProcurementDocumentsService::attachFromRequest()` чистил temp внутри транзакции → при откате пользователь терял и процедуру, и файлы.
+
+**Изменённые файлы:**
+- `resources/views/partials/procurement-documents.blade.php` — скрытые маркеры `data-procurement-attached` (реактивные от Alpine) для JS-валидации
+- `resources/views/rfqs/create.blade.php` — JS-проверка ТЗ учитывает файл из temp-хранилища, старая ошибка снимается при повторной отправке
+- `app/Support/ProcurementDocuments.php` — `clearTempOnFreshForm()`
+- `app/Http/Controllers/RfqController.php`, `app/Http/Controllers/AuctionController.php` — сброс temp при открытии create/edit, очистка temp только после `DB::commit()`
+- `app/Services/ProcurementDocumentsService.php` — убрана очистка temp из сервиса
+- `tests/Feature/ProcurementTempRestoreTest.php` — новый тест (4 кейса)
+
+## #269 / #270 / #271 — Отображение параметров торгов коммерческого аукциона (2026-08-10)
+
+**#269** НМЦ и другие суммы рвались посреди цифр при переносе строки. Добавлен общий blade-компонент `<x-money>`: разряды и символ валюты соединены неразрывными пробелами + `whitespace-nowrap`. Применён во всех местах вывода сумм (аукционы, запросы цен, мои заявки, дашборд, карточки). Формат цены, приходящей поллингом (`current_price_formatted`), приведён к тому же виду.
+
+**#270** Шаги изменения цены/срока/аванса и максимумы срока/аванса, заданные организатором, теперь показываются явно — на этапе 1 (страница Запроса цен) и во время торгов (страница Аукциона + панель торгов). Новый партиал `partials/commercial-stage2-parameters.blade.php`.
+
+**#271** В таблице предложений рядом с каждым критерием выводится процент изменения относительно стартового ориентира (НМЦ / макс. срок / макс. аванс): снижение зелёным со знаком «−», рост красным «+».
+
+**Изменённые файлы:**
+- `resources/views/components/money.blade.php` (новый), `resources/views/partials/commercial-stage2-parameters.blade.php` (новый)
+- `resources/views/auctions/show.blade.php`, `resources/views/auctions/partials/commercial-trading.blade.php`, `resources/views/auctions/my-bids.blade.php`, `resources/views/components/auction-card.blade.php`
+- `resources/views/rfqs/show.blade.php`, `resources/views/rfqs/my-bids.blade.php`, `resources/views/tenders/my-bids.blade.php`, `resources/views/partials/dashboard/bids-widget.blade.php`
+- `app/Http/Controllers/AuctionController.php` — формат `current_price_formatted`
+- `tests/Feature/AuctionTradingDisplayTest.php` — новый тест (4 кейса)
+
+## #218 — Чат внутри процедуры с обезличиванием и отстранением участников (2026-08-10)
+
+Чат вопросов-ответов на этапе 1: страница Запроса цен коммерческого аукциона и страница обычного аукциона в период приёма заявок. Виден только организатору и участникам.
+
+- Участники обезличены: коды вида `У-01` — умышленно другого формата, чем `anonymous_code` торгов этапа 2 (2 буквы + 2 цифры), чтобы переписку нельзя было сопоставить со ставками. Названия компаний видит только организатор.
+- Организатор может отстранить компанию с обязательной причиной. Отстранение: блокирует чат и подачу заявок, аннулирует уже поданные заявки (`status=rejected`), снимает приглашение и публикует обезличенную системную запись в чате. Отстранённый видит баннер с причиной.
+- Аннулированные заявки исключены из расчёта баллов и определения победителя (`RfqScoringService`, `AuctionWinnerService`), из расчёта НМЦ этапа 2 и списка приглашённых на торги (`CommercialAuctionLauncherService`).
+- Лента обновляется коротким поллингом (7 с) с докачкой по `after_id` — тот же приём, что в панели торгов.
+
+**Новые файлы:** миграции `procedure_participants` / `procedure_chat_messages`, модели `ProcedureParticipant`, `ProcedureChatMessage`, трейт `HasProcedureChat`, `ProcedureChatController`, партиал `partials/procedure-chat.blade.php`, тест `tests/Feature/ProcedureChatTest.php` (10 кейсов).
+**Изменены:** `Rfq`, `Auction`, `RfqController::storeBid`, `AuctionController::storeBid/storeOffer`, `RfqScoringService`, `AuctionWinnerService`, `CommercialAuctionLauncherService`, `routes/web.php`, `rfqs/show.blade.php`, `auctions/show.blade.php`.
+
+## #268 — Приглашение компании во время этапа 1 (2026-08-10)
+
+**Проблема:** блок «Пригласить компании» на странице процедуры был закрыт `@can('update', $rfq)`, а политика `update` разрешает правки только черновику. Сразу после публикации процедуры организатор терял возможность пригласить компанию — в том числе во время этапа 1 коммерческого аукциона, до старта этапа 2.
+
+**Решение:** новый метод `Rfq::canInviteCompanies()` — организатор + статус `draft`/`active` + приём заявок не истёк. По нему теперь работают и UI-блок, и серверная проверка в `RfqController::storeInvitation()`. Форма приглашения (поиск с выпадающим списком) уже была реализована — менялась только видимость.
+
+**Изменённые файлы:** `app/Models/Rfq.php`, `app/Http/Controllers/RfqController.php`, `resources/views/rfqs/show.blade.php`, `tests/Feature/InviteDuringStageOneTest.php` (новый, 5 кейсов).
+
+## #176 — Документы компании: ограничение общего объёма (2026-08-11)
+
+Поочерёдная загрузка нескольких PDF (компонент `x-pdf-documents-input`) и выборочное удаление ранее загруженных файлов уже были реализованы ранее (коммит f62d750). Не хватало заявленного в задаче ограничения общего объёма.
+
+- Новый трейт `App\Http\Requests\Concerns\ValidatesCompanyDocuments`: только PDF, не более 10 файлов, каждый ≤ 10 МБ, суммарный объём ≤ 10 МБ **с учётом уже загруженных** документов (при редактировании).
+- Подключён в `StoreCompanyRequest` и `UpdateCompanyRequest`.
+- Подсказки в формах приведены в соответствие (было противоречие: «10 файлов по 20MB» в вебе против «по 10MB» в Orchid).
+
+**Изменённые файлы:** `app/Http/Requests/Concerns/ValidatesCompanyDocuments.php` (новый), `StoreCompanyRequest`, `UpdateCompanyRequest`, `resources/views/components/pdf-documents-input.blade.php`, `resources/views/companies/create.blade.php`, `resources/views/companies/edit.blade.php`, `tests/Feature/CompanyDocumentsTest.php` (новый, 6 кейсов).
+
+**Заметка по тестам:** `UploadedFile::fake()->create()` создаёт файл нулевого размера с mime `application/x-empty` — media library такой файл в PDF-коллекцию не принимает. Для тестов размера нужен `createWithContent()` с сигнатурой `%PDF-1.4`.
+
+## Правки после тестов: #269 / #270 / #218 (2026-08-12)
+
+**#269** Строка «Текущая цена» в блоке параметров аукциона удалена по просьбе заказчика. Заодно устранена причина, по которой она стала пустой: при вводе `<x-money>` я повесил на неё класс `current-price`, а поллинг коммерческого аукциона (`commercialState()`) не возвращает `current_price_formatted` — и JS затирал содержимое. Большой блок «Текущая цена» в панели торгов обычного аукциона не затронут.
+
+**#270** Правая колонка страницы аукциона расширена (`md:w-80` → `md:w-96`), блоки перекомпонованы: НМЦ, веса, максимумы и шаги собраны в один блок «Параметры аукциона» компактными строками (`Макс.: срок 30 дн. / аванс 40%`, `Шаг: цена 1% / срок 2 дн. / аванс 10%`). Дублирующие строки убраны из шапки панели торгов. На странице Запроса цен (этап 1) параметры показываются тем же компактным блоком.
+
+**#218** История чата этапа 1 теперь доступна на странице коммерческого аукциона (этап 2): показывается чат связанного Запроса цен — только организатору и участникам, посторонним блок не рендерится, а API ленты отдаёт 403. Приём новых сообщений завершается вместе с этапом 1, история доступна только для чтения.
+
+**Изменённые файлы:** `resources/views/auctions/show.blade.php`, `resources/views/rfqs/show.blade.php`, `resources/views/auctions/partials/commercial-trading.blade.php`, `resources/views/partials/commercial-stage2-parameters.blade.php`, `resources/views/partials/procedure-chat.blade.php`, `app/Http/Controllers/AuctionController.php` (eager load `rfq`), `tests/Feature/AuctionReviewFixesTest.php` (новый, 5 кейсов), `tests/Feature/AuctionTradingDisplayTest.php` (обновлён под новую компоновку), `public/build`.

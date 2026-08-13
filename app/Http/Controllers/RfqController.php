@@ -68,6 +68,10 @@ class RfqController extends Controller
     {
         $this->authorize('create', Rfq::class);
 
+        // #185 Чистое открытие формы — сбрасываем документы недоделанной процедуры,
+        // иначе они «прилипают» к следующей. После ошибки валидации файлы сохраняются.
+        \App\Support\ProcurementDocuments::clearTempOnFreshForm();
+
         // Компании, где пользователь является модератором
         $companies = auth()->user()->moderatedCompanies;
 
@@ -154,6 +158,9 @@ class RfqController extends Controller
             }
 
             DB::commit();
+
+            // #185 Temp-документы больше не нужны — чистим только после успешного commit.
+            \App\Support\ProcurementDocuments::clearTemp();
 
             // ✅ РАЗНЫЕ СООБЩЕНИЯ В ЗАВИСИМОСТИ ОТ СТАТУСА
             $message = $rfq->status === 'active'
@@ -297,6 +304,9 @@ class RfqController extends Controller
     {
         $this->authorize('update', $rfq);
 
+        // #185 см. create()
+        \App\Support\ProcurementDocuments::clearTempOnFreshForm();
+
         $rfq->load('invitations.company');
 
         return view('rfqs.edit', compact('rfq'));
@@ -316,6 +326,9 @@ class RfqController extends Controller
             app(\App\Services\ProcurementDocumentsService::class)->attachFromRequest($rfq, $request);
 
             DB::commit();
+
+            // #185 см. store()
+            \App\Support\ProcurementDocuments::clearTemp();
 
             return redirect()->route('rfqs.show', $rfq)
                 ->with('success', 'Запрос цен обновлён');
@@ -379,6 +392,11 @@ class RfqController extends Controller
             return back()->withInput()->with('error', 'Организатор не может подать заявку на собственный запрос цен.');
         }
 
+        // #218 Компания, отстранённая организатором, к участию не допускается
+        if ($rfq->isCompanyBanned($company->id)) {
+            return back()->withInput()->with('error', 'Ваша компания отстранена организатором от участия в этой процедуре.');
+        }
+
         // Для закрытого RFQ компания должна быть приглашена
         if ($rfq->type !== 'open') {
             $isInvited = $rfq->invitations()->where('company_id', $company->id)->exists();
@@ -433,9 +451,9 @@ class RfqController extends Controller
             return response()->json(['error' => 'Недостаточно прав'], 403);
         }
 
-        // Проверка: RFQ не завершён
-        if ($rfq->status === 'closed') {
-            return response()->json(['error' => 'RFQ уже завершён'], 422);
+        // #268 Приглашать можно, пока идёт приём заявок (этап 1) — та же проверка, что и в UI.
+        if (! $rfq->canInviteCompanies(auth()->user())) {
+            return response()->json(['error' => 'Приём заявок по этой процедуре завершён'], 422);
         }
 
         $request->validate([

@@ -10,6 +10,7 @@ use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProcedureChatController;
 use App\Http\Controllers\ProcurementDocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
@@ -222,6 +223,11 @@ Route::middleware(['auth'])->group(function () {
 
     // T8: Приглашение компании к участию
     Route::post('/rfqs/{rfq}/invitations', [RfqController::class, 'storeInvitation'])->name('rfqs.invitations.store');
+
+    // #218 Чат процедуры (этап 1) и отстранение участника организатором
+    Route::get('/rfqs/{rfq}/chat', [ProcedureChatController::class, 'rfqIndex'])->name('rfqs.chat.index');
+    Route::post('/rfqs/{rfq}/chat', [ProcedureChatController::class, 'rfqStore'])->name('rfqs.chat.store');
+    Route::post('/rfqs/{rfq}/chat/ban', [ProcedureChatController::class, 'rfqBan'])->name('rfqs.chat.ban');
 });
 
 // #205 Лёгкий статус этапа 2 для авто-перехода к запущенному аукциону (до catch-all show)
@@ -277,6 +283,11 @@ Route::prefix('auctions')->name('auctions.')->group(function () {
 
         // Long Polling (JSON response)
         Route::get('/{auction}/state', [AuctionController::class, 'getState'])->name('state');
+
+        // #218 Чат процедуры (этап приёма заявок) и отстранение участника организатором
+        Route::get('/{auction}/chat', [ProcedureChatController::class, 'auctionIndex'])->name('chat.index');
+        Route::post('/{auction}/chat', [ProcedureChatController::class, 'auctionStore'])->name('chat.store');
+        Route::post('/{auction}/chat/ban', [ProcedureChatController::class, 'auctionBan'])->name('chat.ban');
     });
 });
 
