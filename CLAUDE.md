@@ -207,6 +207,33 @@ Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom
 
 ## CI/CD & Deployment
 
+### Two repositories (mirror)
+
+| | Development | Customer mirror |
+|---|---|---|
+| Repo | `ShaerWare/BIZZIO` (public) | `BizzioDev/BIZZIO` (**private**) |
+| Local remote | `origin` | `customer` |
+| Holds | PRs, issues, kanban, branch protection | code only (`develop`, `main`) |
+
+All development happens in `ShaerWare` (issues + kanban live there); after each merge to
+`develop`/`main` the branch is mirror-pushed to `customer`. Feature branches are never pushed
+to the mirror, and the mirror has **no branch protection** (it would reject the mirror push).
+`.github/workflows/ci.yml` is byte-identical in both repos — edit it only in `ShaerWare`.
+
+Both repos hold the deploy secrets and can deploy; the two test deploys of the same commit are
+serialized on the server by `flock` (`/var/lock/bizzio-{test,prod}-deploy.lock`). Prod auto-deploy
+is restricted to `ShaerWare` via `github.repository ==` in the job condition, because only there
+does the `production` environment actually gate the run with a manual approval (required
+reviewers are unavailable on the customer org's free plan for a private repo). In `BizzioDev`
+prod is deployed manually: Actions → CI/CD → Run workflow → `target: prod`.
+
+**The server pulls from `ShaerWare`** (`origin` = public HTTPS): deploy keys are disabled by
+BizzioDev's org policy, so the server cannot read the private mirror. A read-only key is already
+prepared on the server (`~/.ssh/bizzio_repo` + `~/.ssh/config` entry) if the org owner ever
+enables deploy keys.
+
+### Environments
+
 Two environments live on the same server (159.194.219.159), both behind the shared Caddy proxy:
 
 | | Staging | Production |

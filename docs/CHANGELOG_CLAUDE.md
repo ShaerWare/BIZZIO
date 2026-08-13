@@ -2788,3 +2788,15 @@ read-only — смена организатора ломала бы пригла
 Краткое правило расчёта добавлено в описание процедуры — новый партиал `partials/commercial-rating-rules` (раскрывающийся блок «Как рассчитывается рейтинг?») в блоке параметров на страницах аукциона (этап 2) и запроса цен (этап 1).
 
 **Изменённые файлы:** `app/Services/CommercialAuctionScoringService.php`, `resources/views/auctions/partials/commercial-trading.blade.php`, `resources/views/partials/commercial-rating-rules.blade.php` (новый), `resources/views/auctions/show.blade.php`, `resources/views/rfqs/show.blade.php`, `tests/Unit/CommercialAuctionScoringServiceTest.php` (5 новых кейсов, включая проверочный пример ТЗ: АПЕЙРОН 37,38 против СигналПро 39,87).
+
+## Инфраструктура: зеркало репозитория для заказчика BizzioDev/BIZZIO (2026-08-14)
+
+Код теперь хранится в двух репозиториях: `ShaerWare/BIZZIO` (public, разработка — PR, issues, канбан) и `BizzioDev/BIZZIO` (**private**, зеркало для заказчика, remote `customer`). После каждого мерджа в `develop`/`main` ветка зеркалится пушем в `customer`; feature-ветки в зеркало не попадают, защиты веток там нет (иначе зеркальный пуш отклонялся бы).
+
+**Деплой.** `ci.yml` идентичен в обеих репах, у обеих заведены секреты `SSH_HOST`/`SSH_USER`/`SSH_PRIVATE_KEY`, деплой на тест запускается из обеих. Одновременный деплой на один сервер исключён — оба джоба берут `flock` (`/var/lock/bizzio-test-deploy.lock`, `/var/lock/bizzio-prod-deploy.lock`). Добавлен `workflow_dispatch` с параметром `target: test|prod` — ручной деплой.
+
+**Ограничения free-плана организации BizzioDev (важно для будущих сессий):**
+- Правило environment «required reviewers» недоступно для приватной репы на free-плане (API отдаёт 422). Поэтому авто-деплой прода ограничен условием `github.repository == 'ShaerWare/BIZZIO'`: только там `production` реально гейтит запуск аппрувом. В BizzioDev прод раскатывается вручную через Run workflow.
+- Deploy keys запрещены политикой организации (422 «Deploy keys are disabled for this repository»), поэтому сервер не может тянуть приватное зеркало и `origin` в `/var/www/bizzio-test` и `/var/www/BIZZIO` остаётся `ShaerWare/BIZZIO` (публичная, анонимный HTTPS-fetch). На сервере уже подготовлены read-only ключ `~/.ssh/bizzio_repo` и запись в `~/.ssh/config` — если владелец организации (MSverlov) включит deploy keys, останется добавить публичную часть в Settings → Deploy keys и переключить `origin`.
+
+**Изменённые файлы:** `.github/workflows/ci.yml`, `.claude/commands/пр.md` (скилл переписан под две репы: зеркальный пуш шагом 8, промоушен на прод зеркалит `main`), `CLAUDE.md` (раздел CI/CD).
