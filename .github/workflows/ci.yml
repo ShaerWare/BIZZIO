@@ -1,9 +1,22 @@
 name: CI/CD
 
+# Этот файл живёт в ДВУХ репозиториях с идентичным содержимым:
+#   ShaerWare/BIZZIO  — основная репа разработки (PR, issues, канбан), публичная;
+#   BizzioDev/BIZZIO  — зеркало для заказчика, приватное (free-план организации).
+# Сервер тянет код из ShaerWare (публичная репа, анонимный HTTPS-fetch), поэтому деплой из
+# любой из реп раскатывает один и тот же коммит. Правки вносить только в ShaerWare — в
+# BizzioDev файл попадает зеркальным пушем.
 on:
   pull_request:
   push:
     branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Ручной деплой (нужен в BizzioDev: авто-деплой прода там выключен)'
+        type: choice
+        options: [test, prod]
+        default: test
 
 concurrency:
   group: cicd-${{ github.ref }}
@@ -94,7 +107,11 @@ jobs:
     name: Deploy develop -> test.bizzio.ru
     runs-on: ubuntu-latest
     needs: [tests, pint, assets]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    # Пуш develop в обе репы запускает этот job дважды. Раскатывается один и тот же коммит,
+    # но одновременный запуск двух деплоев на один сервер недопустим — сериализуем через flock.
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/develop')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'test')
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -106,6 +123,8 @@ jobs:
           command_timeout: 20m
           script: |
             set -e
+            exec 9>/var/lock/bizzio-test-deploy.lock
+            flock -w 1200 9
             cd /var/www/bizzio-test
             git fetch origin develop
             git reset --hard origin/develop
@@ -115,7 +134,13 @@ jobs:
     name: Deploy main -> bizzio.ru
     runs-on: ubuntu-latest
     needs: [tests, pint, assets]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Авто-деплой прода — только из ShaerWare: там environment `production` реально гейтит
+    # запуск ручным подтверждением. В BizzioDev (приватная репа на free-плане) правило
+    # required reviewers недоступно, поэтому прод оттуда раскатывается только вручную —
+    # Actions -> CI/CD -> Run workflow -> target: prod.
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ShaerWare/BIZZIO')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'prod')
     # Requires manual approval (repo Settings -> Environments -> production).
     environment: production
     steps:
@@ -129,6 +154,8 @@ jobs:
           command_timeout: 20m
           script: |
             set -e
+            exec 9>/var/lock/bizzio-prod-deploy.lock
+            flock -w 1200 9
             cd /var/www/BIZZIO
             git fetch origin main
             git reset --hard origin/main
