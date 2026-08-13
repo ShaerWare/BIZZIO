@@ -260,6 +260,10 @@
                                     @include('partials.commercial-stage2-parameters', ['procedure' => $auction])
                                 @endif
                             </ul>
+                            {{-- #280 Краткое правило расчёта рейтинга (нормировка до расчётных границ). --}}
+                            @if($auction->isCommercial())
+                                @include('partials.commercial-rating-rules', ['procedure' => $auction])
+                            @endif
                         </div>
 
                         {{-- #185 Конкурсная документация (Извещение / ТЗ / Проект договора / Прочие) + скачивание архивом --}}

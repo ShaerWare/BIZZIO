@@ -11,7 +11,12 @@
     // пересчитывал его сам, и на «половинке копейки» (388 888,50 × 5 % = 19 444,425) PHP и JS
     // округляли в разные стороны: одно нажатие «−» давало снижение на копейку меньше требуемого
     // и сервер отклонял предложение.
-    $priceStepAbs = app(\App\Services\CommercialAuctionScoringService::class)->priceStep($auction);
+    $scoringService = app(\App\Services\CommercialAuctionScoringService::class);
+    $priceStepAbs = $scoringService->priceStep($auction);
+
+    // #280 Границы полного балла (цена −40%, срок −50%, аванс 0) считает сервер — клиент
+    // зеркалит ту же нормировку, чтобы предпросмотр рейтинга совпадал с проверкой на сервере.
+    $fullRefs = $scoringService->fullRefs($auction);
 @endphp
 
 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6"
@@ -21,6 +26,7 @@
         nmc: {{ (float) $auction->starting_price }},
         weights: { p: {{ (float) $auction->weight_price }}, d: {{ (float) $auction->weight_deadline }}, a: {{ (float) $auction->weight_advance }} },
         refs: { d: {{ (int) $auction->max_deadline }}, a: {{ (float) $auction->max_advance }} },
+        full: { p: {{ $fullRefs['p'] }}, d: {{ $fullRefs['d'] }}, a: {{ $fullRefs['a'] }} },
         steps: { p: {{ (float) $auction->step_price }}, d: {{ (int) $auction->step_deadline }}, a: {{ (float) $auction->step_advance }} },
         priceStepAbs: {{ $priceStepAbs }},
         canOffer: {{ $myCompanies->isNotEmpty() ? 'true' : 'false' }},
@@ -96,7 +102,7 @@
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваша цена ({{ $auction->currency_symbol }})</label>
-                                <span class="text-xs" :class="criteria.price.is_best ? 'text-emerald-600' : 'text-gray-400'"
+                                <span class="text-xs" :class="hintClass('price')"
                                       x-text="hintText('price')"></span>
                             </div>
                             {{-- Реальное числовое значение цены уходит на сервер скрытым полем; видимое поле — форматированное. --}}
@@ -117,7 +123,7 @@
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваш срок (дни)</label>
-                                <span class="text-xs" :class="criteria.deadline.is_best ? 'text-emerald-600' : 'text-gray-400'"
+                                <span class="text-xs" :class="hintClass('deadline')"
                                       x-text="hintText('deadline')"></span>
                             </div>
                             <input type="hidden" name="deadline" :value="d">
@@ -141,7 +147,7 @@
                         <div>
                             <div class="flex justify-between items-baseline mb-1">
                                 <label class="text-sm font-medium text-gray-700">Ваш аванс (%)</label>
-                                <span class="text-xs" :class="criteria.advance.is_best ? 'text-emerald-600' : 'text-gray-400'"
+                                <span class="text-xs" :class="hintClass('advance')"
                                       x-text="hintText('advance')"></span>
                             </div>
                             <input type="hidden" name="advance_percent" :value="a">
@@ -288,6 +294,8 @@ function commercialAuction(cfg) {
         nmc: cfg.nmc,
         weights: cfg.weights,
         refs: cfg.refs,
+        // #280 Границы полного балла (системные предустановки, приходят с сервера).
+        full: cfg.full,
         steps: cfg.steps,
         // #261 Абсолютный шаг цены приходит с сервера — тот же, по которому сервер проверяет
         // предложение. Собственный пересчёт расходился с ним на копейку.
@@ -461,15 +469,19 @@ function commercialAuction(cfg) {
             this.recalc();
         },
 
-        normalize(x, ref) {
-            if (ref <= 0) return 0;
-            return Math.max(0, Math.min(100, 100 * (ref - x) / ref));
+        // #280 Нормировка идёт от исходного значения критерия до расчётной границы полного
+        // балла (цена −40%, срок −50%, аванс до 0). Зеркалит CommercialAuctionScoringService.
+        normalize(x, ref, full) {
+            const span = Number(ref) - Number(full);
+            // A0 = 0%: снижать нечего — критерий уже на границе, балл полный.
+            if (span <= 0) return Number(x) <= Number(full) + EPS ? 100 : 0;
+            return Math.max(0, Math.min(100, 100 * (ref - x) / span));
         },
 
         scores(p, d, a) {
-            const sp = this.normalize(p, this.nmc);
-            const sd = this.normalize(d, this.refs.d);
-            const sa = this.normalize(a, this.refs.a);
+            const sp = this.normalize(p, this.nmc, this.full.p);
+            const sd = this.normalize(d, this.refs.d, this.full.d);
+            const sa = this.normalize(a, this.refs.a, this.full.a);
             const total = (sp * this.weights.p + sd * this.weights.d + sa * this.weights.a) / 100;
             return { price: sp, deadline: sd, advance: sa, total };
         },
@@ -521,28 +533,32 @@ function commercialAuction(cfg) {
             this.wouldBeat = target === null ? true : sc.total > target;
 
             this.criteria = {
-                price: this.criterion(target, sc, 'p', 'price', this.nmc, this.p, this.best ? this.best.price : null),
-                deadline: this.criterion(target, sc, 'd', 'deadline', this.refs.d, this.d, this.best ? this.best.deadline : null),
-                advance: this.criterion(target, sc, 'a', 'advance', this.refs.a, this.a, this.best ? this.best.advance : null),
+                price: this.criterion(target, sc, 'p', 'price', this.nmc, this.full.p, this.p, this.best ? this.best.price : null),
+                deadline: this.criterion(target, sc, 'd', 'deadline', this.refs.d, this.full.d, this.d, this.best ? this.best.deadline : null),
+                advance: this.criterion(target, sc, 'a', 'advance', this.refs.a, this.full.a, this.a, this.best ? this.best.advance : null),
             };
         },
 
-        criterion(target, sc, wkey, skey, ref, value, bestValue) {
+        criterion(target, sc, wkey, skey, ref, full, value, bestValue) {
             const isBest = bestValue !== null && value < bestValue;
             const weight = this.weights[wkey];
-            if (target === null || weight <= 0) return { is_best: isBest, threshold: null, reachable: false };
+            // #280 При ref == full (например A0 = 0%) снижать нечего — порога нет.
+            if (target === null || weight <= 0 || ref - full <= 0) return { is_best: isBest, threshold: null, reachable: false };
 
             const others = sc.total * 100 - sc[skey] * weight;
             const targetScore = (target * 100 - others) / weight;
             if (targetScore > 100 + EPS) return { is_best: isBest, threshold: null, reachable: false };
 
-            const threshold = ref * (1 - Math.max(0, targetScore) / 100);
+            // #280 x = ref − (score/100) × (ref − full).
+            const threshold = ref - Math.max(0, targetScore) / 100 * (ref - full);
             return { is_best: isBest, threshold, reachable: true };
         },
 
         hintText(key) {
             const c = this.criteria[key];
             if (!c) return '';
+            // #280 Расчётная граница достигнута — дальнейшее снижение рейтинг не увеличит.
+            if (this.atFullScore(key)) return 'Макс. балл по критерию';
             if (c.is_best) return 'Лучший критерий';
             // #232 Порог «уменьшите до X» показываем при наличии цели (лидера) — в т.ч. при скрытых
             // результатах: X считается от целевого балла и НЕ раскрывает цифры лидера.
@@ -551,6 +567,22 @@ function commercialAuction(cfg) {
             const unit = key === 'advance' ? '%' : (key === 'deadline' ? ' дн.' : '');
             const val = key === 'price' ? this.fmt(Math.floor(c.threshold)) : Math.floor(c.threshold);
             return 'Уменьшите до ' + val + unit;
+        },
+
+        // Зелёным подсвечиваем и «лучший критерий», и достигнутый максимальный балл (#280).
+        hintClass(key) {
+            const c = this.criteria[key];
+            return (this.atFullScore(key) || (c && c.is_best)) ? 'text-emerald-600' : 'text-gray-400';
+        },
+
+        // #280 Достигнута ли расчётная граница полного балла по критерию.
+        atFullScore(key) {
+            const map = { price: [this.p, this.full.p], deadline: [this.d, this.full.d], advance: [this.a, this.full.a] };
+            const pair = map[key];
+            if (!pair) return false;
+            const [value, full] = pair;
+            return this.weights[key === 'price' ? 'p' : (key === 'deadline' ? 'd' : 'a')] > 0
+                && Number(value) <= Number(full) + EPS;
         },
 
         fmt(n) {
