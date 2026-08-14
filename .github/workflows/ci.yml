@@ -126,7 +126,16 @@ jobs:
             exec 9>/var/lock/bizzio-test-deploy.lock
             flock -w 1200 9
             cd /var/www/bizzio-test
-            git fetch origin develop
+            # origin сервера = зеркало BizzioDev, а оно обновляется отдельным пушем уже после
+            # мерджа. Без ожидания deploy успешно раскатывал ПРЕДЫДУЩИЙ коммит (молча, с
+            # зелёным статусом). Ждём, пока нужный коммит появится в зеркале.
+            for i in $(seq 1 60); do
+              git fetch origin develop --quiet
+              [ "$(git rev-parse origin/develop)" = "${{ github.sha }}" ] && break
+              echo "ожидание зеркала: origin/develop=$(git rev-parse --short origin/develop), нужен ${{ github.sha }}"
+              sleep 10
+            done
+            test "$(git rev-parse origin/develop)" = "${{ github.sha }}"               || { echo "Зеркало BizzioDev не содержит коммит ${{ github.sha }} — деплой отменён"; exit 1; }
             git reset --hard origin/develop
             bash scripts/deploy.sh
 
@@ -157,6 +166,13 @@ jobs:
             exec 9>/var/lock/bizzio-prod-deploy.lock
             flock -w 1200 9
             cd /var/www/BIZZIO
-            git fetch origin main
+            # См. комментарий в deploy-test: ждём, пока зеркало догонит нужный коммит.
+            for i in $(seq 1 60); do
+              git fetch origin main --quiet
+              [ "$(git rev-parse origin/main)" = "${{ github.sha }}" ] && break
+              echo "ожидание зеркала: origin/main=$(git rev-parse --short origin/main), нужен ${{ github.sha }}"
+              sleep 10
+            done
+            test "$(git rev-parse origin/main)" = "${{ github.sha }}"               || { echo "Зеркало BizzioDev не содержит коммит ${{ github.sha }} — деплой отменён"; exit 1; }
             git reset --hard origin/main
             bash scripts/deploy.sh

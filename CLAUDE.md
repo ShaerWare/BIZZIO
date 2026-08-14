@@ -229,10 +229,12 @@ does the `production` environment actually gate the run with a manual approval (
 reviewers are unavailable on the customer org's free plan for a private repo). In `BizzioDev`
 prod is deployed manually: Actions → CI/CD → Run workflow → `target: prod`.
 
-**The server pulls from `ShaerWare`** (`origin` = public HTTPS): deploy keys are disabled by
-BizzioDev's org policy, so the server cannot read the private mirror. A read-only key is already
-prepared on the server (`~/.ssh/bizzio_repo` + `~/.ssh/config` entry) if the org owner ever
-enables deploy keys.
+**The server pulls from the mirror** (`origin` = `git@github.com:BizzioDev/BIZZIO.git`, read-only
+deploy key `~/.ssh/bizzio_repo`), on both test and prod, since 2026-08-14. Consequence: **mirror-push
+right after the merge, before the deploy runs** — otherwise the deploy `reset --hard origin/<branch>`
+lands on the stale mirror and silently redeploys the previous commit with a green status (this is
+exactly how prod sat on the 8 Aug release for two days). The deploy jobs now poll for the run's
+`github.sha` in the mirror for up to 10 minutes and fail loudly if it never arrives.
 
 ### Environments
 
