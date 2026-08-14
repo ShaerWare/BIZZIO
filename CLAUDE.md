@@ -93,6 +93,7 @@ php artisan tinker
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **Commercial Auction (Коммерческий аукцион)** — Two-stage procedure (#179): `Rfq`/`Auction` with `procedure='commercial'`. Stage 1 = price-only RFQ that auto-launches Stage 2 (`CommercialAuctionLauncherService`, НМЦ = max stage-1 price) — a multi-criteria (price/deadline/advance) real-time auction with continuous-leadership scoring (`CommercialAuctionScoringService`), offers via `AuctionController::storeOffer` (route `auctions.offers.store`, lockForUpdate), UI partial `auctions/partials/commercial-trading`, own protocol (`CommercialAuctionProtocolService`). Standard RFQs/auctions use `procedure='standard'` and are unaffected.
+  **Scoring (#280):** each criterion is normalized from its initial value down to a system-preset *full-score boundary* — price −40% of НМЦ, deadline −50%, advance 0% (`CommercialAuctionScoringService::FULL_FACTOR_*`): `score = weight × clamp((ref − x) / (ref − full), 0, 1)`. Boundaries are not configurable by the organizer. The Alpine mirror in `commercial-trading` receives them from `fullRefs()` — keep both sides in sync when touching the formula.
 - **News** — RSS aggregator with keyword filtering, personalized feed. `RSSSource` managed via Orchid admin
 - **Posts** — Social-media-style posts on dashboard feed (create/delete)
 - **Search** — Search via model `scopeSearch()` with `ilike`/`like` queries (Scout uses `collection` driver; search is not index-based)
@@ -205,6 +206,35 @@ Welcome page uses gradient: `#28a745 → #81b407` (defined in `public/css/custom
 - **No Node.js in the app container** — Vite assets are built locally and `public/build` is committed to git (see `.gitignore`). There is no `npm` step on the server.
 
 ## CI/CD & Deployment
+
+### Two repositories (mirror)
+
+| | Development | Customer mirror |
+|---|---|---|
+| Repo | `ShaerWare/BIZZIO` (public) | `BizzioDev/BIZZIO` (**private**) |
+| Local remote | `origin` | `customer` |
+| Holds | PRs, issues, kanban, branch protection | code only (`develop`, `main`) |
+
+All development happens in `ShaerWare` (issues + kanban live there); after each merge to
+`develop`/`main` the branch is mirror-pushed to `customer`. Feature branches are never pushed
+to the mirror, and the mirror has **no branch protection** (it would reject the mirror push).
+`.github/workflows/ci.yml` is byte-identical in both repos — edit it only in `ShaerWare`.
+
+Both repos hold the deploy secrets and can deploy; the two test deploys of the same commit are
+serialized on the server by `flock` (`/var/lock/bizzio-{test,prod}-deploy.lock`). Note the mirror
+does **not** create workflow runs on push (verified via the runs API) — its deploy is triggered
+explicitly with `gh workflow run "CI/CD" --repo BizzioDev/BIZZIO --ref develop -f target=test`. Prod auto-deploy
+is restricted to `ShaerWare` via `github.repository ==` in the job condition, because only there
+does the `production` environment actually gate the run with a manual approval (required
+reviewers are unavailable on the customer org's free plan for a private repo). In `BizzioDev`
+prod is deployed manually: Actions → CI/CD → Run workflow → `target: prod`.
+
+**The server pulls from `ShaerWare`** (`origin` = public HTTPS): deploy keys are disabled by
+BizzioDev's org policy, so the server cannot read the private mirror. A read-only key is already
+prepared on the server (`~/.ssh/bizzio_repo` + `~/.ssh/config` entry) if the org owner ever
+enables deploy keys.
+
+### Environments
 
 Two environments live on the same server (159.194.219.159), both behind the shared Caddy proxy:
 

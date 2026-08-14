@@ -14,11 +14,17 @@ use App\Models\AuctionBid;
  * здесь используются ФИКСИРОВАННЫЕ референсы, заданные организатором при создании,
  * чтобы баллы были сопоставимы во времени (принцип непрерывного лидерства).
  *
- * Нормировка — линейная от максимума-референса, единая для всех трёх критериев
- * (меньше значение → больше балл, диапазон 0..100):
- *   score(x, ref) = 100 * (ref - x) / ref
+ * #280 Нормировка — линейная от исходного значения критерия до РАСЧЁТНОЙ ГРАНИЦЫ полного
+ * балла (меньше значение → больше балл, диапазон 0..100):
+ *   score(x, ref, full) = 100 * clamp((ref - x) / (ref - full), 0, 1)
  * где для цены ref = НМЦ (starting_price), для срока ref = max_deadline,
- * для аванса ref = max_advance.
+ * для аванса ref = max_advance, а границы полного балла — системные предустановки:
+ *   цена — снижение на 40% (full = ref * 0,6), срок — на 50% (full = ref * 0,5),
+ *   аванс — до 0% (full = 0).
+ *
+ * До #280 нормировка шла от всего исходного значения (full = 0 для всех критериев), из-за
+ * чего «Срок» и «Аванс» влияли на исход непропорционально своим весам: снижение аванса на
+ * 10 п.п. перекрывало заметное снижение цены при весах 80/10/10.
  *
  * Итог: S = (score_price*wp + score_deadline*wd + score_advance*wa) / 100.
  */
@@ -26,6 +32,16 @@ class CommercialAuctionScoringService
 {
     /** Порог для сравнений с плавающей точкой (защита от ложных «ничьих»). */
     public const EPSILON = 1e-6;
+
+    /**
+     * #280 Расчётные границы полного балла (доля от исходного значения критерия).
+     * Системные предустановки — организатор их не задаёт.
+     */
+    public const FULL_FACTOR_PRICE = 0.60;      // полный балл при снижении цены на 40%
+
+    public const FULL_FACTOR_DEADLINE = 0.50;   // полный балл при сокращении срока вдвое
+
+    public const FULL_FACTOR_ADVANCE = 0.0;     // полный балл при авансе 0%
 
     /**
      * Референсы нормировки аукциона.
@@ -56,15 +72,38 @@ class CommercialAuctionScoringService
     }
 
     /**
-     * Нормированный балл одного критерия (0..100). Меньше значение → больше балл.
+     * #280 Границы полного балла критериев (в единицах самих критериев).
+     *
+     * @return array{p: float, d: float, a: float}
      */
-    public function normalize(float $value, float $ref): float
+    public function fullRefs(Auction $auction): array
     {
-        if ($ref <= 0) {
-            return 0.0;
+        $refs = $this->refs($auction);
+
+        return [
+            'p' => $refs['p0'] * self::FULL_FACTOR_PRICE,
+            'd' => $refs['dref'] * self::FULL_FACTOR_DEADLINE,
+            'a' => $refs['aref'] * self::FULL_FACTOR_ADVANCE,
+        ];
+    }
+
+    /**
+     * Нормированный балл одного критерия (0..100). Меньше значение → больше балл.
+     *
+     * @param  float  $ref  исходное значение критерия (0 баллов)
+     * @param  float  $full  расчётная граница полного балла (100 баллов)
+     */
+    public function normalize(float $value, float $ref, float $full = 0.0): float
+    {
+        $span = $ref - $full;
+
+        // #280 Исходное значение уже на границе (частный случай ТЗ: A0 = 0%) — критерий
+        // считается достигшим полного балла, деления на ноль не выполняем.
+        if ($span <= 0.0) {
+            return $value <= $full + self::EPSILON ? 100.0 : 0.0;
         }
 
-        return max(0.0, min(100.0, 100 * ($ref - $value) / $ref));
+        return max(0.0, min(100.0, 100 * ($ref - $value) / $span));
     }
 
     /**
@@ -75,11 +114,12 @@ class CommercialAuctionScoringService
     public function computeScores(Auction $auction, float $price, float $deadline, float $advance): array
     {
         $refs = $this->refs($auction);
+        $full = $this->fullRefs($auction);
         $w = $this->weights($auction);
 
-        $sp = $this->normalize($price, $refs['p0']);
-        $sd = $this->normalize($deadline, $refs['dref']);
-        $sa = $this->normalize($advance, $refs['aref']);
+        $sp = $this->normalize($price, $refs['p0'], $full['p']);
+        $sd = $this->normalize($deadline, $refs['dref'], $full['d']);
+        $sa = $this->normalize($advance, $refs['aref'], $full['a']);
 
         $total = ($sp * $w['p'] + $sd * $w['d'] + $sa * $w['a']) / 100;
 
@@ -149,6 +189,7 @@ class CommercialAuctionScoringService
     public function analyze(Auction $auction, float $price, float $deadline, float $advance): array
     {
         $refs = $this->refs($auction);
+        $fullRefs = $this->fullRefs($auction);
         $w = $this->weights($auction);
         $scores = $this->computeScores($auction, $price, $deadline, $advance);
 
@@ -165,15 +206,15 @@ class CommercialAuctionScoringService
         $criteria = [
             'price' => $this->criterionAnalysis(
                 $target, $scores, $w, 'p',
-                $refs['p0'], $price, $best?->price !== null ? (float) $best->price : null
+                $refs['p0'], $fullRefs['p'], $price, $best?->price !== null ? (float) $best->price : null
             ),
             'deadline' => $this->criterionAnalysis(
                 $target, $scores, $w, 'd',
-                $refs['dref'], $deadline, $best?->deadline !== null ? (float) $best->deadline : null
+                $refs['dref'], $fullRefs['d'], $deadline, $best?->deadline !== null ? (float) $best->deadline : null
             ),
             'advance' => $this->criterionAnalysis(
                 $target, $scores, $w, 'a',
-                $refs['aref'], $advance, $best?->advance_percent !== null ? (float) $best->advance_percent : null
+                $refs['aref'], $fullRefs['a'], $advance, $best?->advance_percent !== null ? (float) $best->advance_percent : null
             ),
         ];
 
@@ -210,6 +251,7 @@ class CommercialAuctionScoringService
         array $weights,
         string $key,
         float $ref,
+        float $full,
         float $currentValue,
         ?float $bestValue,
     ): array {
@@ -220,8 +262,9 @@ class CommercialAuctionScoringService
         // «Лучший критерий»: строго лучше (меньше), чем у лидера.
         $isBest = $bestValue !== null && $currentValue < $bestValue;
 
-        // Порог считаем только если есть лидер и вес критерия > 0.
-        if ($target === null || $thisWeight <= 0.0) {
+        // Порог считаем только если есть лидер, вес критерия > 0 и критерий вообще
+        // улучшаемый (#280: при ref == full, например A0 = 0%, снижать уже нечего).
+        if ($target === null || $thisWeight <= 0.0 || $ref - $full <= 0.0) {
             return ['is_best' => $isBest, 'threshold' => null, 'reachable' => false];
         }
 
@@ -236,8 +279,9 @@ class CommercialAuctionScoringService
             return ['is_best' => $isBest, 'threshold' => null, 'reachable' => false];
         }
 
-        // Инвертируем нормировку: score = 100*(ref - x)/ref  →  x = ref*(1 - score/100).
-        $threshold = $ref * (1 - max(0.0, $targetScore) / 100);
+        // #280 Инвертируем нормировку:
+        //   score = 100*(ref - x)/(ref - full)  →  x = ref - (score/100)*(ref - full).
+        $threshold = $ref - max(0.0, $targetScore) / 100 * ($ref - $full);
 
         return [
             'is_best' => $isBest,
