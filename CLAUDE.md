@@ -221,7 +221,9 @@ to the mirror, and the mirror has **no branch protection** (it would reject the 
 `.github/workflows/ci.yml` is byte-identical in both repos — edit it only in `ShaerWare`.
 
 Both repos hold the deploy secrets and can deploy; the two test deploys of the same commit are
-serialized on the server by `flock` (`/var/lock/bizzio-{test,prod}-deploy.lock`). Prod auto-deploy
+serialized on the server by `flock` (`/var/lock/bizzio-{test,prod}-deploy.lock`). Note the mirror
+does **not** create workflow runs on push (verified via the runs API) — its deploy is triggered
+explicitly with `gh workflow run "CI/CD" --repo BizzioDev/BIZZIO --ref develop -f target=test`. Prod auto-deploy
 is restricted to `ShaerWare` via `github.repository ==` in the job condition, because only there
 does the `production` environment actually gate the run with a manual approval (required
 reviewers are unavailable on the customer org's free plan for a private repo). In `BizzioDev`
