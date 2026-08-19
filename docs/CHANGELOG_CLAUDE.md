@@ -2815,3 +2815,20 @@ read-only — смена организатора ломала бы пригла
 - скилл `пр`: зеркальный пуш перенесён на позицию сразу после мерджа, **до** деплоя (и для `develop`, и для `main` при промоушене на прод).
 
 **Изменённые файлы:** `.github/workflows/ci.yml`, `.claude/commands/пр.md`, `CLAUDE.md`.
+
+## #286 Обратная связь: письма уходили на непроверяемый ящик, сбои терялись молча (2026-08-20)
+
+**Диагностика.** Форма обратной связи (`/profile` → «Обратная связь») отправляла письмо на `config('app.admin_email')` = `ADMIN_NOTIFICATION_EMAIL`, а на обоих контурах это `admin@bizzio.ru` — ни один из проверявшихся ящиков (`notify@`, `noreply@`, `support@`) в отправке не участвовал. Второе: на тестовом стенде стоял `MAIL_MAILER=log`, поэтому с test.bizzio.ru почта не уходила вовсе. SMTP-ошибок в логе прода нет — письма реально отправлялись на `admin@bizzio.ru`.
+
+**Что сделано в коде:**
+- Письмо переведено с `Mail::raw()` на полноценный Mailable `App\Mail\FeedbackMail` + текстовый шаблон `resources/views/emails/feedback.blade.php`. Причина: `MailFake::raw()` в Laravel 12 — пустой метод, поэтому отправку через `Mail::raw` невозможно покрыть тестом (`Mail::assertSent` всегда падал с «The expected [Illuminate\Mail\Mailable] mailable was not sent»).
+- `ADMIN_NOTIFICATION_EMAIL` теперь может содержать несколько адресов через запятую — письмо уходит всем.
+- Отправка обёрнута в `try/catch` с `Log::error` (и `Log::info` на успех): раньше сбой SMTP не логировался, а пользователю всё равно показывалось «Сообщение отправлено».
+- Пустой `ADMIN_NOTIFICATION_EMAIL` больше не приводит к отправке в никуда — пишется ошибка в лог, форма показывает статус `feedback-failed`.
+- В форме добавлено сообщение об ошибке отправки со ссылкой mailto на админский адрес.
+
+**Инфраструктура:** на тестовом стенде `/var/www/bizzio-test/.env` переключён `MAIL_MAILER=log` → `smtp` (бэкап `.env.bak.20260820`), кэш конфига сброшен — теперь обратную связь можно проверять до прода.
+
+**Тесты:** `tests/Feature/FeedbackFormTest.php` — 5 кейсов (адресат из конфига, несколько получателей, пустой конфиг, валидация, гость). Полный прогон: 436 passed.
+
+**Изменённые файлы:** `app/Http/Controllers/ProfileController.php`, `app/Mail/FeedbackMail.php` (новый), `resources/views/emails/feedback.blade.php` (новый), `resources/views/profile/partials/feedback-form.blade.php`, `tests/Feature/FeedbackFormTest.php` (новый).
