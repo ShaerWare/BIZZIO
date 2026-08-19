@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Mail\FeedbackMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
@@ -94,18 +96,42 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Mail::raw(
-            "Обратная связь от пользователя Bizzio.ru\n\n".
-            "ФИО: {$validated['name']}\n".
-            "Email: {$user->email}\n".
-            ($validated['company'] ? "Компания: {$validated['company']}\n" : '').
-            "\nСообщение:\n{$validated['message']}",
-            function ($mail) use ($validated, $user) {
-                $mail->to(config('app.admin_email', 'admin@bizzio.ru'))
-                    ->subject('Обратная связь: '.mb_substr($validated['message'], 0, 50))
-                    ->replyTo($user->email, $validated['name']);
-            }
-        );
+        // ADMIN_NOTIFICATION_EMAIL может содержать несколько адресов через запятую.
+        $recipients = collect(explode(',', (string) config('app.admin_email')))
+            ->map(fn (string $email): string => trim($email))
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($recipients === []) {
+            Log::error('Обратная связь: не задан ADMIN_NOTIFICATION_EMAIL, сообщение не отправлено', [
+                'user_id' => $user->id,
+            ]);
+
+            return Redirect::route('profile.edit')->with('status', 'feedback-failed');
+        }
+
+        try {
+            Mail::to($recipients)->send(new FeedbackMail(
+                sender: $user,
+                senderName: $validated['name'],
+                senderCompany: $validated['company'] ?? null,
+                body: $validated['message'],
+            ));
+        } catch (\Throwable $e) {
+            Log::error('Обратная связь: ошибка отправки письма', [
+                'user_id' => $user->id,
+                'recipients' => $recipients,
+                'error' => $e->getMessage(),
+            ]);
+
+            return Redirect::route('profile.edit')->with('status', 'feedback-failed');
+        }
+
+        Log::info('Обратная связь отправлена', [
+            'user_id' => $user->id,
+            'recipients' => $recipients,
+        ]);
 
         return Redirect::route('profile.edit')->with('status', 'feedback-sent');
     }
