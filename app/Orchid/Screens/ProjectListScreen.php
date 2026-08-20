@@ -135,7 +135,7 @@ class ProjectListScreen extends Screen
                     ),
 
                 TD::make('creator', 'Создатель')
-                    ->render(fn (Project $project) => $project->creator->name ?? '—'),
+                    ->render(fn (Project $project) => $project->creator->full_name ?? '—'),
 
                 TD::make('created_at', 'Создан')
                     ->sort()

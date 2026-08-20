@@ -383,6 +383,22 @@ class User extends Orchid
         return trim($this->name.' '.$this->last_name);
     }
 
+    /**
+     * #288 Инициалы «ИФ» для аватара-заглушки. Если фамилии нет — две первые буквы имени,
+     * как было раньше.
+     */
+    public function getInitialsAttribute(): string
+    {
+        $first = mb_substr(trim((string) $this->name), 0, 1);
+        $last = mb_substr(trim((string) $this->last_name), 0, 1);
+
+        if ($last === '') {
+            return mb_strtoupper(mb_substr(trim((string) $this->name), 0, 2));
+        }
+
+        return mb_strtoupper($first.$last);
+    }
+
     // ========================
     // ПОИСК (SCOUT)
     // ========================
@@ -395,6 +411,8 @@ class User extends Orchid
         return [
             'id' => $this->id,
             'name' => $this->name,
+            // #288 Без фамилии в индексе пользователя нельзя было найти по фамилии
+            'last_name' => $this->last_name,
             'email' => $this->email,
             'position' => $this->position,
             'bio' => $this->bio,

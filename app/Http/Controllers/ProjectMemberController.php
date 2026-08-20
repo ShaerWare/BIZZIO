@@ -65,7 +65,7 @@ class ProjectMemberController extends Controller
 
         event(new ProjectUserInvited($project, $user, auth()->user()));
 
-        return back()->with('success', "Пользователь {$user->name} добавлен в проект");
+        return back()->with('success', "Пользователь {$user->full_name} добавлен в проект");
     }
 
     /**
@@ -95,7 +95,7 @@ class ProjectMemberController extends Controller
             'role' => $validated['role'],
         ]);
 
-        return back()->with('success', "Роль пользователя {$user->name} обновлена");
+        return back()->with('success', "Роль пользователя {$user->full_name} обновлена");
     }
 
     /**
@@ -114,7 +114,7 @@ class ProjectMemberController extends Controller
 
         $project->removeMember($user);
 
-        return back()->with('success', "Пользователь {$user->name} удалён из проекта");
+        return back()->with('success', "Пользователь {$user->full_name} удалён из проекта");
     }
 
     /**
@@ -197,7 +197,7 @@ class ProjectMemberController extends Controller
 
             event(new ProjectJoinRequestReviewed($joinRequest, 'approved'));
 
-            return back()->with('success', "Запрос одобрен. Пользователь {$joinRequest->user->name} добавлен в проект.");
+            return back()->with('success', "Запрос одобрен. Пользователь {$joinRequest->user->full_name} добавлен в проект.");
         } catch (\Exception $e) {
             DB::rollBack();
 

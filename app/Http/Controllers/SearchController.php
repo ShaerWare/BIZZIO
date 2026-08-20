@@ -112,7 +112,7 @@ class SearchController extends Controller
                 'type' => 'user',
                 'type_label' => 'Пользователь',
                 'id' => $user->id,
-                'title' => $user->name,
+                'title' => $user->full_name,
                 'subtitle' => $user->position,
                 'url' => route('users.show', $user),
             ];
@@ -204,7 +204,7 @@ class SearchController extends Controller
             'type_label' => 'Пользователь',
             'icon' => 'user',
             'id' => $user->id,
-            'title' => $user->name,
+            'title' => $user->full_name,
             'subtitle' => $user->position,
             'description' => $user->bio,
             'url' => route('users.show', $user),

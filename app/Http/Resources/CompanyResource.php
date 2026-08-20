@@ -31,11 +31,14 @@ class CompanyResource extends JsonResource
             'creator' => [
                 'id' => $this->creator->id,
                 'name' => $this->creator->name,
+                // #288 full_name добавлен рядом с name, чтобы не ломать существующий контракт API
+                'full_name' => $this->creator->full_name,
                 'email' => $this->creator->email,
             ],
             'moderators' => $this->moderators->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'full_name' => $user->full_name,
                 'email' => $user->email,
                 'role' => $user->pivot->role,
             ]),

@@ -46,7 +46,7 @@ class SubscriptionController extends Controller
             UserSubscribed::dispatch($subscription);
         }
 
-        return back()->with('success', "Вы подписались на {$user->name}.");
+        return back()->with('success', "Вы подписались на {$user->full_name}.");
     }
 
     public function unsubscribeUser(User $user)
@@ -56,7 +56,7 @@ class SubscriptionController extends Controller
             ->where('subscribable_id', $user->id)
             ->delete();
 
-        return back()->with('success', "Вы отписались от {$user->name}.");
+        return back()->with('success', "Вы отписались от {$user->full_name}.");
     }
 
     public function subscribeCompany(Company $company)

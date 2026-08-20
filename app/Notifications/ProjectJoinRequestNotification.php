@@ -29,7 +29,7 @@ class ProjectJoinRequestNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Запрос на присоединение к проекту: '.$this->joinRequest->project->name)
             ->greeting('Здравствуйте, '.$notifiable->name.'!')
-            ->line('Пользователь **'.$this->joinRequest->user->name.'** отправил запрос на присоединение к проекту **'.$this->joinRequest->project->name.'**.')
+            ->line('Пользователь **'.$this->joinRequest->user->full_name.'** отправил запрос на присоединение к проекту **'.$this->joinRequest->project->name.'**.')
             ->when($this->joinRequest->message, function ($message) {
                 return $message->line('Сообщение: '.$this->joinRequest->message);
             })
@@ -44,7 +44,7 @@ class ProjectJoinRequestNotification extends Notification implements ShouldQueue
             'project_id' => $this->joinRequest->project_id,
             'project_title' => $this->joinRequest->project->name,
             'user_id' => $this->joinRequest->user_id,
-            'user_name' => $this->joinRequest->user->name,
+            'user_name' => $this->joinRequest->user->full_name,
             'url' => route('projects.show', $this->joinRequest->project->slug),
         ];
     }

@@ -51,7 +51,7 @@ class CompanyModeratorController extends Controller
 
         // TODO: Отправить уведомление пользователю (Спринт 7)
 
-        return back()->with('success', "Пользователь {$user->name} добавлен как модератор компании");
+        return back()->with('success', "Пользователь {$user->full_name} добавлен как модератор компании");
     }
 
     /**
@@ -73,7 +73,7 @@ class CompanyModeratorController extends Controller
             'can_manage_moderators' => $validated['can_manage_moderators'] ?? false,
         ]);
 
-        return back()->with('success', "Роль пользователя {$user->name} обновлена");
+        return back()->with('success', "Роль пользователя {$user->full_name} обновлена");
     }
 
     /**
@@ -116,6 +116,6 @@ class CompanyModeratorController extends Controller
 
         $company->removeModerator($user);
 
-        return back()->with('success', "Пользователь {$user->name} удалён из модераторов компании");
+        return back()->with('success', "Пользователь {$user->full_name} удалён из модераторов компании");
     }
 }

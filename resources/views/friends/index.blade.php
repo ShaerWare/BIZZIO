@@ -152,7 +152,7 @@
                                             <img src="{{ $request->sender->avatar_url }}" alt=""
                                                  class="w-10 h-10 rounded-full object-cover flex-shrink-0">
                                             <div class="min-w-0">
-                                                <p class="text-sm font-medium text-gray-900 truncate">{{ $request->sender->name }}</p>
+                                                <p class="text-sm font-medium text-gray-900 truncate">{{ $request->sender->full_name }}</p>
                                                 @if($request->sender->position)
                                                     <p class="text-xs text-gray-500 truncate">{{ $request->sender->position }}</p>
                                                 @endif
