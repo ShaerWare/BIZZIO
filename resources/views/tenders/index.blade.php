@@ -14,30 +14,14 @@
             </div>
             @auth
                 @if(auth()->user()->isModeratorOfAnyCompany())
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open"
-                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Разместить
-                            <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition
-                             class="absolute right-0 z-50 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
-                             style="display: none;">
-                            <div class="py-1">
-                                <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    Запрос цен
-                                </a>
-                                <a href="{{ route('auctions.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    Аукцион
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    {{-- #282: размещается только двухэтапная закупка (коммерческий аукцион) --}}
+                    <a href="{{ route('rfqs.create', ['procedure' => 'commercial']) }}"
+                       class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Создать закупку
+                    </a>
                 @endif
             @endauth
         </div>
