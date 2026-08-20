@@ -30,7 +30,7 @@
     $lines[] = '';
     $lines[] = 'С уважением,';
     if (optional($model->creator)->name) {
-        $lines[] = $model->creator->name;
+        $lines[] = $model->creator->full_name;
     }
     $lines[] = $model->company->name;
 

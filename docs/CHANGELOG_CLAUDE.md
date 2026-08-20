@@ -2902,3 +2902,25 @@ read-only — смена организатора ломала бы пригла
 **Тесты:** `tests/Feature/CompanyLegalFormTest.php` — 9 кейсов (порядок полей на обеих формах, создание с чистым названием, отклонение ОПФ и кавычек, «Ипотека Плюс» проходит, старое название с ОПФ сохраняется, смена названия на вариант с ОПФ отклоняется, сборка юридического наименования).
 
 **Изменённые файлы:** `app/Rules/CompanyNameWithoutLegalForm.php` (новый), `app/Http/Requests/StoreCompanyRequest.php`, `app/Http/Requests/UpdateCompanyRequest.php`, `resources/views/companies/create.blade.php`, `resources/views/companies/edit.blade.php`, `tests/Feature/CompanyLegalFormTest.php` (новый).
+
+## #288 Пользователь везде отображается как «Имя Фамилия» (2026-08-21)
+
+**Что сделано.** Часть интерфейса перевели на `full_name` ещё в #145, но во многих местах оставалось одно имя — в том числе в быстром поиске, через который пользователя добавляют в компанию (случай из задачи). Переведены на `User::full_name`:
+
+- **Поиск:** `SearchController::quickSearch()` и `formatUser()` — заголовок результата;
+- **Страницы:** создатель аукциона / запроса цен / проекта, комментарии проекта, участники и заявки проекта, заявки на присоединение к компании (включая модалки подтверждения), публичный профиль, аватар в профиле, входящие заявки в друзья, текст приглашения «Поделиться», колонка «Создатель» в Orchid-списке проектов;
+- **Флеш-сообщения:** добавление/смена роли/удаление модератора компании и участника проекта, одобрение заявок, подписка и отписка;
+- **Уведомления:** заявка в друзья, заявки на присоединение к компании и проекту, новый комментарий, создание компании.
+
+Дополнительно:
+- `User::$initials` (accessor) — инициалы «ИФ» для аватаров-заглушек вместо двух первых букв имени; при пустой фамилии поведение прежнее.
+- В `User::toSearchableArray()` добавлено `last_name` — **без него пользователя нельзя было найти по фамилии** (Scout с драйвером `collection` ищет по индексируемым полям).
+- В `CompanyResource` рядом с `name` добавлено `full_name` — существующий контракт API не менялся.
+
+**Обязательность полей при регистрации,** упомянутая в задаче, уже была: `RegisteredUserController` требует и `name`, и `last_name` (min:2). Изменений не потребовалось.
+
+**Не тронуто:** поле ввода «Имя» в форме профиля (`update-profile-information-form.blade.php`) — это редактирование самого поля `name`.
+
+**Тесты:** `tests/Feature/UserFullNameDisplayTest.php` — 8 кейсов (быстрый поиск отдаёт «Имя Фамилия», поиск находит по фамилии, страница поиска, публичный профиль, инициалы и фолбэк, страница компании, состав поискового индекса).
+
+**Изменённые файлы:** `app/Models/User.php`, `app/Http/Controllers/{SearchController,CompanyJoinRequestController,CompanyModeratorController,ProjectMemberController,SubscriptionController}.php`, `app/Http/Resources/CompanyResource.php`, `app/Notifications/{FriendRequest,JoinRequest,ProjectJoinRequest,NewComment,CompanyCreated}Notification.php`, `app/Orchid/Screens/ProjectListScreen.php`, 10 blade-шаблонов, `tests/Feature/UserFullNameDisplayTest.php` (новый).

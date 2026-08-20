@@ -32,7 +32,7 @@ class CompanyCreatedNotification extends Notification implements ShouldQueue
             ->line('На платформе зарегистрирована новая компания.')
             ->line('**Название:** '.$this->company->name)
             ->line('**ИНН:** '.($this->company->inn ?? '—'))
-            ->line('**Создатель:** '.($this->company->creator->name ?? '—'))
+            ->line('**Создатель:** '.($this->company->creator->full_name ?? '—'))
             ->action('Верифицировать в админке', route('platform.companies.edit', $this->company))
             ->line('Пожалуйста, проверьте данные и верифицируйте компанию.');
     }

@@ -11,7 +11,7 @@
              @if($profileBadge) style="border: 3px solid {{ $profileBadge->color }};" @endif>
             <div class="p-6">
                 <div class="flex items-start space-x-6">
-                    <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}"
+                    <img src="{{ $user->avatar_url }}" alt="{{ $user->full_name }}"
                          class="w-24 h-24 rounded-full object-cover shadow-md">
 
                     <div class="flex-1">

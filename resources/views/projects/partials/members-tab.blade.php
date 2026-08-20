@@ -192,7 +192,7 @@
                                     {{-- Аватар с инициалами --}}
                                     <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
                                         <span class="text-sm font-semibold text-emerald-700">
-                                            {{ strtoupper(mb_substr($member->name, 0, 1)) }}
+                                            {{ $member->initials }}
                                         </span>
                                     </div>
                                     <div>
@@ -229,7 +229,7 @@
                                         </form>
                                         {{-- Удаление --}}
                                         <form method="POST" action="{{ route('projects.members.destroy', [$project->slug, $member->id]) }}"
-                                              onsubmit="return confirm('Удалить пользователя {{ $member->name }} из проекта?')">
+                                              onsubmit="return confirm('Удалить пользователя {{ $member->full_name }} из проекта?')">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-400 hover:text-red-600" title="Удалить из проекта">
@@ -259,7 +259,7 @@
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
                             <span class="text-sm font-semibold text-yellow-700">
-                                {{ strtoupper(mb_substr($request->user->name, 0, 1)) }}
+                                {{ $request->user->initials }}
                             </span>
                         </div>
                         <div>

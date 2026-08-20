@@ -3,12 +3,12 @@
         <div class="flex-shrink-0 mr-3">
             @if($comment->user->avatar)
                 <img src="{{ asset('storage/' . $comment->user->avatar) }}" 
-                     alt="{{ $comment->user->name }}" 
+                     alt="{{ $comment->user->full_name }}" 
                      class="w-10 h-10 rounded-full object-cover">
             @else
                 <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                     <span class="text-sm text-gray-500 font-semibold">
-                        {{ strtoupper(substr($comment->user->name, 0, 2)) }}
+                        {{ $comment->user->initials }}
                     </span>
                 </div>
             @endif
@@ -16,7 +16,7 @@
 
         <div class="flex-1">
             <div class="flex items-center justify-between mb-1">
-                <h4 class="text-sm font-semibold text-gray-900">{{ $comment->user->name }}</h4>
+                <h4 class="text-sm font-semibold text-gray-900">{{ $comment->user->full_name }}</h4>
                 <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
             </div>
 

@@ -121,7 +121,7 @@ class CompanyJoinRequestController extends Controller
 
             // TODO: Отправить уведомление пользователю (Спринт 7)
 
-            return back()->with('success', "Запрос одобрен. Пользователь {$joinRequest->user->name} добавлен как модератор.");
+            return back()->with('success', "Запрос одобрен. Пользователь {$joinRequest->user->full_name} добавлен как модератор.");
         } catch (\Exception $e) {
             DB::rollBack();
 

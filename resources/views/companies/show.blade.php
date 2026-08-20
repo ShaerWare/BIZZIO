@@ -485,7 +485,7 @@
                                                     <div class="flex items-start flex-1 min-w-0">
                                                         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
                                                             <span class="text-lg font-semibold text-emerald-600">
-                                                                {{ strtoupper(substr($joinRequest->user->name, 0, 2)) }}
+                                                                {{ $joinRequest->user->initials }}
                                                             </span>
                                                         </div>
                                                         <div class="flex-1">
@@ -516,11 +516,11 @@
 
                                                     <!-- Кнопки действий -->
                                                     <div class="flex gap-2 sm:ml-4">
-                                                        <button onclick="showApproveModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->name) }}, {{ Js::from($joinRequest->desired_role) }})"
+                                                        <button onclick="showApproveModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->full_name) }}, {{ Js::from($joinRequest->desired_role) }})"
                                                                 class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
                                                             Одобрить
                                                         </button>
-                                                        <button onclick="showRejectModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->name) }})"
+                                                        <button onclick="showRejectModal({{ $joinRequest->id }}, {{ Js::from($joinRequest->user->full_name) }})"
                                                                 class="inline-flex items-center px-3 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
                                                             Отклонить
                                                         </button>
