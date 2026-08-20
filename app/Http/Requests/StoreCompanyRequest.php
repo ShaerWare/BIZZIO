@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesCompanyDocuments;
+use App\Rules\CompanyNameWithoutLegalForm;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class StoreCompanyRequest extends FormRequest
     public function rules(): array
     {
         return array_merge([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', new CompanyNameWithoutLegalForm],
             'inn' => ['required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies', 'inn')->whereNull('deleted_at')],
             'legal_form' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'], // max 2MB
