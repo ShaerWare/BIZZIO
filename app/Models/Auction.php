@@ -311,6 +311,38 @@ class Auction extends Model implements HasMedia
     }
 
     /**
+     * #283 Скрывать ли НМЦ от данного зрителя.
+     *
+     * По завершении процедуры (для двухэтапной закупки — после закрытия этапа 2 и формирования
+     * протокола) начальная максимальная цена уходит из общего доступа: её видят только
+     * организатор и участники закупки — приглашённые компании и компании, подавшие заявку
+     * или предложение. Пока процедура идёт, НМЦ видна всем: без неё нельзя торговаться.
+     */
+    public function startingPriceHiddenFor(?User $user): bool
+    {
+        if ($this->status !== 'closed') {
+            return false;
+        }
+
+        return ! ($user && ($this->canManage($user) || $this->isProcedureInsider($user)));
+    }
+
+    /**
+     * #283 Причастен ли пользователь к процедуре: модератор приглашённой компании либо
+     * компании, подавшей заявку/предложение (у открытого аукциона заявку подают без приглашения).
+     */
+    public function isProcedureInsider(User $user): bool
+    {
+        if ($this->isParticipant($user)) {
+            return true;
+        }
+
+        $companyIds = $user->moderatedCompanies()->pluck('companies.id');
+
+        return $this->bids()->whereIn('company_id', $companyIds)->exists();
+    }
+
+    /**
      * #193 Кому доступен блок «Поделиться» (готовый текст приглашения сторонней компании).
      *
      * Пока идёт приём заявок: организатору — с черновика, остальным — только у открытой процедуры.
