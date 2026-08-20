@@ -74,9 +74,14 @@
 
         <!-- Информация -->
         <div class="space-y-2 text-sm text-gray-600 mb-4">
+            {{-- #283 По завершении процедуры НМЦ видна только организатору и участникам закупки --}}
             <div class="flex justify-between">
                 <span>НМЦ:</span>
-                <x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" class="font-semibold text-gray-900 whitespace-nowrap" />
+                @if($auction->startingPriceHiddenFor(auth()->user()))
+                    <span class="text-gray-400 whitespace-nowrap">скрыта</span>
+                @else
+                    <x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" class="font-semibold text-gray-900 whitespace-nowrap" />
+                @endif
             </div>
             
             @if($auction->isTrading())
