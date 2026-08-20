@@ -29,13 +29,15 @@
         <!-- Фильтры -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
-                <form method="GET" action="{{ route('tenders.index') }}" class="space-y-4">
+                {{-- #285 Автопоиск: фильтры применяются сами, кнопки «Применить» нет --}}
+                <form method="GET" action="{{ route('tenders.index') }}" class="space-y-4" x-data="{}" data-autofilter>
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <!-- Поиск -->
                         <div>
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Поиск</label>
                             <input type="text" name="search" id="search"
                                    value="{{ request('search') }}"
+                                   @input.debounce.600ms="$el.form.requestSubmit()"
                                    placeholder="Название или номер"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
@@ -71,6 +73,7 @@
                         <div>
                             <label for="kind" class="block text-sm font-medium text-gray-700 mb-2">Вид процедуры</label>
                             <select name="kind" id="kind"
+                                    @change="$el.form.requestSubmit()"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все виды</option>
                                 <option value="rfq" {{ request('kind') === 'rfq' ? 'selected' : '' }}>Запрос цен</option>
@@ -82,6 +85,7 @@
                         <div>
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Статус</label>
                             <select name="status" id="status"
+                                    @change="$el.form.requestSubmit()"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все статусы</option>
                                 <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Приём заявок</option>
@@ -95,6 +99,7 @@
                         <div>
                             <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Тип процедуры</label>
                             <select name="type" id="type"
+                                    @change="$el.form.requestSubmit()"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">Все типы</option>
                                 <option value="open" {{ request('type') === 'open' ? 'selected' : '' }}>Открытые</option>
@@ -102,14 +107,10 @@
                             </select>
                         </div>
 
-                        <!-- Кнопки -->
-                        <div class="flex items-end space-x-2">
-                            <button type="submit"
-                                    class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                                Применить
-                            </button>
+                        {{-- #285 Кнопка «Применить» убрана: поиск идёт автоматически --}}
+                        <div class="flex items-end">
                             <a href="{{ route('tenders.index') }}"
-                               class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 transition">
+                               class="w-full inline-flex justify-center items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 transition">
                                 Сбросить
                             </a>
                         </div>
@@ -186,8 +187,62 @@
                 this.query = company.name;
                 this.$refs.organizerId.value = company.id;
                 this.open = false;
+                // #285 Выбор компании сразу применяет фильтр
+                this.$el.closest('form').requestSubmit();
             },
         };
     }
+
+    // #285 Автопоиск в фильтрах закупок: форма отправляется сама, без кнопки подтверждения.
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+
+        if (! form.matches('form[data-autofilter]')) {
+            return;
+        }
+
+        // Перезагрузка сбивает фокус — запоминаем поле и позицию курсора, чтобы вернуть их.
+        const active = document.activeElement;
+        if (active && active.name && form.contains(active)) {
+            sessionStorage.setItem('tendersFilterFocus', JSON.stringify({
+                name: active.name,
+                position: typeof active.selectionStart === 'number' ? active.selectionStart : null,
+            }));
+        }
+
+        // Пустые фильтры не должны попадать в строку запроса.
+        Array.from(form.elements).forEach(function (element) {
+            if (element.name && element.value === '') {
+                element.disabled = true;
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form[data-autofilter]');
+        const saved = sessionStorage.getItem('tendersFilterFocus');
+        sessionStorage.removeItem('tendersFilterFocus');
+
+        if (! form || ! saved) {
+            return;
+        }
+
+        try {
+            const state = JSON.parse(saved);
+            const field = form.elements[state.name];
+
+            if (! field) {
+                return;
+            }
+
+            field.focus();
+
+            if (state.position !== null && typeof field.setSelectionRange === 'function') {
+                field.setSelectionRange(state.position, state.position);
+            }
+        } catch (error) {
+            // повреждённое значение в sessionStorage не должно ломать страницу
+        }
+    });
 </script>
 @endpush
