@@ -185,6 +185,8 @@ Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name
 
 Route::get('/tenders', [TenderController::class, 'index'])->name('tenders.index');
 Route::get('/tenders/rules', [TenderController::class, 'rules'])->name('tenders.rules');
+// #284 Подсказки для фильтра «Компания-организатор» на /tenders
+Route::get('/tenders/organizers', [TenderController::class, 'organizers'])->name('tenders.organizers');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/my-tenders', [TenderController::class, 'myTenders'])->name('tenders.my');
