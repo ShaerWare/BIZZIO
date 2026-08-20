@@ -51,36 +51,32 @@
                                 class="absolute z-50 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
                                 style="display: none;">
                                 <div class="py-1">
+                                    {{-- #282: состав и порядок пунктов меню «Закупки» --}}
                                     <a href="{{ route('tenders.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         {{ __('Найти закупку') }}
                                     </a>
                                     @auth
-                                        <div class="border-t border-gray-100"></div>
-                                        <a href="{{ route('tenders.bids.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            {{ __('Мои заявки') }}
-                                        </a>
-                                        <a href="{{ route('tenders.invitations.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            {{ __('Мои приглашения') }}
-                                        </a>
                                         @if(auth()->user()->isModeratorOfAnyCompany())
+                                            <a href="{{ route('rfqs.create', ['procedure' => 'commercial']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                {{ __('Создать закупку') }}
+                                            </a>
                                             <div class="border-t border-gray-100"></div>
                                             <a href="{{ route('tenders.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 {{ __('Мои закупки') }}
                                             </a>
-                                            <a href="{{ route('rfqs.create', ['procedure' => 'commercial']) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                {{ __('Создать коммерческий аукцион') }}
-                                            </a>
-                                            <a href="{{ route('auctions.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                {{ __('Создать аукцион') }}
-                                            </a>
-                                            <a href="{{ route('rfqs.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                {{ __('Создать запрос цен') }}
-                                            </a>
+                                        @else
+                                            <div class="border-t border-gray-100"></div>
                                         @endif
+                                        <a href="{{ route('tenders.invitations.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            {{ __('Мои приглашения') }}
+                                        </a>
+                                        <a href="{{ route('tenders.bids.my') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            {{ __('Мои заявки') }}
+                                        </a>
                                     @endauth
                                     <div class="border-t border-gray-100"></div>
                                     <a href="{{ route('tenders.rules') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        {{ __('Правила проведения') }}
+                                        {{ __('Правила закупок') }}
                                     </a>
                                 </div>
                             </div>
@@ -404,40 +400,33 @@
                     </svg>
                 </button>
                 <div x-show="expanded" class="space-y-1">
+                    {{-- #282: состав и порядок пунктов меню «Закупки» --}}
                     <x-responsive-nav-link :href="route('tenders.index')" :active="request()->routeIs('tenders.index')">
                         {{ __('Найти закупку') }}
                     </x-responsive-nav-link>
 
                     @auth
-                        <x-responsive-nav-link :href="route('tenders.bids.my')" :active="request()->routeIs('tenders.bids.my')">
-                            {{ __('Мои заявки') }}
-                        </x-responsive-nav-link>
+                        @if(auth()->user()->isModeratorOfAnyCompany())
+                            <x-responsive-nav-link :href="route('rfqs.create', ['procedure' => 'commercial'])" :active="request()->routeIs('rfqs.create') && request('procedure') === 'commercial'">
+                                {{ __('Создать закупку') }}
+                            </x-responsive-nav-link>
+
+                            <x-responsive-nav-link :href="route('tenders.my')" :active="request()->routeIs('tenders.my')">
+                                {{ __('Мои закупки') }}
+                            </x-responsive-nav-link>
+                        @endif
 
                         <x-responsive-nav-link :href="route('tenders.invitations.my')" :active="request()->routeIs('tenders.invitations.my')">
                             {{ __('Мои приглашения') }}
                         </x-responsive-nav-link>
 
-                        @if(auth()->user()->isModeratorOfAnyCompany())
-                            <x-responsive-nav-link :href="route('tenders.my')" :active="request()->routeIs('tenders.my')">
-                                {{ __('Мои закупки') }}
-                            </x-responsive-nav-link>
-
-                            <x-responsive-nav-link :href="route('rfqs.create', ['procedure' => 'commercial'])" :active="request()->routeIs('rfqs.create') && request('procedure') === 'commercial'">
-                                {{ __('Создать коммерческий аукцион') }}
-                            </x-responsive-nav-link>
-
-                            <x-responsive-nav-link :href="route('auctions.create')" :active="request()->routeIs('auctions.create')">
-                                {{ __('Создать аукцион') }}
-                            </x-responsive-nav-link>
-
-                            <x-responsive-nav-link :href="route('rfqs.create')" :active="request()->routeIs('rfqs.create') && request('procedure') !== 'commercial'">
-                                {{ __('Создать запрос цен') }}
-                            </x-responsive-nav-link>
-                        @endif
+                        <x-responsive-nav-link :href="route('tenders.bids.my')" :active="request()->routeIs('tenders.bids.my')">
+                            {{ __('Мои заявки') }}
+                        </x-responsive-nav-link>
                     @endauth
 
                     <x-responsive-nav-link :href="route('tenders.rules')" :active="request()->routeIs('tenders.rules')">
-                        {{ __('Правила проведения') }}
+                        {{ __('Правила закупок') }}
                     </x-responsive-nav-link>
                 </div>
             </div>
