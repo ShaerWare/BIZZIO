@@ -42,6 +42,26 @@
                     @csrf
                     @method('PUT')
 
+                    {{-- #287 ОПФ идёт перед названием: иначе пользователи вписывают «ООО» и кавычки в само название --}}
+                    <div>
+                        <label for="legal_form" class="block text-sm font-medium text-gray-700">
+                            Организационно-правовая форма
+                        </label>
+                        <select name="legal_form"
+                                id="legal_form"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                            <option value="">Не выбрано</option>
+                            <option value="ООО" {{ old('legal_form', $company->legal_form) == 'ООО' ? 'selected' : '' }}>ООО</option>
+                            <option value="АО" {{ old('legal_form', $company->legal_form) == 'АО' ? 'selected' : '' }}>АО</option>
+                            <option value="ПАО" {{ old('legal_form', $company->legal_form) == 'ПАО' ? 'selected' : '' }}>ПАО</option>
+                            <option value="ИП" {{ old('legal_form', $company->legal_form) == 'ИП' ? 'selected' : '' }}>ИП</option>
+                            <option value="ЗАО" {{ old('legal_form', $company->legal_form) == 'ЗАО' ? 'selected' : '' }}>ЗАО</option>
+                        </select>
+                        @error('legal_form')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Название -->
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">
@@ -52,7 +72,9 @@
                                id="name" 
                                value="{{ old('name', $company->name) }}"
                                required
+                               placeholder="Ромашка"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm @error('name') border-red-500 @enderror">
+                        <p class="mt-1 text-xs text-gray-500">Без организационно-правовой формы и кавычек — например: Ромашка</p>
                         @error('name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -78,25 +100,6 @@
                         @enderror
                     </div>
 
-                    <!-- Организационно-правовая форма -->
-                    <div>
-                        <label for="legal_form" class="block text-sm font-medium text-gray-700">
-                            Организационно-правовая форма
-                        </label>
-                        <select name="legal_form" 
-                                id="legal_form"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
-                            <option value="">Не выбрано</option>
-                            <option value="ООО" {{ old('legal_form', $company->legal_form) == 'ООО' ? 'selected' : '' }}>ООО</option>
-                            <option value="АО" {{ old('legal_form', $company->legal_form) == 'АО' ? 'selected' : '' }}>АО</option>
-                            <option value="ПАО" {{ old('legal_form', $company->legal_form) == 'ПАО' ? 'selected' : '' }}>ПАО</option>
-                            <option value="ИП" {{ old('legal_form', $company->legal_form) == 'ИП' ? 'selected' : '' }}>ИП</option>
-                            <option value="ЗАО" {{ old('legal_form', $company->legal_form) == 'ЗАО' ? 'selected' : '' }}>ЗАО</option>
-                        </select>
-                        @error('legal_form')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
 
                     <!-- Отрасль -->
                     {{-- C2: text-base для iOS (16px предотвращает auto-zoom) --}}
