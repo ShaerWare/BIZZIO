@@ -2858,3 +2858,19 @@ read-only — смена организатора ломала бы пригла
 **Тесты:** `tests/Feature/HiddenStartingPriceTest.php` — 9 кейсов (видимость до закрытия, скрытие от постороннего и гостя после закрытия, доступ организатора, приглашённой компании и участника без приглашения, рендер карточки и страницы). Полный прогон: 451 passed.
 
 **Изменённые файлы:** `app/Models/Auction.php`, `resources/views/components/auction-card.blade.php`, `resources/views/auctions/show.blade.php`, `tests/Feature/HiddenStartingPriceTest.php` (новый).
+
+## #284 Фильтр закупок по компании-организатору (2026-08-20)
+
+**Что сделано.** В фильтры `/tenders` добавлено поле «Компания-организатор» с подсказками: при вводе от 2 символов Alpine дёргает новый эндпоинт `GET /tenders/organizers` (`TenderController::organizers`, роут `tenders.organizers`) и показывает выпадающий список компаний. Выбор из списка фиксирует `organizer_id` в скрытом поле, ручная правка текста его сбрасывает — иначе фильтр продолжал бы искать по ранее выбранной компании.
+
+Фильтрация в `applyFilters()`: при заданном `organizer_id` — точное совпадение по `company_id`, иначе по введённому тексту через `whereHas('company', name ilike %…%)`. Подсказки возвращают только компании, у которых есть закупки (`whereHas('rfqs')->orWhereHas('auctions')`), лимит 10 — иначе в списке оказывались бы организаторы, по которым результат всегда пуст.
+
+Сетка фильтров расширена с `md:grid-cols-5` до `md:grid-cols-3 lg:grid-cols-6` (пять полей + кнопки).
+
+**Попутно:** в `Company` добавлена связь `auctions()` — её не было, хотя `rfqs()` есть; без неё нельзя было отобрать организаторов аукционов.
+
+**Про регистр.** Поиск использует принятый в проекте паттерн `ilike` (PostgreSQL) / `like` (SQLite в тестах). В SQLite `like` приводит к нижнему регистру только ASCII, поэтому в тестах регистр запроса совпадает с названием компании; на проде (PostgreSQL) регистр не важен.
+
+**Тесты:** `tests/Feature/TenderOrganizerFilterTest.php` — 7 кейсов (подсказки по подстроке, компании без закупок в подсказки не попадают, минимум 2 символа, фильтр по `organizer_id`, фильтр по тексту, приоритет `organizer_id` над текстом, наличие поля на странице). Полный прогон: 458 passed.
+
+**Изменённые файлы:** `app/Http/Controllers/TenderController.php`, `app/Models/Company.php`, `routes/web.php`, `resources/views/tenders/index.blade.php`, `tests/Feature/TenderOrganizerFilterTest.php` (новый), `public/build` (новые Tailwind-классы выпадающего списка).

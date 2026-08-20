@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\AuctionInvitation;
+use App\Models\Company;
 use App\Models\Rfq;
 use App\Models\RfqBid;
 use App\Models\RfqInvitation;
@@ -178,6 +179,32 @@ class TenderController extends Controller
     }
 
     /**
+     * #284 Подсказки для фильтра «Компания-организатор».
+     *
+     * Возвращаем только те компании, у которых есть закупки, — иначе в подсказках окажутся
+     * организаторы, по которым список всегда пуст.
+     */
+    public function organizers(Request $request)
+    {
+        $search = trim((string) $request->get('q', ''));
+
+        if (mb_strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        $companies = Company::query()
+            ->where('name', $op, "%{$search}%")
+            ->where(fn ($q) => $q->whereHas('rfqs')->orWhereHas('auctions'))
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name']);
+
+        return response()->json($companies);
+    }
+
+    /**
      * Скрываем черновики от посторонних (C3)
      */
     private function applyDraftFilter($query): void
@@ -244,6 +271,16 @@ class TenderController extends Controller
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
+        }
+
+        // #284 Фильтр по компании-организатору: выбор из подсказок фиксирует organizer_id,
+        // но и просто введённый текст должен что-то находить.
+        if ($request->filled('organizer_id')) {
+            $query->where('company_id', (int) $request->organizer_id);
+        } elseif ($request->filled('organizer')) {
+            $op = \DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $organizer = $request->organizer;
+            $query->whereHas('company', fn ($q) => $q->where('name', $op, "%{$organizer}%"));
         }
 
         // #179 Фильтр по виду процедуры (standard / commercial)

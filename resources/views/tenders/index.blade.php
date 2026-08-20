@@ -30,7 +30,7 @@
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
                 <form method="GET" action="{{ route('tenders.index') }}" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <!-- Поиск -->
                         <div>
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Поиск</label>
@@ -38,6 +38,33 @@
                                    value="{{ request('search') }}"
                                    placeholder="Название или номер"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        </div>
+
+                        {{-- #284 Компания-организатор: подсказки появляются при вводе от 2 символов --}}
+                        <div x-data="organizerFilter()" class="relative">
+                            <label for="organizer" class="block text-sm font-medium text-gray-700 mb-2">Компания-организатор</label>
+                            <input type="text" name="organizer" id="organizer"
+                                   x-model="query"
+                                   @input.debounce.300ms="fetchSuggestions()"
+                                   @focus="if (suggestions.length) open = true"
+                                   @keydown.escape="open = false"
+                                   autocomplete="off"
+                                   placeholder="Название компании"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <input type="hidden" name="organizer_id" x-ref="organizerId" value="{{ request('organizer_id') }}">
+
+                            <div x-show="open && suggestions.length > 0"
+                                 @click.away="open = false"
+                                 x-transition
+                                 class="absolute z-50 mt-1 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto"
+                                 style="display: none;">
+                                <template x-for="company in suggestions" :key="company.id">
+                                    <button type="button"
+                                            @click="select(company)"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            x-text="company.name"></button>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Вид процедуры -->
@@ -122,3 +149,45 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    // #284 Автокомплит по компаниям-организаторам в фильтрах закупок.
+    function organizerFilter() {
+        return {
+            query: @json(request('organizer', '')),
+            suggestions: [],
+            open: false,
+
+            fetchSuggestions() {
+                // Ручная правка текста сбрасывает ранее выбранную компанию:
+                // иначе фильтр продолжил бы искать по старому organizer_id.
+                this.$refs.organizerId.value = '';
+
+                if (this.query.trim().length < 2) {
+                    this.suggestions = [];
+                    this.open = false;
+                    return;
+                }
+
+                fetch('{{ route('tenders.organizers') }}?q=' + encodeURIComponent(this.query))
+                    .then(response => response.json())
+                    .then(data => {
+                        this.suggestions = Array.isArray(data) ? data : [];
+                        this.open = this.suggestions.length > 0;
+                    })
+                    .catch(() => {
+                        this.suggestions = [];
+                        this.open = false;
+                    });
+            },
+
+            select(company) {
+                this.query = company.name;
+                this.$refs.organizerId.value = company.id;
+                this.open = false;
+            },
+        };
+    }
+</script>
+@endpush
