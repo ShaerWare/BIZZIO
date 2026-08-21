@@ -1,6 +1,7 @@
 {{-- #218 Чат процедуры (этап 1): вопросы участников и ответы организатора.
-     Виден только организатору и участникам. Для участников переписка обезличена —
+     Виден организатору и участникам. Для участников переписка обезличена —
      коды вида «У-01» намеренно отличаются от кодов торгов этапа 2.
+     #295 У открытой процедуры вопрос можно задать до подачи заявки.
      Параметр: $procedure (Rfq|Auction). --}}
 @php
     $viewer = auth()->user();
@@ -18,7 +19,8 @@
         $participantRows = collect();
         if ($isOrganizer) {
             $records = $procedure->chatParticipants()->get()->keyBy('company_id');
-            $participantRows = \App\Models\Company::whereIn('id', $procedure->chatParticipantCompanyIds())
+            // #295 В списке — и те, кто писал в чат, не подав заявку: их тоже можно отстранить
+            $participantRows = \App\Models\Company::whereIn('id', $procedure->chatVisibleCompanyIds())
                 ->where('id', '!=', $procedure->company_id)
                 ->orderBy('name')
                 ->get()
@@ -51,6 +53,10 @@
             <p class="text-sm text-gray-500 mb-4">
                 Вопросы по процедуре и ответы организатора. Переписка видна только организатору и участникам;
                 участники не видят названий компаний друг друга.
+                @if($procedure->chatOpenToProspects())
+                    {{-- #295 Вопрос можно задать до подачи заявки --}}
+                    <span class="block mt-1">Задать вопрос можно до подачи заявки на участие.</span>
+                @endif
                 @isset($chatNote)
                     <span class="block mt-1">{{ $chatNote }}</span>
                 @endisset
