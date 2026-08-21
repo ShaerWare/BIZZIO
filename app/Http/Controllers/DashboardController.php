@@ -19,7 +19,16 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        return view('dashboard', $this->dashboardData(auth()->user()));
+    }
+
+    /**
+     * #181 Данные дашборда отдельно от вью: их же показывает новая главная (`HomeController`).
+     *
+     * @return array<string, mixed>
+     */
+    public function dashboardData(User $user): array
+    {
 
         // Компании пользователя (один запрос для всех виджетов)
         $userCompanies = $user->moderatedCompanies()->get();
@@ -219,7 +228,7 @@ class DashboardController extends Controller
             'created_at' => $b->created_at,
         ]))->sortByDesc('created_at')->take(3)->values();
 
-        return view('dashboard', compact(
+        return compact(
             'userCompanies',
             'pendingJoinRequests',
             'userProjects',
@@ -229,7 +238,7 @@ class DashboardController extends Controller
             'myInvitations',
             'myBids',
             'recommendedCompanies',
-        ));
+        );
     }
 
     private function getSubscriptionContext(User $user): array

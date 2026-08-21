@@ -5,7 +5,7 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ auth()->check() ? route('dashboard') : url('/') }}">
+                    <a href="{{ route('home') }}">
                         <img src="{{ asset('images/apple-touch-icon.png') }}" alt="Icon" class="reduce-10 h-10 w-auto max-h-12 object-contain">
                     </a>
                 </div>
@@ -270,7 +270,7 @@
                                 {{ __('Профиль') }}
                             </x-dropdown-link>
 
-                            <x-dropdown-link :href="route('dashboard')">
+                            <x-dropdown-link :href="route('home')">
                                 {{ __('Лента активности') }}
                             </x-dropdown-link>
 
@@ -467,7 +467,7 @@
                         {{ __('Профиль') }}
                     </x-responsive-nav-link>
 
-                    <x-responsive-nav-link :href="route('dashboard')">
+                    <x-responsive-nav-link :href="route('home')">
                         {{ __('Лента активности') }}
                     </x-responsive-nav-link>
 

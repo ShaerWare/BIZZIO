@@ -12,12 +12,15 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', fn () => redirect('/?mode=register'))
+    // #181 Формы жили на лендинге («/?mode=register», «/#login-form»), а эти адреса вели
+    // обратно на «/». Новая главная форм не содержит, поэтому вход и регистрация снова
+    // отдаются собственными страницами — их адреса и есть AUTH_URL / REGISTER_URL.
+    Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', fn () => redirect('/#login-form'))
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);

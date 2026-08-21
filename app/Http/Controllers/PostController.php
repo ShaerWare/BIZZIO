@@ -23,7 +23,7 @@ class PostController extends Controller
             $post->addMediaFromRequest('photo')->toMediaCollection('photos');
         }
 
-        return redirect()->route('dashboard')->with('success', 'Пост опубликован');
+        return redirect()->route('home')->with('success', 'Пост опубликован');
     }
 
     public function destroy(Post $post)
@@ -32,6 +32,6 @@ class PostController extends Controller
 
         $post->delete();
 
-        return redirect()->route('dashboard')->with('success', 'Пост удалён');
+        return redirect()->route('home')->with('success', 'Пост удалён');
     }
 }

@@ -29,7 +29,7 @@ class ProcurementMenuTest extends TestCase
 
     public function test_menu_has_create_procurement_instead_of_auction_and_rfq(): void
     {
-        $response = $this->actingAs($this->moderator())->get('/dashboard');
+        $response = $this->actingAs($this->moderator())->get('/tenders');
 
         $response->assertOk();
         $response->assertSee('Создать закупку');
@@ -40,14 +40,14 @@ class ProcurementMenuTest extends TestCase
 
     public function test_create_procurement_points_to_commercial_procedure(): void
     {
-        $response = $this->actingAs($this->moderator())->get('/dashboard');
+        $response = $this->actingAs($this->moderator())->get('/tenders');
 
         $response->assertSee(route('rfqs.create', ['procedure' => 'commercial']), false);
     }
 
     public function test_menu_contains_all_required_items(): void
     {
-        $response = $this->actingAs($this->moderator())->get('/dashboard');
+        $response = $this->actingAs($this->moderator())->get('/tenders');
 
         foreach (['Найти закупку', 'Создать закупку', 'Мои закупки', 'Мои приглашения', 'Мои заявки', 'Правила закупок'] as $item) {
             $response->assertSee($item);

@@ -169,6 +169,15 @@ Requires `.env`: `GEMINI_API_KEY`
 - Each result has: `type`, `type_label`, `id`, `title`, `subtitle`, `url`
 - Types: `company`, `project`, `rfq`, `auction`, `user`
 
+### Landing / Home (#181, v26)
+
+`/` is the single entry point (`HomeController@index`, route name `home`): it renders `home/guest.blade.php` for guests and `home/authorized.blade.php` for signed-in users. The old `/dashboard` is a redirect to `/` (kept for bookmarks, route name `dashboard` still resolves).
+
+- Markup is a port of the approved prototype `Bizzio_Dashboard_v26`. It runs on its own stylesheet `resources/css/v26.css` (a separate Vite entry, together with `resources/js/v26.js`) — the prototype's selectors (`.page`, `.card`, `.service`) are too generic to sit next to the Tailwind theme of the other pages. Desktop and tablet share one markup (media queries); the mobile screen keeps the prototype's separate structure, scoped `#bizzio-mobile-v1`, and the two are switched at 768px.
+- Authorized data comes from `DashboardController::dashboardData()` — the same widgets as the old dashboard; the task added no new entities or APIs.
+- Auth links come from config, not hardcoded: `config('app.auth_url')` / `config('app.register_url')` (`AUTH_URL` / `REGISTER_URL`).
+- Elements with no working feature stay visible and clickable but lead nowhere: `data-inactive-feature` and `data-future-service` send Yandex.Metrika goals `inactive_feature_click` / `future_service_interest` (see `resources/js/v26.js`). One physical click = one event: the interest button inside a card stops propagation.
+
 ### View Conventions
 - Layouts: `layouts/app.blade.php` (authenticated), `layouts/guest.blade.php` (auth pages)
 - Dashboard widgets: `partials/dashboard/*.blade.php` (profile-card, news-widget, posts-feed, etc.)

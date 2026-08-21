@@ -8,6 +8,15 @@
       "app.css"
     ]
   },
+  "resources/css/v26.css": {
+    "file": "assets/v26-Ddzm8ktK.css",
+    "src": "resources/css/v26.css",
+    "isEntry": true,
+    "name": "v26",
+    "names": [
+      "v26.css"
+    ]
+  },
   "resources/js/app.js": {
     "file": "assets/app-ChQv8H90.js",
     "name": "app",
@@ -16,5 +25,11 @@
     "css": [
       "assets/app-D0aDPu-n.css"
     ]
+  },
+  "resources/js/v26.js": {
+    "file": "assets/v26-ClgLlw_v.js",
+    "name": "v26",
+    "src": "resources/js/v26.js",
+    "isEntry": true
   }
 }
