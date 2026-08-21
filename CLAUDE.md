@@ -60,6 +60,7 @@ php artisan rfqs:check-expired       # Close expired RFQs (scheduled every minut
 php artisan commercial:notify-stages # Notify participants about stage 1 start / stage 2 in 30 min (scheduled every minute)
 php artisan rss:parse                # Parse RSS news sources (scheduled every 5 min)
 php artisan news:clean-old           # Clean old news articles (scheduled daily at 02:00)
+php artisan documents:cleanup        # Delete procurement documents past the retention window (scheduled daily at 03:00)
 php artisan cleanup:test-data        # Interactive deletion of test companies (cascade soft-delete)
 ```
 
@@ -70,6 +71,7 @@ Configured in `bootstrap/app.php` via `withSchedule()`:
 - `rfqs:check-expired` — every minute (with `withoutOverlapping`) — closes RFQs whose `end_date` passed (fallback to the delayed `CloseRfqJob`)
 - `commercial:notify-stages` — every minute (with `withoutOverlapping`) — #195 notifies moderators of invited companies when stage 1 opens, and stage-1 bidders 30 min before stage 2 trading starts. Idempotent via `rfqs.stage1_notified_at` / `stage2_notified_at`
 - `news:clean-old` — daily at 02:00
+- `documents:cleanup` — daily at 03:00 — #296 deletes procurement documents of procedures closed longer ago than the retention window (`Setting: documents_retention_days`, default 30). Counted from `closed_at`, not `updated_at` — the latter shifts on any edit. Protocols are never deleted
 
 ### Testing PDF Generation
 Queue worker must be running: `php artisan queue:work`

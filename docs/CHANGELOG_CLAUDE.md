@@ -2924,3 +2924,23 @@ read-only — смена организатора ломала бы пригла
 **Тесты:** `tests/Feature/UserFullNameDisplayTest.php` — 8 кейсов (быстрый поиск отдаёт «Имя Фамилия», поиск находит по фамилии, страница поиска, публичный профиль, инициалы и фолбэк, страница компании, состав поискового индекса).
 
 **Изменённые файлы:** `app/Models/User.php`, `app/Http/Controllers/{SearchController,CompanyJoinRequestController,CompanyModeratorController,ProjectMemberController,SubscriptionController}.php`, `app/Http/Resources/CompanyResource.php`, `app/Notifications/{FriendRequest,JoinRequest,ProjectJoinRequest,NewComment,CompanyCreated}Notification.php`, `app/Orchid/Screens/ProjectListScreen.php`, 10 blade-шаблонов, `tests/Feature/UserFullNameDisplayTest.php` (новый).
+
+## #296 Конкурсная документация: 30 дней после завершения, затем удаление (2026-08-21)
+
+**Что было.** По #185 документация после завершения процедуры оставалась доступной организатору и участникам бессрочно, а автоудаление шло по настройке «срок хранения в месяцах» (3 мес.) с отсчётом от `updated_at`.
+
+**Что стало.**
+- Срок хранения переведён в **дни, по умолчанию 30** (`Setting::documentsRetentionDays()`, ключ `documents_retention_days`). Старое значение в месяцах читается как запасной вариант и пересчитывается ×30 — иначе после выката срок молча схлопнулся бы с «3 месяца» до «3 дня». Orchid-экран «Настройки документации» теперь принимает дни (1–3650).
+- Добавлено поле `closed_at` в `rfqs` и `auctions` (миграция с бэкфиллом из `updated_at` для уже завершённых). **Отсчёт от `updated_at` был ошибкой:** его сдвигает любое изменение процедуры — генерация протокола, правка полей, — и документы жили дольше срока.
+- `closed_at` проставляется модельным событием (`App\Traits\TracksClosedAt`), а не в каждом месте закрытия: статус на `closed`/`cancelled` меняется из девяти разных мест (джобы, `AuctionWinnerService`, отмена организатором). Повторное закрытие дату не сдвигает, возврат в работу — снимает.
+- `documentsAccessibleBy()` дополнен окном хранения: после его истечения доступ закрыт для всех, включая организатора (файлов к тому моменту уже нет). Добавлены `documentsAvailableUntil()` и `documentsRetentionExpired()`.
+- Команда `documents:cleanup` считает срок в днях от `closed_at` (с фолбэком на `updated_at`).
+- В блоке документации на странице процедуры выводится «Документация доступна для скачивания до ДД.ММ.ГГГГ», а после истечения — что файлы удалены и когда истёк срок.
+
+**Ошибка по пути:** тест не мог задать прошлую дату закрытия — `closed_at` отсутствовал в `$fillable` обеих моделей, `update()` его молча игнорировал, и просроченная процедура выглядела свежей.
+
+**Тесты:** `tests/Feature/ProcurementDocumentsRetentionTest.php` — 9 кейсов (простановка `closed_at`, дата не сдвигается при правках, доступность внутри окна и закрытие после него, скачивание архива на 29-й и 31-й день, выборочное удаление командой, чтение настройки в днях, пересчёт старой настройки в месяцах).
+
+**Изменённые файлы:** `database/migrations/2026_08_21_120000_add_closed_at_to_procedures.php` (новая), `app/Traits/TracksClosedAt.php` (новый), `app/Traits/HasProcurementDocuments.php`, `app/Models/{Auction,Rfq,Setting}.php`, `app/Console/Commands/CleanupProcurementDocuments.php`, `app/Orchid/Screens/DocumentSettingsScreen.php`, `resources/views/partials/procurement-documents-list.blade.php`, `tests/Feature/ProcurementDocumentsRetentionTest.php` (новый).
+
+**Вторая ошибка по пути (blade).** Пояснение к новым переменным было вставлено внутрь блока `@php ... @endphp` как blade-комментарий `{{-- … --}}`. Внутри `@php` содержимое компилируется как обычный PHP, поэтому `{{--` превратилось в синтаксическую ошибку: `syntax error, unexpected token "="` при рендере `partials/procurement-documents-list.blade.php`. Полный прогон уронило сразу 40 тестов — падали все страницы процедур, куда включён этот партиал. Внутри `@php` комментарии пишутся как `//`.

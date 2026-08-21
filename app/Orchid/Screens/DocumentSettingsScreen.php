@@ -23,7 +23,7 @@ class DocumentSettingsScreen extends Screen
     public function query(): iterable
     {
         return [
-            'retention_months' => Setting::documentsRetentionMonths(),
+            'retention_days' => Setting::documentsRetentionDays(),
         ];
     }
 
@@ -56,13 +56,13 @@ class DocumentSettingsScreen extends Screen
     {
         return [
             Layout::rows([
-                Input::make('retention_months')
+                Input::make('retention_days')
                     ->type('number')
                     ->min(1)
-                    ->max(120)
+                    ->max(3650)
                     ->required()
-                    ->title('Срок хранения конкурсной документации (месяцы)')
-                    ->help('По истечении срока после завершения процедуры файлы конкурсной документации автоматически удаляются с сервера. Протоколы не удаляются.'),
+                    ->title('Срок хранения конкурсной документации (дни)')
+                    ->help('#296: сколько дней после завершения процедуры участники и организатор могут скачивать документацию. По истечении срока файлы автоматически удаляются с сервера. Протоколы не удаляются.'),
             ]),
         ];
     }
@@ -70,10 +70,10 @@ class DocumentSettingsScreen extends Screen
     public function save(Request $request): void
     {
         $data = $request->validate([
-            'retention_months' => 'required|integer|min:1|max:120',
+            'retention_days' => 'required|integer|min:1|max:3650',
         ]);
 
-        Setting::put(Setting::DOCUMENTS_RETENTION_MONTHS, (int) $data['retention_months']);
+        Setting::put(Setting::DOCUMENTS_RETENTION_DAYS, (int) $data['retention_days']);
 
         Toast::info('Настройки документации сохранены.');
     }
