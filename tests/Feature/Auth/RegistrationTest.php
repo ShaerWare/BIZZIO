@@ -26,14 +26,18 @@ class RegistrationTest extends TestCase
 
     public function test_registration_screen_can_be_rendered(): void
     {
+        // #181 Форма регистрации переехала с лендинга на собственную страницу
         $response = $this->get('/register');
 
-        $response->assertRedirect('/?mode=register');
+        $response->assertStatus(200);
     }
 
     public function test_registration_form_displayed_on_welcome_page(): void
     {
-        $response = $this->get('/?mode=register');
+        // #181 Формы входа и регистрации переехали с «/?mode=…» на отдельные адреса
+        $this->get('/?mode=register')->assertRedirect(config('app.register_url'));
+
+        $response = $this->get(config('app.register_url'));
 
         $response->assertStatus(200);
         $response->assertSee('Зарегистрироваться');
@@ -55,7 +59,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('home', absolute: false));
     }
 
     public function test_registration_fails_without_captcha(): void
@@ -110,7 +114,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('home', absolute: false));
     }
 
     public function test_registration_fails_with_short_name(): void

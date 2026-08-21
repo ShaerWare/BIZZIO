@@ -174,7 +174,7 @@ class SubscriptionTest extends TestCase
             'body' => 'Пост от подписки для теста',
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
+        $response = $this->actingAs($this->user)->get(route('home'));
 
         $response->assertStatus(200);
         $response->assertSee('Пост от подписки для теста');
@@ -190,7 +190,7 @@ class SubscriptionTest extends TestCase
             'body' => 'Пост от чужого пользователя',
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
+        $response = $this->actingAs($this->user)->get(route('home'));
 
         $response->assertStatus(200);
         $response->assertDontSee('Пост от чужого пользователя');
@@ -221,7 +221,7 @@ class SubscriptionTest extends TestCase
             'body' => 'Пост от друга друга',
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
+        $response = $this->actingAs($this->user)->get(route('home'));
 
         $response->assertStatus(200);
         $response->assertSee('Пост от друга друга');
@@ -236,7 +236,7 @@ class SubscriptionTest extends TestCase
             'name' => 'Рекомендованная Компания Тест',
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
+        $response = $this->actingAs($this->user)->get(route('home'));
 
         $response->assertStatus(200);
         $response->assertSee('Подпишитесь на коллег и компании');
