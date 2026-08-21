@@ -100,14 +100,26 @@ class ProcedureChatTest extends TestCase
         ]);
     }
 
-    public function test_outsider_cannot_read_chat(): void
+    /**
+     * #295 У ЗАКРЫТОЙ процедуры состав ограничен приглашёнными — правило #218 сохраняется.
+     * Для открытой процедуры действует новое правило, см. ProcedureChatProspectTest.
+     */
+    public function test_outsider_cannot_read_chat_of_closed_procedure(): void
     {
         $rfq = $this->createRfq();
+        $rfq->update(['type' => 'closed']);
         [$stranger] = $this->makeUserWithCompany('Посторонняя компания');
 
         $this->actingAs($stranger)
             ->getJson(route('rfqs.chat.index', $rfq))
             ->assertForbidden();
+    }
+
+    public function test_guest_cannot_read_chat(): void
+    {
+        $rfq = $this->createRfq();
+
+        $this->getJson(route('rfqs.chat.index', $rfq))->assertUnauthorized();
     }
 
     public function test_participant_sees_codes_and_not_company_names(): void
