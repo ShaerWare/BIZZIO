@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasProcedureChat;
 use App\Traits\HasProcurementDocuments;
+use App\Traits\TracksClosedAt;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Auction extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes, TracksClosedAt;
 
     protected $fillable = [
         'number',
@@ -48,6 +49,7 @@ class Auction extends Model implements HasMedia
         'max_advance',
         'last_bid_at',
         'status',
+        'closed_at',
         'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
@@ -61,6 +63,7 @@ class Auction extends Model implements HasMedia
         'trading_start' => 'datetime',
         'trading_end' => 'datetime',
         'last_bid_at' => 'datetime',
+        'closed_at' => 'datetime',
         'starting_price' => 'decimal:2',
         'step_percent' => 'decimal:2',
         'weight_price' => 'decimal:2',

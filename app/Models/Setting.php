@@ -14,11 +14,14 @@ class Setting extends Model
 {
     use AsSource;
 
-    /** Ключ: срок хранения конкурсной документации (в месяцах). */
-    public const DOCUMENTS_RETENTION_MONTHS = 'documents_retention_months';
+    /** #296 Ключ: срок хранения конкурсной документации (в днях). */
+    public const DOCUMENTS_RETENTION_DAYS = 'documents_retention_days';
 
-    /** Значение по умолчанию срока хранения (месяцы). */
-    public const DEFAULT_DOCUMENTS_RETENTION_MONTHS = 3;
+    /** #296 Значение по умолчанию срока хранения — 30 дней после завершения процедуры. */
+    public const DEFAULT_DOCUMENTS_RETENTION_DAYS = 30;
+
+    /** Прежний ключ (месяцы) — читается как запасной вариант для старых установок. */
+    public const DOCUMENTS_RETENTION_MONTHS = 'documents_retention_months';
 
     protected $fillable = ['key', 'value'];
 
@@ -34,12 +37,26 @@ class Setting extends Model
         static::query()->updateOrCreate(['key' => $key], ['value' => (string) $value]);
     }
 
-    /** Срок хранения конкурсной документации (месяцы, ≥ 1). */
-    public static function documentsRetentionMonths(): int
+    /**
+     * #296 Срок хранения конкурсной документации в днях (≥ 1).
+     *
+     * Если настройка ещё в старом формате (месяцы), пересчитываем её в дни — иначе после
+     * выката срок молча схлопнулся бы с «3 месяца» до «3 дня».
+     */
+    public static function documentsRetentionDays(): int
     {
-        return max(1, (int) static::get(
-            self::DOCUMENTS_RETENTION_MONTHS,
-            self::DEFAULT_DOCUMENTS_RETENTION_MONTHS
-        ));
+        $days = static::get(self::DOCUMENTS_RETENTION_DAYS);
+
+        if ($days !== null) {
+            return max(1, (int) $days);
+        }
+
+        $months = static::get(self::DOCUMENTS_RETENTION_MONTHS);
+
+        if ($months !== null) {
+            return max(1, (int) $months * 30);
+        }
+
+        return self::DEFAULT_DOCUMENTS_RETENTION_DAYS;
     }
 }

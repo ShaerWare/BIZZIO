@@ -5,6 +5,9 @@
     $docs = $model->allProcurementDocuments();
     $canAccessDocs = $model->documentsAccessibleBy(auth()->user());
     $docLabels = \App\Support\ProcurementDocuments::COLLECTIONS;
+    // #296 Срок, до которого документация доступна после завершения процедуры
+    $availableUntil = $model->documentsAvailableUntil();
+    $retentionExpired = $model->documentsRetentionExpired();
 @endphp
 
 @if($docs->isNotEmpty())
@@ -29,10 +32,25 @@
                class="block w-full text-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                 Скачать всё архивом (ZIP)
             </a>
+            @if($availableUntil)
+                {{-- #296 После завершения документация доступна ограниченное время --}}
+                <p class="mt-2 text-xs text-gray-500">
+                    Документация доступна для скачивания до {{ $availableUntil->format('d.m.Y') }}, затем удаляется с сервера.
+                </p>
+            @endif
+        @elseif($retentionExpired)
+            <p class="text-sm text-gray-500">
+                Конкурсная документация удалена: срок хранения после завершения процедуры истёк
+                {{ $availableUntil->format('d.m.Y') }}.
+            </p>
         @else
             <p class="text-sm text-gray-500">
                 Доступ к конкурсной документации закрыт после завершения процедуры —
-                файлы доступны только организатору и компаниям-участникам.
+                файлы доступны только организатору и компаниям-участникам
+                @if($availableUntil)
+                    до {{ $availableUntil->format('d.m.Y') }}
+                @endif
+                .
             </p>
         @endif
     </div>
