@@ -583,15 +583,32 @@
  * (1680×945 / 1024×1366 / 393×852), боевая страница должна тянуться по контенту.
  */
 
-/* Кадр прототипа → живая страница: высота по контенту, без обрезки. */
-.page{height:auto;min-height:100vh;overflow:visible}
+/* Кадр прототипа → живая страница.
+ *
+ * Макет верстался под фиксированный кадр, поэтому в перенесённых секциях у .page стоят
+ * жёсткие размеры: `min-width:1200px` в десктоп-базе и `width:1680px` внутри планшетного
+ * медиазапроса (это «превью» десктопа в tablet-файле эталона). На боевой странице такие
+ * правила дают горизонтальный скролл и ломают адаптив на планшете и в мобильной вёрстке,
+ * поэтому кадр здесь снимается целиком — размеры страницы задаёт контент и вьюпорт. */
+.page{width:100%;min-width:0;max-width:1680px;height:auto;min-height:100vh;overflow:visible}
 .content,.guest-content{height:auto;min-height:0}
+
+@media (max-width:1279px){
+  /* Планшет: страница по ширине вьюпорта, а не 1680px из превью-кадра эталона. */
+  .page{width:100%;min-width:0;max-width:none;height:auto;min-height:0;overflow:visible}
+  .content,.guest-content{height:auto;min-height:0}
+}
+
+@media (max-width:767px){
+  .page{width:100%;min-width:0;max-width:none;height:auto;min-height:100dvh;overflow-x:hidden}
+}
 
 /* Переключение десктоп/мобильной разметки: в макете это отдельные файлы. */
 #bizzio-mobile-v1{display:none}
 @media (max-width:767px){
   .v26-desktop{display:none}
-  #bizzio-mobile-v1{display:block}
+  /* display:flex, а не block: .bz-phone имеет ширину min(100%,430px) и центрируется флексом */
+  #bizzio-mobile-v1{display:flex}
 }
 
 /* Аватары в макете были кусками общего скриншота — в проде это реальные изображения. */

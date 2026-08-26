@@ -122,6 +122,36 @@ function initFutureServices(root, authState) {
     });
 }
 
+/**
+ * Мобильная версия эталона переключает панели иначе: состояние живёт в атрибуте
+ * data-open на #bizzio-mobile-v1, а CSS ловит его селекторами вида
+ * #bizzio-mobile-v1[data-open="menu"] .bz-menu-drawer.
+ */
+function initMobilePanels(mobileRoot) {
+    if (!mobileRoot) {
+        return;
+    }
+
+    mobileRoot.querySelectorAll('[data-open-panel]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const target = button.dataset.openPanel;
+            mobileRoot.dataset.open = mobileRoot.dataset.open === target ? 'none' : target;
+        });
+    });
+
+    mobileRoot.querySelectorAll('[data-close-panels]').forEach((element) => {
+        element.addEventListener('click', () => {
+            mobileRoot.dataset.open = 'none';
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            mobileRoot.dataset.open = 'none';
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const root = document.querySelector('[data-v26-root]');
 
@@ -132,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const authState = root.dataset.authState || 'guest';
 
     root.querySelectorAll('.page').forEach((page) => initPanels(page));
+    initMobilePanels(root.querySelector('#bizzio-mobile-v1'));
     initInactiveFeatures(root, authState);
     initFutureServices(root, authState);
 });

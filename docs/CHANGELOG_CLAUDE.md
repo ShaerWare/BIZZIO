@@ -3004,3 +3004,18 @@ read-only — смена организатора ломала бы пригла
 Исправлено: `GET /login` и `GET /register` снова отдают собственные страницы (`AuthenticatedSessionController::create` / `RegisteredUserController::create`, вью `auth/login.blade.php` и `auth/register.blade.php` — они всё это время лежали в проекте неиспользованными). Подписи на них переведены на русский (были английские ключи Breeze: Register, Already registered?, Log in, Password, Remember me). Старые адреса `/?mode=login|register` теперь редиректят на новые — старые ссылки не ломаются.
 
 Заодно выполнено требование ТЗ «после успешного входа пользователь возвращается на `/`»: во всех контроллерах авторизации (вход, регистрация, подтверждение почты, подтверждение пароля) цель `route('dashboard')` заменена на `route('home')`.
+
+## #181 Фикс: мобильная вёрстка новой главной (2026-08-22)
+
+**Симптом.** После выката новой главной «слетел мобильный адаптив». Причин оказалось четыре — все допущены при переносе макета.
+
+1. **Не было обёртки `.bz-phone`.** В эталоне `.bz-header` и `.bz-bottom` позиционируются `fixed`, а компенсирует их высоту именно `.bz-phone` (`padding-top: var(--bz-header-height)`, нижний отступ в `.bz-main`). Я вместо неё использовал десктопный `.page` — контент уезжал под шапку и под нижнюю навигацию.
+2. **Кадр прототипа тёк в боевую страницу.** Десктоп-база задаёт `.page{min-width:1200px}`, а в планшетный медиазапрос из tablet-файла эталона попало `.page{width:1680px;height:945px;overflow:hidden}` — это «превью» десктопа внутри планшетного файла, а не планшетные стили. На узких экранах это давало горизонтальный скролл. В секции PRODUCTION кадр теперь снимается: ширина по вьюпорту для `≤1279px` и `≤767px`.
+3. **Три класса были выдуманы при переносе:** `bz-card`, `bz-card-title`, `bz-icon-btn`. В эталоне это `bz-panel`, именные заголовки (`bz-events-title`, `bz-news-title`, `bz-service-label`) и `bz-icon-button` — секции оставались без единого правила CSS. В гостевой версии то же с кнопками: нужны `gm-interest`, `gm-login`, `gm-register-button`, `gm-menu-actions`, `gm-menu-note`, а не десктопные `guest-*`.
+4. **Панели переключались не тем механизмом.** Мобильная часть эталона держит состояние в `data-open` на `#bizzio-mobile-v1` (CSS: `#bizzio-mobile-v1[data-open="menu"] .bz-menu-drawer`), а я вешал десктопный `data-panel` на `.page` — «Меню» и «Сервисы» на телефоне не открывались. Плюс в нижней навигации было 5 пунктов при сетке `grid 4×1fr`.
+
+**Что сделано.** Мобильные блоки переписаны по структуре эталона и вынесены в `partials/v26/mobile-guest.blade.php` и `partials/v26/mobile-authorized.blade.php` (в шаблонах главной остался `@include`). В `resources/js/v26.js` добавлен `initMobilePanels()` — переключение `data-open`, закрытие по `data-close-panels`, оверлею и Escape. В `v26.css` дополнена секция PRODUCTION: снят кадр прототипа, `#bizzio-mobile-v1` показывается как `flex` (при `display:block` обёртка шириной `min(100%,430px)` не центрировалась).
+
+**Тест на этот класс ошибок:** `tests/Feature/MobileLayoutV26Test.php` — вытаскивает из отрендеренной страницы все классы `bz-*` / `gm-*` и проверяет, что для каждого есть правило в `v26.css`; отдельно проверяет наличие `.bz-phone` и `data-open`, а также что в нижней навигации ровно 4 пункта. На прежнем коде тест падал бы на выдуманных классах.
+
+**Изменённые файлы:** `resources/views/partials/v26/mobile-{guest,authorized}.blade.php` (новые), `resources/views/home/{guest,authorized}.blade.php`, `resources/css/v26.css`, `resources/js/v26.js`, `tests/Feature/MobileLayoutV26Test.php` (новый).
