@@ -13,8 +13,11 @@
     {{-- #152 SEO-разметка главной (Open Graph, Twitter Card, canonical, JSON-LD) — общий партиал --}}
     @include('partials.seo')
 
-    <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+    {{-- #181 Фавикон — тот же набор, что и на остальных страницах (layouts/app).
+         Старый /images/favicon.svg остался от прежнего логотипа и здесь не используется. --}}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
 
     @vite(['resources/css/v26.css', 'resources/js/v26.js'])
 

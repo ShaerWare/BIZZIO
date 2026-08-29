@@ -13,7 +13,8 @@
 
     {{-- ======================= DESKTOP / TABLET ======================= --}}
     <div class="v26-desktop">
-        <div class="page" data-panel="none">
+        {{-- #181 guest-page обязателен: на нём завязаны селекторы панелей «Меню» и «Сервисы» --}}
+        <div class="page guest-page" data-panel="none">
             <header class="topbar guest-topbar">
                 <div class="brand">
                     <a href="{{ route('home') }}"><img class="brand-logo" src="/images/bizzio_horizontal_logo_color_whitebg.svg" alt="Bizzio"></a>
@@ -157,16 +158,16 @@
                         @endforelse
                     </article>
 
-                    <article class="card ad guest-ad">
-                        <div class="ad-label">Реклама</div>
-                        <h3>Найдите надёжных<br>партнёров для бизнеса<br>на Bizzio</h3>
-                        <a class="guest-welcome-cta" href="{{ $registerUrl }}">Присоединиться</a>
-                    </article>
+                    @include('partials.v26.ad-card', ['ctaUrl' => $registerUrl, 'ctaLabel' => 'Присоединиться'])
 
                     <article class="card news guest-news">
                         <div class="news-head">
                             <h3>Новости</h3>
-                            <div class="news-tools"><a href="{{ route('news.index') }}">Все новости&nbsp; →</a></div>
+                            {{-- #181 «Настроить выдачу» — персональная выдача доступна после регистрации --}}
+                            <div class="news-tools">
+                                <a href="{{ $registerUrl }}">⚙ Настроить выдачу</a>
+                                <a href="{{ route('news.index') }}">Все новости&nbsp; →</a>
+                            </div>
                         </div>
                         @forelse($latestNews as $item)
                             <a class="news-row" href="{{ $item->link }}" target="_blank" rel="noopener">
@@ -230,10 +231,24 @@
                              data-service-name="{{ $service['name'] }}"
                              data-placement="guest_services_drawer">
                             <svg><use href="#{{ $service['icon'] }}"/></svg>
+                            <span class="guest-plus">+</span>
                             <div class="guest-service-name">{{ $service['name'] }}</div>
                         </div>
                     @endforeach
                 </div>
+
+                <div class="guest-drawer-rule"></div>
+                <div class="guest-drawer-propose">
+                    <svg><use href="#guest-light"/></svg>
+                    <span>Не нашли нужный сервис?</span>
+                    <button type="button"
+                            data-inactive-feature="suggest_service"
+                            data-feature-label="Предложить сервис"
+                            data-placement="guest_services_drawer">Предложить</button>
+                </div>
+
+                {{-- #181 Блок «Bizzio в соцсетях» (ссылки появятся, когда заведут аккаунты) --}}
+                @include('partials.v26.social-links', ['scope' => 'guest'])
             </aside>
         </div>
     </div>

@@ -29,6 +29,12 @@
                 </form>
                 <div class="top-actions">
                     <a class="icon-btn" href="{{ route('profile.edit') }}#feedback" aria-label="Помощь и обратная связь"><svg><use href="#help-chat"/></svg></a>
+                    {{-- #181 Сообщения: раздела пока нет, элемент остаётся видимым и уходит в аналитику --}}
+                    <button class="plain-icon" type="button"
+                            data-inactive-feature="messages"
+                            data-feature-label="Сообщения"
+                            data-placement="auth_topbar"
+                            aria-label="Сообщения"><svg><use href="#chat"/></svg></button>
                     <a class="plain-icon" href="{{ route('notifications.index') }}" aria-label="Уведомления"><svg><use href="#bell"/></svg></a>
                     <button class="services" type="button" data-panel-toggle="services">
                         <svg class="nav-icon" aria-hidden="true"><use href="#grid"/></svg><span>Сервисы</span>
@@ -102,11 +108,12 @@
                 </section>
 
                 <section class="column">
+                    {{-- #181 Состав и иконки быстрых действий — как в эталоне v26 (PNG-иконки, не SVG) --}}
                     <article class="card services-card">
-                        <a class="service neutral-i" href="{{ route('tenders.index') }}"><svg><use href="#gavel"/></svg><span>Найти закупку</span></a>
+                        <a class="service neutral-i" href="{{ route('friends.index') }}"><img class="quick-icon" src="/images/v26/bizzio-quick-icon-find-friends-v4.png" alt=""><span>Найти друзей</span></a>
+                        <a class="service neutral-i" href="{{ route('tenders.index') }}"><img class="quick-icon" src="/images/v26/bizzio-quick-icon-find-procurement-v4.png" alt=""><span>Найти закупку</span></a>
                         <a class="service neutral-i" href="{{ route('rfqs.create', ['procedure' => 'commercial']) }}"><img class="quick-icon" src="/images/v26/bizzio-quick-icon-create-procurement-v4.png" alt=""><span>Создать закупку</span></a>
-                        <a class="service neutral-i" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg><span>Найти друзей</span></a>
-                        <a class="service neutral-i" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><span>Компании</span></a>
+                        <a class="service neutral-i" href="{{ route('profile.keywords.index') }}"><img class="quick-icon" src="/images/v26/bizzio-quick-icon-news-v4.png" alt=""><span>Настроить новости</span></a>
                     </article>
 
                     <article class="card composer">
@@ -170,45 +177,41 @@
                 </section>
 
                 <aside class="column">
-                    <article class="card events">
-                        <div class="events-title">Мои закупки</div>
-                        @forelse($myTenders as $tender)
-                            <a class="event" href="{{ $tender['url'] }}">
+                    {{-- #181 Блок «Актуальное в Bizzio»: три последних события из разделов
+                         Закупки, Друзья, Компании и Проекты (HomeController::personalEvents) --}}
+                    <article class="card events" aria-label="Актуальное в Bizzio">
+                        <div class="events-title">Актуальное в Bizzio</div>
+                        @forelse($events as $event)
+                            <a class="event" href="{{ $event['url'] }}">
                                 <div class="event-icon neutral-i" style="background:#f0f5fc">
-                                    <img class="procurement-event-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">
+                                    @switch($event['type'])
+                                        @case('procurement')
+                                            <img class="procurement-event-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">
+                                            @break
+                                        @case('friend')
+                                            <svg><use href="#users"/></svg>
+                                            @break
+                                        @case('company')
+                                            <svg><use href="#building"/></svg>
+                                            @break
+                                        @default
+                                            <svg><use href="#clip"/></svg>
+                                    @endswitch
                                 </div>
                                 <div>
-                                    <div class="event-title">{{ \Illuminate\Support\Str::limit($tender['title'], 34) }}</div>
-                                    <div class="meta">{{ $tender['number'] }}</div>
+                                    <div class="event-title">{{ \Illuminate\Support\Str::limit($event['title'], 34) }}</div>
+                                    <div class="meta">{{ \Illuminate\Support\Str::limit($event['meta'], 40) }}</div>
                                 </div>
-                                <span class="tag purple">{{ $tender['status_label'] }}</span>
+                                <span class="tag {{ $event['tag_class'] }}">{{ $event['tag'] }}</span>
                                 <span>›</span>
                             </a>
                         @empty
-                            <div class="event"><div><div class="meta">У вас пока нет закупок</div></div></div>
+                            <div class="event"><div><div class="meta">Пока нет событий</div></div></div>
                         @endforelse
                     </article>
 
-                    <article class="card events">
-                        <div class="events-title">Приглашения и заявки</div>
-                        @forelse($myInvitations->take(2) as $invitation)
-                            <a class="event" href="{{ $invitation['url'] }}">
-                                <div class="event-icon blue-i" style="background:#e7f1ff"><svg><use href="#clip"/></svg></div>
-                                <div>
-                                    <div class="event-title">{{ \Illuminate\Support\Str::limit($invitation['title'], 34) }}</div>
-                                    <div class="meta">{{ $invitation['inv_label'] }}</div>
-                                </div>
-                                <span class="tag blue-tag">Приглашение</span>
-                                <span>›</span>
-                            </a>
-                        @empty
-                            <div class="event"><div><div class="meta">Приглашений пока нет</div></div></div>
-                        @endforelse
-                        <div class="side-links">
-                            <a class="link" href="{{ route('tenders.invitations.my') }}">Все приглашения&nbsp; →</a>
-                            <a class="link" href="{{ route('tenders.bids.my') }}">Мои заявки&nbsp; →</a>
-                        </div>
-                    </article>
+                    {{-- #181 На месте прежних «Приглашений и заявок» — рекламный блок эталона v26 --}}
+                    @include('partials.v26.ad-card', ['ctaUrl' => route('tenders.index')])
 
                     <article class="card news">
                         <div class="news-head">
@@ -245,20 +248,8 @@
                         <a href="{{ route('users.show', $viewer) }}">Открыть профиль</a>
                     </div>
                 </div>
-                <div class="auth-drawer-label">Мои компании</div>
-                @forelse($userCompanies as $company)
-                    <a class="auth-company-line" href="{{ route('companies.show', $company) }}">
-                        <span class="auth-company-mark"><svg><use href="#building"/></svg></span>
-                        <span class="auth-company-copy">
-                            {{ $company->name }}
-                            <span class="auth-company-role">{{ $company->pivot->role === 'owner' ? 'Руководитель' : 'Представитель' }}</span>
-                        </span>
-                    </a>
-                @empty
-                    <div class="auth-company-line"><span class="auth-company-copy">Компаний пока нет</span></div>
-                @endforelse
-                <a class="auth-add-company" href="{{ route('companies.create') }}">+ Добавить компанию</a>
-
+                {{-- #181 Блока «Мои компании» в меню раздела нет: компании показывает
+                     карточка левой колонки, в эталоне v26 меню начинается с «Моей работы». --}}
                 <div class="auth-drawer-label">Моя работа</div>
                 <a class="auth-menu-row current" href="{{ route('home') }}"><svg><use href="#auth-home"/></svg><span>Главная</span></a>
                 <a class="auth-menu-row" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><span>Компании</span></a>
@@ -267,8 +258,8 @@
                 <a class="auth-menu-row" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><span>Новости</span></a>
                 <a class="auth-menu-row" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><span>Проекты</span></a>
 
+                {{-- #181 «Настройки профиля» живут в меню профиля (правый верхний угол), в меню раздела их нет --}}
                 <div class="auth-drawer-label">Настройки и поддержка</div>
-                <a class="auth-menu-row" href="{{ route('profile.edit') }}"><svg><use href="#auth-settings"/></svg><span>Настройки профиля</span></a>
                 <a class="auth-menu-row" href="{{ route('profile.edit') }}#feedback"><svg><use href="#help-chat"/></svg><span>Помощь и обратная связь</span></a>
             </aside>
 
@@ -310,8 +301,11 @@
                     <button type="button"
                             data-inactive-feature="suggest_service"
                             data-feature-label="Предложить сервис"
-                            data-placement="auth_services_drawer">Предложить сервис</button>
+                            data-placement="auth_services_drawer">Предложить</button>
                 </div>
+
+                {{-- #181 Блок «Bizzio в соцсетях» (ссылки появятся, когда заведут аккаунты) --}}
+                @include('partials.v26.social-links', ['scope' => 'auth'])
             </aside>
         </div>
     </div>

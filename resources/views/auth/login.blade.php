@@ -55,4 +55,10 @@
             Войти через Яндекс
         </a>
     </div>
+
+    {{-- #181 Со страницы входа должен быть переход на регистрацию --}}
+    <p class="mt-6 text-center text-sm text-gray-600">
+        Нет аккаунта?
+        <a href="{{ route('register') }}" class="font-semibold text-emerald-600 hover:text-emerald-500">Зарегистрироваться</a>
+    </p>
 </x-guest-layout>

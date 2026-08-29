@@ -161,6 +161,22 @@ class Auction extends Model implements HasMedia
     }
 
     /**
+     * #296 Носитель конкурсной документации.
+     *
+     * У коммерческого аукциона (этап 2) своих файлов нет — документацию организатор
+     * загружает на этапе 1, поэтому на странице торгов показываем и отдаём файлы
+     * связанного запроса цен.
+     */
+    public function procurementDocumentsHolder(): \Illuminate\Database\Eloquent\Model
+    {
+        if ($this->isCommercial() && $this->rfq) {
+            return $this->rfq;
+        }
+
+        return $this;
+    }
+
+    /**
      * #179 Текущее «Лучшее предложение» (принцип непрерывного лидерства)
      */
     public function bestBid(): BelongsTo

@@ -2,12 +2,15 @@
      Параметр: $model (Rfq|Auction). Доступ проверяется через documentsAccessibleBy(). --}}
 @php
     $routePrefix = ($model instanceof \App\Models\Auction) ? 'auctions' : 'rfqs';
-    $docs = $model->allProcurementDocuments();
-    $canAccessDocs = $model->documentsAccessibleBy(auth()->user());
+    // #296 У коммерческого аукциона (этап 2) документация загружена на этапе 1 —
+    // берём файлы и правила доступа у носителя, ссылки при этом ведут на текущую процедуру.
+    $docsHolder = $model->procurementDocumentsHolder();
+    $docs = $docsHolder->allProcurementDocuments();
+    $canAccessDocs = $docsHolder->documentsAccessibleBy(auth()->user());
     $docLabels = \App\Support\ProcurementDocuments::COLLECTIONS;
-    // #296 Срок, до которого документация доступна после завершения процедуры
-    $availableUntil = $model->documentsAvailableUntil();
-    $retentionExpired = $model->documentsRetentionExpired();
+    // #296 Срок, до которого документация доступна после завершения этапа 2
+    $availableUntil = $docsHolder->documentsAvailableUntil();
+    $retentionExpired = $docsHolder->documentsRetentionExpired();
 @endphp
 
 @if($docs->isNotEmpty())

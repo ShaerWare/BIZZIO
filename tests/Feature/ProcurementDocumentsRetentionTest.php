@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Auction;
 use App\Models\Company;
+use App\Models\Rfq;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -152,6 +153,96 @@ class ProcurementDocumentsRetentionTest extends TestCase
 
         $this->assertCount(0, $expired->fresh()->getMedia('notice'));
         $this->assertCount(1, $fresh->fresh()->getMedia('notice'));
+    }
+
+    /**
+     * #296 Этап 1 двухэтапной процедуры с загруженной конкурсной документацией.
+     */
+    private function stageOneRfq(Auction $stageTwo): Rfq
+    {
+        $rfq = Rfq::create([
+            'number' => Rfq::generateNumber(),
+            'title' => $stageTwo->title,
+            'company_id' => $this->company->id,
+            'created_by' => $this->organizer->id,
+            'type' => 'open',
+            'procedure' => Rfq::PROCEDURE_COMMERCIAL,
+            'start_date' => now()->subDays(5),
+            'end_date' => now()->subDays(3),
+            'status' => 'closed',
+            'closed_at' => now()->subDays(3),
+            'linked_auction_id' => $stageTwo->id,
+        ]);
+
+        $content = '%PDF-1.4'.'
+'.str_repeat('0', 1024);
+        $rfq->addMedia(UploadedFile::fake()->createWithContent('notice.pdf', $content))
+            ->toMediaCollection('notice');
+
+        $stageTwo->update(['rfq_id' => $rfq->id]);
+
+        return $rfq->fresh();
+    }
+
+    public function test_stage_two_serves_stage_one_documents(): void
+    {
+        $auction = $this->auction();
+        $rfq = $this->stageOneRfq($auction);
+        $auction->update(['status' => 'closed']);
+        $auction = $auction->fresh();
+
+        // Своих файлов у этапа 2 нет — документация берётся с этапа 1.
+        $this->assertCount(0, $auction->allProcurementDocuments());
+        $this->assertTrue($auction->hasAnyProcurementDocument());
+        $this->assertTrue($auction->procurementDocumentsHolder()->is($rfq));
+
+        $this->actingAs($this->organizer)
+            ->get(route('auctions.documents.archive', $auction))
+            ->assertOk();
+
+        $this->actingAs($this->organizer)
+            ->get(route('auctions.documents.file', [$auction, $rfq->getFirstMedia('notice')]))
+            ->assertOk();
+    }
+
+    public function test_stage_one_documents_survive_until_stage_two_closes(): void
+    {
+        $auction = $this->auction();
+        $rfq = $this->stageOneRfq($auction);
+
+        // Этап 1 закрыт давно, но торги ещё идут — срок хранения не начался.
+        $this->travel(40)->days();
+        $rfq = $rfq->fresh();
+
+        $this->assertNull($rfq->documentsAvailableUntil());
+        $this->assertFalse($rfq->documentsRetentionExpired());
+        $this->assertTrue($rfq->documentsAccessibleBy($this->organizer));
+
+        $this->artisan('documents:cleanup')->assertSuccessful();
+        $this->assertCount(1, $rfq->fresh()->getMedia('notice'));
+    }
+
+    public function test_stage_one_documents_are_removed_thirty_days_after_stage_two(): void
+    {
+        $auction = $this->auction();
+        $rfq = $this->stageOneRfq($auction);
+        $auction->update(['status' => 'closed']);
+
+        $this->assertSame(
+            $auction->fresh()->closed_at->copy()->addDays(30)->toDateString(),
+            $rfq->fresh()->documentsAvailableUntil()->toDateString()
+        );
+
+        $this->travel(31)->days();
+
+        $this->assertTrue($rfq->fresh()->documentsRetentionExpired());
+
+        $this->actingAs($this->organizer)
+            ->get(route('auctions.documents.archive', $auction->fresh()))
+            ->assertForbidden();
+
+        $this->artisan('documents:cleanup')->assertSuccessful();
+        $this->assertCount(0, $rfq->fresh()->getMedia('notice'));
     }
 
     public function test_retention_setting_is_read_in_days(): void
