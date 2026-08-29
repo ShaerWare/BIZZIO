@@ -71,7 +71,7 @@ Configured in `bootstrap/app.php` via `withSchedule()`:
 - `rfqs:check-expired` — every minute (with `withoutOverlapping`) — closes RFQs whose `end_date` passed (fallback to the delayed `CloseRfqJob`)
 - `commercial:notify-stages` — every minute (with `withoutOverlapping`) — #195 notifies moderators of invited companies when stage 1 opens, and stage-1 bidders 30 min before stage 2 trading starts. Idempotent via `rfqs.stage1_notified_at` / `stage2_notified_at`
 - `news:clean-old` — daily at 02:00
-- `documents:cleanup` — daily at 03:00 — #296 deletes procurement documents of procedures closed longer ago than the retention window (`Setting: documents_retention_days`, default 30). Counted from `closed_at`, not `updated_at` — the latter shifts on any edit. Protocols are never deleted
+- `documents:cleanup` — daily at 03:00 — #296 deletes procurement documents of procedures closed longer ago than the retention window (`Setting: documents_retention_days`, default 30). Counted from `closed_at`, not `updated_at` — the latter shifts on any edit. For a two-stage (commercial) procedure the countdown starts at the **stage-2** close, so stage-1 documents survive while trading runs — the command asks `documentsRetentionExpired()` per procedure rather than trusting the SQL date filter alone. Protocols are never deleted
 
 ### Testing PDF Generation
 Queue worker must be running: `php artisan queue:work`
@@ -95,6 +95,7 @@ php artisan tinker
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **Commercial Auction (Коммерческий аукцион)** — Two-stage procedure (#179): `Rfq`/`Auction` with `procedure='commercial'`. Stage 1 = price-only RFQ that auto-launches Stage 2 (`CommercialAuctionLauncherService`, НМЦ = max stage-1 price) — a multi-criteria (price/deadline/advance) real-time auction with continuous-leadership scoring (`CommercialAuctionScoringService`), offers via `AuctionController::storeOffer` (route `auctions.offers.store`, lockForUpdate), UI partial `auctions/partials/commercial-trading`, own protocol (`CommercialAuctionProtocolService`). Standard RFQs/auctions use `procedure='standard'` and are unaffected.
+  **Конкурсная документация (#296):** этап 2 своих файлов не имеет — документацию грузят на этапе 1. `Auction::procurementDocumentsHolder()` возвращает связанный `Rfq`, поэтому страница и маршруты `auctions.documents.*` отдают файлы этапа 1; срок хранения (`Rfq::documentsRetentionStartedAt()`) отсчитывается от закрытия этапа 2.
   **Scoring (#280):** each criterion is normalized from its initial value down to a system-preset *full-score boundary* — price −40% of НМЦ, deadline −50%, advance 0% (`CommercialAuctionScoringService::FULL_FACTOR_*`): `score = weight × clamp((ref − x) / (ref − full), 0, 1)`. Boundaries are not configurable by the organizer. The Alpine mirror in `commercial-trading` receives them from `fullRefs()` — keep both sides in sync when touching the formula.
 - **News** — RSS aggregator with keyword filtering, personalized feed. `RSSSource` managed via Orchid admin
 - **Posts** — Social-media-style posts on dashboard feed (create/delete)

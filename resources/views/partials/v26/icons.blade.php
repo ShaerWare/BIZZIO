@@ -30,6 +30,7 @@
     <symbol id="guest-bot" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="3"/><path d="M12 2v4M8 12h.01M16 12h.01M8 16h8M2 11h2M20 11h2"/></symbol>
     <symbol id="guest-light" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M8 14c-1-1-2-3-2-5a6 6 0 1 1 12 0c0 2-1 4-2 5-1 1-1 2-1 3H9c0-1 0-2-1-3z"/></symbol>
     <symbol id="guest-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 0 1 4.6 1c0 1.7-2.4 2-2.4 4M12 18h.01"/></symbol>
+    <symbol id="login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></symbol>
     <symbol id="guest-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v10h-6v-6H9v6H3z"/></symbol>
     <symbol id="auth-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
     <symbol id="auth-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v10h-6v-6H9v6H3z"/></symbol>

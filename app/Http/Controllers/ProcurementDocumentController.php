@@ -45,9 +45,12 @@ class ProcurementDocumentController extends Controller
      */
     private function archive(Model $model, string $name): BinaryFileResponse
     {
-        abort_unless($model->documentsAccessibleBy(auth()->user()), 403, 'Доступ к документации закрыт.');
+        // #296 У коммерческого аукциона документация лежит на этапе 1 — отдаём файлы носителя.
+        $holder = $model->procurementDocumentsHolder();
 
-        $zipPath = $this->service->buildZip($model, $name);
+        abort_unless($holder->documentsAccessibleBy(auth()->user()), 403, 'Доступ к документации закрыт.');
+
+        $zipPath = $this->service->buildZip($holder, $name);
         abort_if($zipPath === null, 404, 'Документы отсутствуют.');
 
         return response()->download($zipPath, $name.'.zip')->deleteFileAfterSend(true);
@@ -58,11 +61,14 @@ class ProcurementDocumentController extends Controller
      */
     private function file(Model $model, Media $media): BinaryFileResponse
     {
-        abort_unless($model->documentsAccessibleBy(auth()->user()), 403, 'Доступ к документации закрыт.');
+        // #296 У коммерческого аукциона документация лежит на этапе 1 — отдаём файлы носителя.
+        $holder = $model->procurementDocumentsHolder();
+
+        abort_unless($holder->documentsAccessibleBy(auth()->user()), 403, 'Доступ к документации закрыт.');
 
         // Файл должен принадлежать этой процедуре и быть частью конкурсной документации.
-        $belongs = $media->model_type === $model->getMorphClass()
-            && (int) $media->model_id === (int) $model->getKey()
+        $belongs = $media->model_type === $holder->getMorphClass()
+            && (int) $media->model_id === (int) $holder->getKey()
             && array_key_exists($media->collection_name, ProcurementDocuments::COLLECTIONS);
 
         abort_unless($belongs && is_file($media->getPath()), 404);

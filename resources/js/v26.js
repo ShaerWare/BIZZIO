@@ -76,6 +76,53 @@ function initPanels(page) {
     });
 }
 
+
+/**
+ * #181 Планшетная раскладка (768–1279px). В эталоне это отдельный файл, где правая колонка
+ * разобрана: блок «Актуальное в Bizzio» встаёт сразу после «Добро пожаловать» (у гостя) или
+ * после карточки быстрых действий (у авторизованного), а «Реклама» и «Новости» уходят в конец
+ * средней колонки. У нас разметка одна на десктоп и планшет, поэтому переносим узлы на лету
+ * и возвращаем на место при возврате к десктопу.
+ */
+function initTabletReflow(page) {
+    const content = page.querySelector('.content');
+    const columns = content ? content.querySelectorAll(':scope > .column') : [];
+
+    if (columns.length < 3) {
+        return;
+    }
+
+    const main = columns[1];
+    const side = columns[2];
+    // Исходный порядок правой колонки — по нему собираем её обратно на десктопе.
+    const original = [...side.children];
+
+    const query = window.matchMedia('(min-width: 768px) and (max-width: 1279px)');
+
+    const apply = () => {
+        if (query.matches) {
+            const events = side.querySelector('.events') || main.querySelector('.events');
+            const anchor = main.querySelector('.services-card, .guest-services-card, .guest-welcome');
+
+            if (events && anchor && events.parentElement !== main) {
+                anchor.insertAdjacentElement('afterend', events);
+            }
+
+            [...side.children].forEach((element) => main.appendChild(element));
+            side.style.display = 'none';
+
+            return;
+        }
+
+        // Возврат к десктопу: собираем правую колонку в исходном порядке.
+        side.style.display = '';
+        original.forEach((element) => side.appendChild(element));
+    };
+
+    apply();
+    query.addEventListener('change', apply);
+}
+
 /**
  * Элементы v25/v26 без действующей функции остаются видимыми и кликабельными,
  * но никуда не ведут — по ТЗ это способ измерить спрос, а не заявка на разработку.
@@ -150,6 +197,23 @@ function initMobilePanels(mobileRoot) {
             mobileRoot.dataset.open = 'none';
         }
     });
+
+    // Меню профиля в шапке: открытое состояние — класс bz-open (как в эталоне).
+    const profileMenu = mobileRoot.querySelector('.bz-profile-menu');
+    const profileTrigger = profileMenu?.querySelector('.bz-profile-trigger');
+
+    profileTrigger?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const open = profileMenu.classList.toggle('bz-open');
+        profileTrigger.setAttribute('aria-expanded', String(open));
+    });
+
+    document.addEventListener('click', (event) => {
+        if (profileMenu && !profileMenu.contains(event.target)) {
+            profileMenu.classList.remove('bz-open');
+            profileTrigger?.setAttribute('aria-expanded', 'false');
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -161,7 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const authState = root.dataset.authState || 'guest';
 
-    root.querySelectorAll('.page').forEach((page) => initPanels(page));
+    root.querySelectorAll('.page').forEach((page) => {
+        initPanels(page);
+        initTabletReflow(page);
+    });
     initMobilePanels(root.querySelector('#bizzio-mobile-v1'));
     initInactiveFeatures(root, authState);
     initFutureServices(root, authState);

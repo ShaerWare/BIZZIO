@@ -159,6 +159,24 @@ class Rfq extends Model implements HasMedia
     }
 
     /**
+     * #296 Срок хранения документации двухэтапной процедуры отсчитывается от завершения
+     * этапа 2: пока порождённый аукцион не закрыт, срок не начинается, и документация
+     * этапа 1 остаётся доступной участникам и организатору.
+     */
+    public function documentsRetentionStartedAt(): ?\Illuminate\Support\Carbon
+    {
+        if ($this->isCommercial() && $this->linkedAuction) {
+            return $this->linkedAuction->documentsRetentionStartedAt();
+        }
+
+        if (! in_array($this->status, ['closed', 'cancelled'], true)) {
+            return null;
+        }
+
+        return $this->closed_at ?? $this->updated_at;
+    }
+
+    /**
      * #218 Компании — участники процедуры: подали заявку либо приглашены организатором.
      *
      * @return \Illuminate\Support\Collection<int, int>

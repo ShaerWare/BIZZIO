@@ -17,6 +17,10 @@
   body{font-family:"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased}
   :root{--navy:#071849;--blue:#0877ff;--green:#079b38;--purple:#6b28ff;--orange:#ff6a00;--muted:#60739f;--line:#dfe8f5;--soft:#f4f8fe}
   .page{position:relative;width:100%;min-width:1200px;max-width:1680px;height:945px;margin:0 auto;overflow:hidden;background:#fff}
+  /* #181 Сброс ссылок идёт в начале каскада: в эталоне это были <div>, у нас — <a>.
+     Они должны наследовать цвет, но не перебивать цвета конкретных компонентов. */
+  .page a,#bizzio-mobile-v1 a{text-decoration:none;color:inherit}
+  .page a:hover,#bizzio-mobile-v1 a:hover{text-decoration:none}
   .topbar{width:100%;height:76px;border-bottom:1px solid #e4ebf5;display:grid;grid-template-columns:174px 118px minmax(360px,1fr) auto;align-items:center;gap:18px;padding:0 24px}
   .brand{height:52px;display:flex;align-items:center;overflow:hidden}
   .brand-logo{display:block;width:170px;height:auto}
@@ -56,7 +60,9 @@
   @media(max-width:1499px){.guest-topbar{grid-template-columns:150px 104px minmax(300px,1fr) auto;gap:12px;padding-inline:18px}.brand-logo{width:146px}.guest-topbar .top-actions{gap:8px}.search{padding-inline:13px}.guest-login,.guest-register{padding-inline:13px}.content{padding-inline:18px;grid-template-columns:300px minmax(0,1fr) 430px}}
   @media(max-width:1279px){.guest-topbar{grid-template-columns:138px 96px minmax(245px,1fr) auto;gap:8px;padding-inline:14px}.brand-logo{width:134px}.guest-topbar .top-actions{gap:6px}.icon-btn{width:38px}.guest-login,.guest-register{padding-inline:10px}.services{padding-inline:8px}.content{padding-inline:14px;grid-template-columns:280px minmax(0,1fr) 390px}}
   button.top-btn,button.icon-btn,button.services{font:inherit;color:inherit;cursor:pointer}
-  .guest-login,.guest-register{height:42px;border-radius:7px;padding:0 22px;font:inherit;font-weight:600;cursor:pointer}
+  /* #181 В эталоне это <button>, у нас — ссылки на формы входа/регистрации:
+     инлайновой <a> высота и паддинги не применяются, поэтому задаём flex явно. */
+  .guest-login,.guest-register{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-decoration:none;height:42px;border-radius:7px;padding:0 22px;font:inherit;font-weight:600;cursor:pointer}
   .guest-login{border:1px solid #cfdef0;background:#fff;color:#14234f}
   .guest-register{border:1px solid var(--green);background:var(--green);color:#fff}
   .guest-avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#eef5ff;color:#50658f;font-size:12px}
@@ -616,6 +622,48 @@
 .photo img,.company-avatar img,.person-pic img{width:100%;height:100%;object-fit:cover;display:block}
 .photo{overflow:hidden}
 
-/* Ссылки внутри перенесённой вёрстки не должны получать подчёркивание темы. */
-.page a{text-decoration:none;color:inherit}
-.page a:hover{text-decoration:none}
+/* Сброс ссылок перенесён в начало файла (#181): будучи последним правилом,
+   color:inherit перебивал фирменные цвета — синюю «Открыть профиль» и зелёные
+   ссылки гостевых карточек. */
+
+/* ======================= #181 ПРАВКИ ПОСЛЕ ТЕСТОВ ======================= */
+
+/* Поиск в шапке: в эталоне это <span>-заглушка, в проде — реальное поле формы. */
+.search{width:100%}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:14px;color:#14234f;outline:none;padding:0}
+.search input::placeholder{color:#51658f}
+
+/* Иконка «Сообщения» — кнопка, а не ссылка: раздела пока нет. */
+button.plain-icon{border:0;background:transparent;padding:0;font:inherit;color:inherit;cursor:pointer}
+
+/* Кнопка рекламного блока: в эталоне <button>, у нас ссылка на раздел. */
+.ad-cta{display:inline-flex;align-items:center;height:39px;border-radius:7px;background:#069b39;color:#fff;padding:0 22px;font-size:14px;font-weight:600;text-decoration:none}
+@media (max-width:1279px){.ad-cta{height:34px;padding:0 18px;font-size:13px}}
+
+/* Планшет: карточки, перенесённые скриптом в среднюю колонку, занимают её ширину. */
+@media (min-width:768px) and (max-width:1279px){
+  .content>.column:nth-child(2)>.ad,
+  .content>.column:nth-child(2)>.news,
+  .content>.column:nth-child(2)>.events{width:auto}
+}
+
+/* Мобильные иконки, для которых в эталоне размер задавал сам lucide-<i>:
+   без явных размеров <svg><use> растянулся бы до 300×150 (крестик «Выход» и др.). */
+#bizzio-mobile-v1 .bz-close svg{width:20px;height:20px}
+#bizzio-mobile-v1 .bz-compose-action svg{width:16px;height:16px}
+#bizzio-mobile-v1 .bz-post-actions svg{width:16px;height:16px}
+#bizzio-mobile-v1 .gm-active-service svg{width:25px;height:25px}
+#bizzio-mobile-v1 .gm-placeholder-icon svg{width:23px;height:23px}
+#bizzio-mobile-v1 .gm-public-note svg{width:15px;height:15px}
+#bizzio-mobile-v1 .gm-suggest svg{width:18px;height:18px}
+#bizzio-mobile-v1 .gm-propose svg{width:17px;height:17px}
+#bizzio-mobile-v1 .bz-propose svg{width:17px;height:17px}
+#bizzio-mobile-v1 .bz-profile-action svg{width:17px;height:17px}
+
+/* Поле публикации и кнопки на мобильной главной — реальная форма вместо заглушки эталона. */
+#bizzio-mobile-v1 .bz-compose-field{flex:1;min-width:0;border:0;background:transparent;font:inherit;outline:none}
+#bizzio-mobile-v1 button.bz-compose-action,
+#bizzio-mobile-v1 button.bz-bottom-item{border:0;background:transparent;font:inherit;color:inherit;cursor:pointer}
+#bizzio-mobile-v1 .bz-avatar img,#bizzio-mobile-v1 .bz-company-icon img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
+#bizzio-mobile-v1 .bz-post-photo{width:100%;border-radius:8px;margin-top:8px;display:block}
+#bizzio-mobile-v1 .bz-more button{border:0;background:transparent;color:#8494b3;font:inherit;font-size:16px;cursor:pointer}

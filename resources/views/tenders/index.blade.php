@@ -27,7 +27,8 @@
         </div>
 
         <!-- Фильтры -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+        {{-- #284 overflow-visible: иначе карточка обрезает выпадающий список подсказок организатора --}}
+        <div class="bg-white overflow-visible shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
                 {{-- #285 Автопоиск: фильтры применяются сами, кнопки «Применить» нет --}}
                 <form method="GET" action="{{ route('tenders.index') }}" class="space-y-4" x-data="{}" data-autofilter>
@@ -63,7 +64,7 @@
                                 <template x-for="company in suggestions" :key="company.id">
                                     <button type="button"
                                             @click="select(company)"
-                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 truncate"
                                             x-text="company.name"></button>
                                 </template>
                             </div>

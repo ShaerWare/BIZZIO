@@ -110,7 +110,8 @@ class MobileLayoutV26Test extends TestCase
             $request = $viewer ? $this->actingAs($viewer) : $this;
             $html = $request->get(route('home'))->assertOk()->getContent();
 
-            preg_match('/<nav class="bz-bottom".*?<\/nav>/s', $html, $nav);
+            // У гостя нижняя навигация несёт ещё и класс gm-bottom (эталон guest-mobile).
+            preg_match('/<nav class="bz-bottom[^"]*".*?<\/nav>/s', $html, $nav);
             $items = substr_count($nav[0] ?? '', 'bz-bottom-item');
 
             // .bz-bottom — grid из четырёх колонок; пятый пункт ломает сетку.

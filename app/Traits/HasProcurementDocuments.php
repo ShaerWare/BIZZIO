@@ -49,31 +49,61 @@ trait HasProcurementDocuments
             ->values();
     }
 
+    /**
+     * #296 Есть ли документация у процедуры (у этапа 2 — документация этапа 1).
+     */
     public function hasAnyProcurementDocument(): bool
     {
-        return $this->allProcurementDocuments()->isNotEmpty();
+        return $this->procurementDocumentsHolder()->allProcurementDocuments()->isNotEmpty();
     }
 
     /**
-     * #296 Дата, до которой документация доступна после завершения процедуры.
+     * #296 Процедура, на которой физически лежат файлы документации.
      *
-     * Срок хранения (по умолчанию 30 дней) отсчитывается от `closed_at` — момента завершения
-     * этапа 2. Для процедур, закрытых до появления поля, отсчёт идёт от `updated_at`.
-     * Пока процедура не завершена, срок не начинается и метод возвращает null.
+     * По умолчанию — сама процедура. У коммерческого аукциона (этап 2) своих файлов нет:
+     * документация загружается организатором на этапе 1, поэтому носитель — связанный
+     * запрос цен (переопределено в App\Models\Auction).
+     *
+     * @return \Illuminate\Database\Eloquent\Model&self
      */
-    public function documentsAvailableUntil(): ?\Illuminate\Support\Carbon
+    public function procurementDocumentsHolder(): \Illuminate\Database\Eloquent\Model
+    {
+        return $this;
+    }
+
+    /**
+     * #296 Момент, от которого отсчитывается срок хранения документации.
+     *
+     * Для двухэтапной процедуры это завершение этапа 2: пока идут торги, документация
+     * этапа 1 должна оставаться доступной (переопределено в App\Models\Rfq).
+     * null — срок ещё не начался.
+     */
+    public function documentsRetentionStartedAt(): ?\Illuminate\Support\Carbon
     {
         if (! in_array($this->status, ['closed', 'cancelled'], true)) {
             return null;
         }
 
-        $closedAt = $this->closed_at ?? $this->updated_at;
+        // closed_at заполнен у всех завершённых процедур (миграция #296);
+        // updated_at остаётся запасным вариантом для старых записей.
+        return $this->closed_at ?? $this->updated_at;
+    }
 
-        if ($closedAt === null) {
+    /**
+     * #296 Дата, до которой документация доступна после завершения процедуры.
+     *
+     * Срок хранения (по умолчанию 30 дней) отсчитывается от завершения этапа 2.
+     * Пока процедура не завершена, срок не начинается и метод возвращает null.
+     */
+    public function documentsAvailableUntil(): ?\Illuminate\Support\Carbon
+    {
+        $startedAt = $this->documentsRetentionStartedAt();
+
+        if ($startedAt === null) {
             return null;
         }
 
-        return $closedAt->copy()->addDays(\App\Models\Setting::documentsRetentionDays());
+        return $startedAt->copy()->addDays(\App\Models\Setting::documentsRetentionDays());
     }
 
     /**

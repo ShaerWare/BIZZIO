@@ -36,6 +36,8 @@ class CleanupProcurementDocuments extends Command
         foreach ([Rfq::class, Auction::class] as $modelClass) {
             $modelClass::query()
                 ->whereIn('status', ['closed', 'cancelled'])
+                // Черновой отбор по дате; окончательное решение принимает
+                // documentsRetentionExpired() ниже (учитывает этап 2 у коммерческих процедур).
                 // closed_at заполнен у всех завершённых процедур (миграция #296),
                 // updated_at остаётся запасным вариантом на случай ручных правок в БД.
                 ->where(fn ($query) => $query
@@ -44,6 +46,12 @@ class CleanupProcurementDocuments extends Command
                         ->whereNull('closed_at')
                         ->where('updated_at', '<', $cutoff)))
                 ->each(function ($procedure) use ($collections, &$deletedFiles, &$affected) {
+                    // #296 У двухэтапной процедуры срок хранения отсчитывается от завершения
+                    // этапа 2: пока аукцион идёт (или закрыт недавно), документацию этапа 1 не трогаем.
+                    if (! $procedure->documentsRetentionExpired()) {
+                        return;
+                    }
+
                     $removedHere = 0;
 
                     foreach ($collections as $collection) {

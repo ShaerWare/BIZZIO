@@ -49,7 +49,8 @@ class HomeV26Test extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('home.authorized');
-        $response->assertSee('Мои закупки');
+        // #181 Блок «Мои закупки» заменён на «Актуальное в Bizzio» (правки после тестов)
+        $response->assertSee('Актуальное в Bizzio');
     }
 
     public function test_guest_home_offers_login_and_register(): void
