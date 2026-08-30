@@ -40,7 +40,7 @@ class NewCommentNotification extends Notification implements ShouldQueue
             ->greeting('Здравствуйте!')
             ->line('Новый комментарий в проекте, где участвует ваша компания.')
             ->line('**Проект:** '.$this->comment->project->title)
-            ->line('**Автор:** '.$this->comment->user->name)
+            ->line('**Автор:** '.$this->comment->user->full_name)
             ->line('**Комментарий:** '.\Illuminate\Support\Str::limit($this->comment->content, 100))
             ->action('Просмотреть', route('projects.show', $this->comment->project))
             ->line('Спасибо за использование Bizzo.ru!');
@@ -56,7 +56,7 @@ class NewCommentNotification extends Notification implements ShouldQueue
             'comment_id' => $this->comment->id,
             'project_id' => $this->comment->project_id,
             'project_title' => $this->comment->project->title,
-            'author_name' => $this->comment->user->name,
+            'author_name' => $this->comment->user->full_name,
             'preview' => \Illuminate\Support\Str::limit($this->comment->content, 100),
             'url' => route('projects.show', $this->comment->project).'#comment-'.$this->comment->id,
         ];

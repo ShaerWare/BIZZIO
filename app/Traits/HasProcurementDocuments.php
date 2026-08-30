@@ -49,9 +49,71 @@ trait HasProcurementDocuments
             ->values();
     }
 
+    /**
+     * #296 Есть ли документация у процедуры (у этапа 2 — документация этапа 1).
+     */
     public function hasAnyProcurementDocument(): bool
     {
-        return $this->allProcurementDocuments()->isNotEmpty();
+        return $this->procurementDocumentsHolder()->allProcurementDocuments()->isNotEmpty();
+    }
+
+    /**
+     * #296 Процедура, на которой физически лежат файлы документации.
+     *
+     * По умолчанию — сама процедура. У коммерческого аукциона (этап 2) своих файлов нет:
+     * документация загружается организатором на этапе 1, поэтому носитель — связанный
+     * запрос цен (переопределено в App\Models\Auction).
+     *
+     * @return \Illuminate\Database\Eloquent\Model&self
+     */
+    public function procurementDocumentsHolder(): \Illuminate\Database\Eloquent\Model
+    {
+        return $this;
+    }
+
+    /**
+     * #296 Момент, от которого отсчитывается срок хранения документации.
+     *
+     * Для двухэтапной процедуры это завершение этапа 2: пока идут торги, документация
+     * этапа 1 должна оставаться доступной (переопределено в App\Models\Rfq).
+     * null — срок ещё не начался.
+     */
+    public function documentsRetentionStartedAt(): ?\Illuminate\Support\Carbon
+    {
+        if (! in_array($this->status, ['closed', 'cancelled'], true)) {
+            return null;
+        }
+
+        // closed_at заполнен у всех завершённых процедур (миграция #296);
+        // updated_at остаётся запасным вариантом для старых записей.
+        return $this->closed_at ?? $this->updated_at;
+    }
+
+    /**
+     * #296 Дата, до которой документация доступна после завершения процедуры.
+     *
+     * Срок хранения (по умолчанию 30 дней) отсчитывается от завершения этапа 2.
+     * Пока процедура не завершена, срок не начинается и метод возвращает null.
+     */
+    public function documentsAvailableUntil(): ?\Illuminate\Support\Carbon
+    {
+        $startedAt = $this->documentsRetentionStartedAt();
+
+        if ($startedAt === null) {
+            return null;
+        }
+
+        return $startedAt->copy()->addDays(\App\Models\Setting::documentsRetentionDays());
+    }
+
+    /**
+     * #296 Истёк ли срок хранения документации (файлы удаляются командой `documents:cleanup`).
+     */
+    public function documentsRetentionExpired(): bool
+    {
+        $until = $this->documentsAvailableUntil();
+
+        return $until !== null && $until->isPast();
     }
 
     /**
@@ -60,11 +122,18 @@ trait HasProcurementDocuments
      * Пока процедура активна (не завершена/не отменена) — документы доступны всем
      * (участникам для подготовки заявок). После завершения доступ закрывается:
      * остаётся только у организатора и компаний-участников (подавших заявку или приглашённых).
+     *
+     * #296 И только в течение срока хранения (по умолчанию 30 дней после завершения этапа 2):
+     * дальше файлы удаляются, поэтому доступ закрыт и для организатора.
      */
     public function documentsAccessibleBy(?\App\Models\User $user): bool
     {
         if (! in_array($this->status, ['closed', 'cancelled'], true)) {
             return true;
+        }
+
+        if ($this->documentsRetentionExpired()) {
+            return false;
         }
 
         if (! $user) {

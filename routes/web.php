@@ -5,8 +5,8 @@ use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyJoinRequestController;
 use App\Http\Controllers\CompanyModeratorController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FriendshipController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -36,13 +36,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-
-    return view('welcome');
-});
+// #181 Единая точка входа: гостевая или авторизованная главная v26 по состоянию сессии
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // #152: SEO — динамический sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
@@ -108,7 +103,8 @@ Route::get('companies/{company}', [CompanyController::class, 'show'])->name('com
 // ========================================================================
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // #181 Прежний адрес дашборда: оставлен для старых закладок, ведёт на единую главную
+    Route::redirect('/dashboard', '/')->name('dashboard');
 
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
@@ -185,6 +181,8 @@ Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name
 
 Route::get('/tenders', [TenderController::class, 'index'])->name('tenders.index');
 Route::get('/tenders/rules', [TenderController::class, 'rules'])->name('tenders.rules');
+// #284 Подсказки для фильтра «Компания-организатор» на /tenders
+Route::get('/tenders/organizers', [TenderController::class, 'organizers'])->name('tenders.organizers');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/my-tenders', [TenderController::class, 'myTenders'])->name('tenders.my');

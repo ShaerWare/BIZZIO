@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesCompanyDocuments;
+use App\Rules\CompanyNameWithoutLegalForm;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,10 +20,19 @@ class UpdateCompanyRequest extends FormRequest
 
     public function rules(): array
     {
-        $companyId = $this->route('company')->id;
+        $company = $this->route('company');
+        $companyId = $company->id;
+
+        // #287 Название без ОПФ и кавычек требуем только когда его меняют: у компаний,
+        // заведённых раньше, ОПФ может быть уже вписана в название, и правило заблокировало бы
+        // им сохранение любых других полей.
+        $nameRules = ['sometimes', 'required', 'string', 'max:255'];
+        if ($this->has('name') && trim((string) $this->input('name')) !== trim((string) $company->name)) {
+            $nameRules[] = new CompanyNameWithoutLegalForm;
+        }
 
         return array_merge([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name' => $nameRules,
             'inn' => ['sometimes', 'required', 'string', 'regex:/^\d{10}(\d{2})?$/', Rule::unique('companies', 'inn')->ignore($companyId)->whereNull('deleted_at')],
             'legal_form' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'],

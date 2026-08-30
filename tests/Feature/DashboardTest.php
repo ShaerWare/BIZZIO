@@ -33,20 +33,29 @@ class DashboardTest extends TestCase
         Queue::fake();
     }
 
-    public function test_authenticated_user_can_view_dashboard(): void
+    public function test_authenticated_user_can_view_home(): void
     {
         $response = $this->actingAs($this->user)
-            ->get(route('dashboard'));
+            ->get(route('home'));
 
         $response->assertStatus(200);
-        $response->assertViewIs('dashboard');
+        $response->assertViewIs('home.authorized');
     }
 
-    public function test_guest_cannot_view_dashboard(): void
+    // #181 Дашборд переехал на корень; прежний адрес оставлен для старых закладок
+    public function test_old_dashboard_url_redirects_to_home(): void
     {
-        $response = $this->get(route('dashboard'));
+        $this->actingAs($this->user)
+            ->get(route('dashboard'))
+            ->assertRedirect('/');
+    }
 
-        $response->assertRedirect(route('login'));
+    public function test_guest_sees_guest_home(): void
+    {
+        $response = $this->get(route('home'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('home.guest');
     }
 
     public function test_activity_log_records_company_creation(): void
@@ -89,7 +98,7 @@ class DashboardTest extends TestCase
     public function test_dashboard_has_all_view_data(): void
     {
         $response = $this->actingAs($this->user)
-            ->get(route('dashboard'));
+            ->get(route('home'));
 
         $response->assertStatus(200);
         $response->assertViewHas('userCompanies');
@@ -105,7 +114,7 @@ class DashboardTest extends TestCase
     public function test_dashboard_includes_user_companies(): void
     {
         $response = $this->actingAs($this->user)
-            ->get(route('dashboard'));
+            ->get(route('home'));
 
         $response->assertStatus(200);
         $companies = $response->viewData('userCompanies');
@@ -121,7 +130,7 @@ class DashboardTest extends TestCase
                 'body' => 'Тестовый пост',
             ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
         $this->assertDatabaseHas('posts', [
             'user_id' => $this->user->id,
             'body' => 'Тестовый пост',
@@ -136,7 +145,7 @@ class DashboardTest extends TestCase
                 'photo' => UploadedFile::fake()->image('test.jpg', 640, 480),
             ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
         $post = Post::where('user_id', $this->user->id)->first();
         $this->assertNotNull($post);
         $this->assertCount(1, $post->getMedia('photos'));
@@ -172,7 +181,7 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($this->user)
             ->delete(route('posts.destroy', $post));
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
         $this->assertSoftDeleted('posts', ['id' => $post->id]);
     }
 

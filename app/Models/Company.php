@@ -150,6 +150,14 @@ class Company extends Model implements HasMedia
     }
 
     /**
+     * Аукционы компании (организатор)
+     */
+    public function auctions(): HasMany
+    {
+        return $this->hasMany(Auction::class);
+    }
+
+    /**
      * Заявки компании на RFQ
      */
     public function rfqBids(): HasMany

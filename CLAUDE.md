@@ -60,6 +60,7 @@ php artisan rfqs:check-expired       # Close expired RFQs (scheduled every minut
 php artisan commercial:notify-stages # Notify participants about stage 1 start / stage 2 in 30 min (scheduled every minute)
 php artisan rss:parse                # Parse RSS news sources (scheduled every 5 min)
 php artisan news:clean-old           # Clean old news articles (scheduled daily at 02:00)
+php artisan documents:cleanup        # Delete procurement documents past the retention window (scheduled daily at 03:00)
 php artisan cleanup:test-data        # Interactive deletion of test companies (cascade soft-delete)
 ```
 
@@ -70,6 +71,7 @@ Configured in `bootstrap/app.php` via `withSchedule()`:
 - `rfqs:check-expired` — every minute (with `withoutOverlapping`) — closes RFQs whose `end_date` passed (fallback to the delayed `CloseRfqJob`)
 - `commercial:notify-stages` — every minute (with `withoutOverlapping`) — #195 notifies moderators of invited companies when stage 1 opens, and stage-1 bidders 30 min before stage 2 trading starts. Idempotent via `rfqs.stage1_notified_at` / `stage2_notified_at`
 - `news:clean-old` — daily at 02:00
+- `documents:cleanup` — daily at 03:00 — #296 deletes procurement documents of procedures closed longer ago than the retention window (`Setting: documents_retention_days`, default 30). Counted from `closed_at`, not `updated_at` — the latter shifts on any edit. For a two-stage (commercial) procedure the countdown starts at the **stage-2** close, so stage-1 documents survive while trading runs — the command asks `documentsRetentionExpired()` per procedure rather than trusting the SQL date filter alone. Protocols are never deleted
 
 ### Testing PDF Generation
 Queue worker must be running: `php artisan queue:work`
@@ -93,6 +95,7 @@ php artisan tinker
 - **RFQ (Запрос цен)** — Weighted scoring criteria, auto-calculation, PDF protocols
 - **Auction (Аукционы)** — Real-time trading (long-polling), anonymized participants, PDF protocols
 - **Commercial Auction (Коммерческий аукцион)** — Two-stage procedure (#179): `Rfq`/`Auction` with `procedure='commercial'`. Stage 1 = price-only RFQ that auto-launches Stage 2 (`CommercialAuctionLauncherService`, НМЦ = max stage-1 price) — a multi-criteria (price/deadline/advance) real-time auction with continuous-leadership scoring (`CommercialAuctionScoringService`), offers via `AuctionController::storeOffer` (route `auctions.offers.store`, lockForUpdate), UI partial `auctions/partials/commercial-trading`, own protocol (`CommercialAuctionProtocolService`). Standard RFQs/auctions use `procedure='standard'` and are unaffected.
+  **Конкурсная документация (#296):** этап 2 своих файлов не имеет — документацию грузят на этапе 1. `Auction::procurementDocumentsHolder()` возвращает связанный `Rfq`, поэтому страница и маршруты `auctions.documents.*` отдают файлы этапа 1; срок хранения (`Rfq::documentsRetentionStartedAt()`) отсчитывается от закрытия этапа 2.
   **Scoring (#280):** each criterion is normalized from its initial value down to a system-preset *full-score boundary* — price −40% of НМЦ, deadline −50%, advance 0% (`CommercialAuctionScoringService::FULL_FACTOR_*`): `score = weight × clamp((ref − x) / (ref − full), 0, 1)`. Boundaries are not configurable by the organizer. The Alpine mirror in `commercial-trading` receives them from `fullRefs()` — keep both sides in sync when touching the formula.
 - **News** — RSS aggregator with keyword filtering, personalized feed. `RSSSource` managed via Orchid admin
 - **Posts** — Social-media-style posts on dashboard feed (create/delete)
@@ -100,7 +103,7 @@ php artisan tinker
 - **Tenders** — Unified view (`/tenders`) combining RFQs and Auctions with shared filters
 - **Subscriptions** — Polymorphic subscriptions (User/Company). Dashboard feed filters by subscriptions + friends-of-friends (2nd level). Public user profiles (`/users/{id}`)
 - **Friends** — Friendship requests (send/accept/remove), friends list, friends-of-friends recommendations. `Friendship` model (sender_id, receiver_id, status: pending/accepted). Routes: `/friends`, `/friends/{user}/request`, `/friends/{user}/accept`, `DELETE /friends/{user}`
-- **Procedure Chat (#218)** — Q&A chat on stage 1, polymorphic over `Rfq`/`Auction` via the `HasProcedureChat` trait. Visible only to the organizer and participants (bid submitted or invited). Participants are anonymized by `chat_code` (`У-01`) — deliberately a different format from the stage-2 `auction_bids.anonymous_code` (`AB12`), so chat cannot be matched to bids; only the organizer sees company names. The organizer can ban a company with a mandatory reason: chat and bidding are blocked, existing bids are annulled (`status=rejected`), the invitation is set to `declined`, and an anonymized system message is posted. Annulled bids are excluded from scoring/winner selection, stage-2 НМЦ and stage-2 invitations. Tables: `procedure_participants` (chat code + ban state), `procedure_chat_messages`. Controller `ProcedureChatController`; routes `rfqs.chat.{index,store,ban}` and `auctions.chat.{index,store,ban}`. UI: `partials/procedure-chat.blade.php` (Alpine + 7s polling with `after_id`)
+- **Procedure Chat (#218)** — Q&A chat on stage 1, polymorphic over `Rfq`/`Auction` via the `HasProcedureChat` trait. Visible to the organizer and participants (bid submitted or invited). **#295:** on an *open* procedure, while stage 1 is running, any company may also ask a question **before submitting a bid** (`chatOpenToProspects()`); such a company keeps read access to the history after stage 1 closes, and the organizer can ban it exactly like a participant. *Closed* procedures stay invite-only. Participants are anonymized by `chat_code` (`У-01`) — deliberately a different format from the stage-2 `auction_bids.anonymous_code` (`AB12`), so chat cannot be matched to bids; only the organizer sees company names. The organizer can ban a company with a mandatory reason: chat and bidding are blocked, existing bids are annulled (`status=rejected`), the invitation is set to `declined`, and an anonymized system message is posted. Annulled bids are excluded from scoring/winner selection, stage-2 НМЦ and stage-2 invitations. Tables: `procedure_participants` (chat code + ban state), `procedure_chat_messages`. Controller `ProcedureChatController`; routes `rfqs.chat.{index,store,ban}` and `auctions.chat.{index,store,ban}`. UI: `partials/procedure-chat.blade.php` (Alpine + 7s polling with `after_id`)
 
 ### Status Lifecycles
 
@@ -166,6 +169,15 @@ Requires `.env`: `GEMINI_API_KEY`
 - Quick search API (`GET /search/quick?q=...`) returns a flat JSON array of results (not wrapped in `{results: [...]}`)
 - Each result has: `type`, `type_label`, `id`, `title`, `subtitle`, `url`
 - Types: `company`, `project`, `rfq`, `auction`, `user`
+
+### Landing / Home (#181, v26)
+
+`/` is the single entry point (`HomeController@index`, route name `home`): it renders `home/guest.blade.php` for guests and `home/authorized.blade.php` for signed-in users. The old `/dashboard` is a redirect to `/` (kept for bookmarks, route name `dashboard` still resolves).
+
+- Markup is a port of the approved prototype `Bizzio_Dashboard_v26`. It runs on its own stylesheet `resources/css/v26.css` (a separate Vite entry, together with `resources/js/v26.js`) — the prototype's selectors (`.page`, `.card`, `.service`) are too generic to sit next to the Tailwind theme of the other pages. Desktop and tablet share one markup (media queries); the mobile screen keeps the prototype's separate structure, scoped `#bizzio-mobile-v1`, and the two are switched at 768px.
+- Authorized data comes from `DashboardController::dashboardData()` — the same widgets as the old dashboard; the task added no new entities or APIs.
+- Auth links come from config, not hardcoded: `config('app.auth_url')` / `config('app.register_url')` (`AUTH_URL` / `REGISTER_URL`).
+- Elements with no working feature stay visible and clickable but lead nowhere: `data-inactive-feature` and `data-future-service` send Yandex.Metrika goals `inactive_feature_click` / `future_service_interest` (see `resources/js/v26.js`). One physical click = one event: the interest button inside a card stops propagation.
 
 ### View Conventions
 - Layouts: `layouts/app.blade.php` (authenticated), `layouts/guest.blade.php` (auth pages)

@@ -232,7 +232,7 @@
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
-                            <span>Создатель: <strong>{{ $auction->creator->name }}</strong></span>
+                            <span>Создатель: <strong>{{ $auction->creator->full_name }}</strong></span>
                             <x-user-badges :user="$auction->creator" class="ml-2" />
                         </div>
                     </div>
@@ -244,7 +244,12 @@
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h3 class="text-sm font-semibold text-gray-900 mb-2">Параметры аукциона:</h3>
                             <ul class="text-sm text-gray-700 space-y-1">
-                                <li>• НМЦ: <strong><x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /></strong></li>
+                                {{-- #283 По завершении процедуры НМЦ видна только организатору и участникам закупки --}}
+                                @if($auction->startingPriceHiddenFor(auth()->user()))
+                                    <li>• НМЦ: <span class="text-gray-400">скрыта после завершения закупки</span></li>
+                                @else
+                                    <li>• НМЦ: <strong><x-money :value="$auction->starting_price" :currency="$auction->currency_symbol" /></strong></li>
+                                @endif
                                 {{-- #256 У коммерческого аукциона шаг снижения цены не применяется: шаги трёх
                                      критериев задаёт организатор. Диапазон «X% — 5%» — только обычный аукцион. --}}
                                 @unless($auction->isCommercial())

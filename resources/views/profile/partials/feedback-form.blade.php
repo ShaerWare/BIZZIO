@@ -80,6 +80,11 @@
                    class="text-sm text-green-600">
                     Сообщение отправлено! Спасибо за обратную связь.
                 </p>
+            @elseif (session('status') === 'feedback-failed')
+                <p class="text-sm text-red-600">
+                    Не удалось отправить сообщение. Попробуйте позже или напишите на
+                    <a href="mailto:{{ config('app.admin_email') }}" class="underline">{{ config('app.admin_email') }}</a>.
+                </p>
             @endif
         </div>
     </form>

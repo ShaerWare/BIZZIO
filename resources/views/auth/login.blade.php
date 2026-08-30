@@ -7,14 +7,14 @@
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" :value="'Email'" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+            <x-input-label for="password" :value="'Пароль'" />
 
             <x-text-input id="password" class="block mt-1 w-full"
                             type="password"
@@ -28,19 +28,19 @@
         <div class="block mt-4">
             <label for="remember_me" class="inline-flex items-center">
                 <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+                <span class="ms-2 text-sm text-gray-600">Запомнить меня</span>
             </label>
         </div>
 
         <div class="flex items-center justify-end mt-4">
             @if (Route::has('password.request'))
                 <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
+                    Забыли пароль?
                 </a>
             @endif
 
             <x-primary-button class="ms-3">
-                {{ __('Log in') }}
+                Войти
             </x-primary-button>
         </div>
     </form>
@@ -55,4 +55,10 @@
             Войти через Яндекс
         </a>
     </div>
+
+    {{-- #181 Со страницы входа должен быть переход на регистрацию --}}
+    <p class="mt-6 text-center text-sm text-gray-600">
+        Нет аккаунта?
+        <a href="{{ route('register') }}" class="font-semibold text-emerald-600 hover:text-emerald-500">Зарегистрироваться</a>
+    </p>
 </x-guest-layout>

@@ -29,7 +29,7 @@ class JoinRequestNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Запрос на присоединение к компании '.$this->joinRequest->company->name)
             ->greeting('Здравствуйте, '.$notifiable->name.'!')
-            ->line('Пользователь **'.$this->joinRequest->user->name.'** отправил запрос на присоединение к компании **'.$this->joinRequest->company->name.'**.')
+            ->line('Пользователь **'.$this->joinRequest->user->full_name.'** отправил запрос на присоединение к компании **'.$this->joinRequest->company->name.'**.')
             ->when($this->joinRequest->desired_role, function ($message) {
                 return $message->line('Желаемая роль: '.$this->joinRequest->desired_role);
             })
@@ -47,7 +47,7 @@ class JoinRequestNotification extends Notification implements ShouldQueue
             'company_id' => $this->joinRequest->company_id,
             'company_name' => $this->joinRequest->company->name,
             'user_id' => $this->joinRequest->user_id,
-            'user_name' => $this->joinRequest->user->name,
+            'user_name' => $this->joinRequest->user->full_name,
             'url' => route('companies.show', $this->joinRequest->company),
         ];
     }

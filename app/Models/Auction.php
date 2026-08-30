@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasProcedureChat;
 use App\Traits\HasProcurementDocuments;
+use App\Traits\TracksClosedAt;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Auction extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes, TracksClosedAt;
 
     protected $fillable = [
         'number',
@@ -48,6 +49,7 @@ class Auction extends Model implements HasMedia
         'max_advance',
         'last_bid_at',
         'status',
+        'closed_at',
         'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
@@ -61,6 +63,7 @@ class Auction extends Model implements HasMedia
         'trading_start' => 'datetime',
         'trading_end' => 'datetime',
         'last_bid_at' => 'datetime',
+        'closed_at' => 'datetime',
         'starting_price' => 'decimal:2',
         'step_percent' => 'decimal:2',
         'weight_price' => 'decimal:2',
@@ -155,6 +158,22 @@ class Auction extends Model implements HasMedia
     public function rfq(): BelongsTo
     {
         return $this->belongsTo(Rfq::class, 'rfq_id');
+    }
+
+    /**
+     * #296 Носитель конкурсной документации.
+     *
+     * У коммерческого аукциона (этап 2) своих файлов нет — документацию организатор
+     * загружает на этапе 1, поэтому на странице торгов показываем и отдаём файлы
+     * связанного запроса цен.
+     */
+    public function procurementDocumentsHolder(): \Illuminate\Database\Eloquent\Model
+    {
+        if ($this->isCommercial() && $this->rfq) {
+            return $this->rfq;
+        }
+
+        return $this;
     }
 
     /**
@@ -308,6 +327,38 @@ class Auction extends Model implements HasMedia
         }
 
         return ! ($user && ($this->canManage($user) || $this->isParticipant($user)));
+    }
+
+    /**
+     * #283 Скрывать ли НМЦ от данного зрителя.
+     *
+     * По завершении процедуры (для двухэтапной закупки — после закрытия этапа 2 и формирования
+     * протокола) начальная максимальная цена уходит из общего доступа: её видят только
+     * организатор и участники закупки — приглашённые компании и компании, подавшие заявку
+     * или предложение. Пока процедура идёт, НМЦ видна всем: без неё нельзя торговаться.
+     */
+    public function startingPriceHiddenFor(?User $user): bool
+    {
+        if ($this->status !== 'closed') {
+            return false;
+        }
+
+        return ! ($user && ($this->canManage($user) || $this->isProcedureInsider($user)));
+    }
+
+    /**
+     * #283 Причастен ли пользователь к процедуре: модератор приглашённой компании либо
+     * компании, подавшей заявку/предложение (у открытого аукциона заявку подают без приглашения).
+     */
+    public function isProcedureInsider(User $user): bool
+    {
+        if ($this->isParticipant($user)) {
+            return true;
+        }
+
+        $companyIds = $user->moderatedCompanies()->pluck('companies.id');
+
+        return $this->bids()->whereIn('company_id', $companyIds)->exists();
     }
 
     /**

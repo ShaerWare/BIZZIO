@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasProcedureChat;
 use App\Traits\HasProcurementDocuments;
+use App\Traits\TracksClosedAt;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +22,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Rfq extends Model implements HasMedia
 {
     use AsSource, Filterable, LogsActivity;
-    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes;
+    use HasFactory, HasProcedureChat, HasProcurementDocuments, InteractsWithMedia, Searchable, SoftDeletes, TracksClosedAt;
 
     protected $fillable = [
         'number',
@@ -45,6 +46,7 @@ class Rfq extends Model implements HasMedia
         'max_deadline',
         'max_advance',
         'status',
+        'closed_at',
         'cancellation_reason',
         'is_results_hidden',
         'winner_bid_id',
@@ -54,6 +56,7 @@ class Rfq extends Model implements HasMedia
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'closed_at' => 'datetime',
         'trading_start' => 'datetime',
         'trading_end' => 'datetime',
         'weight_price' => 'decimal:2',
@@ -153,6 +156,24 @@ class Rfq extends Model implements HasMedia
             && $this->status === 'closed'
             && $this->linkedAuction
             && in_array($this->linkedAuction->status, ['active', 'trading'], true);
+    }
+
+    /**
+     * #296 Срок хранения документации двухэтапной процедуры отсчитывается от завершения
+     * этапа 2: пока порождённый аукцион не закрыт, срок не начинается, и документация
+     * этапа 1 остаётся доступной участникам и организатору.
+     */
+    public function documentsRetentionStartedAt(): ?\Illuminate\Support\Carbon
+    {
+        if ($this->isCommercial() && $this->linkedAuction) {
+            return $this->linkedAuction->documentsRetentionStartedAt();
+        }
+
+        if (! in_array($this->status, ['closed', 'cancelled'], true)) {
+            return null;
+        }
+
+        return $this->closed_at ?? $this->updated_at;
     }
 
     /**

@@ -109,7 +109,24 @@ trait HasProcedureChat
     }
 
     /**
-     * Компании пользователя, допущенные к чату этой процедуры (участники, не отстранённые).
+     * #295 Открыт ли чат для компаний, ещё не подавших заявку.
+     *
+     * У открытой процедуры вопрос можно задать до подачи заявки — именно для того, чтобы
+     * решить, участвовать ли. У закрытой состав ограничен приглашёнными, поэтому там
+     * прежнее правило #218 сохраняется.
+     */
+    public function chatOpenToProspects(): bool
+    {
+        return $this->type === 'open' && $this->isChatOpen();
+    }
+
+    /**
+     * Компании пользователя, допущенные к чату этой процедуры (не отстранённые).
+     *
+     * #218 Это участники: подавшие заявку или приглашённые.
+     * #295 Плюс — пока идёт этап 1 открытой процедуры — любая компания пользователя:
+     * вопрос задают до подачи заявки. Компании, успевшие написать, сохраняют доступ
+     * к переписке и после закрытия приёма заявок.
      *
      * @return Collection<int, Company>
      */
@@ -119,11 +136,33 @@ trait HasProcedureChat
             return collect();
         }
 
-        $participantIds = $this->chatParticipantCompanyIds();
+        // Компания-организатор участвует в чате как организатор, а не как участник.
+        $companies = $user->moderatedCompanies
+            ->reject(fn (Company $c) => (int) $c->id === (int) $this->company_id)
+            ->reject(fn (Company $c) => $this->isCompanyBanned($c->id));
 
-        return $user->moderatedCompanies
-            ->whereIn('id', $participantIds->all())
-            ->reject(fn (Company $c) => $this->isCompanyBanned($c->id))
+        if ($this->chatOpenToProspects()) {
+            return $companies->values();
+        }
+
+        $allowedIds = $this->chatParticipantCompanyIds()
+            ->merge($this->chatParticipants()->pluck('company_id'))
+            ->unique();
+
+        return $companies->whereIn('id', $allowedIds->all())->values();
+    }
+
+    /**
+     * #295 Компании, которых организатор видит в списке чата: участники процедуры
+     * плюс те, кто писал в чат, не подав заявку (их тоже нужно иметь возможность отстранить).
+     *
+     * @return Collection<int, int>
+     */
+    public function chatVisibleCompanyIds(): Collection
+    {
+        return $this->chatParticipantCompanyIds()
+            ->merge($this->chatParticipants()->pluck('company_id'))
+            ->unique()
             ->values();
     }
 

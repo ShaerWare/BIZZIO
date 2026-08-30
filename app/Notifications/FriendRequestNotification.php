@@ -31,9 +31,9 @@ class FriendRequestNotification extends Notification implements ShouldQueue
 
         return [
             'type' => 'friend_request',
-            'message' => $sender->name.' хочет добавить вас в друзья',
+            'message' => $sender->full_name.' хочет добавить вас в друзья',
             'sender_id' => $sender->id,
-            'sender_name' => $sender->name,
+            'sender_name' => $sender->full_name,
             'url' => route('friends.index', ['tab' => 'incoming']),
         ];
     }
