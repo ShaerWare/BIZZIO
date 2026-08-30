@@ -15,7 +15,8 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Vite: Tailwind CSS + Alpine.js (предкомпилированные) -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- #181 v26-chrome.css — скоупированная шапка Bizzio v26, общая для всех страниц --}}
+    @vite(['resources/css/app.css', 'resources/css/v26-chrome.css', 'resources/js/app.js', 'resources/js/v26.js'])
 
     @stack('styles')
     
@@ -41,7 +42,11 @@
 </head>
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100">
-        @include('layouts.navigation')
+        {{-- #181 Новое меню распространено на все разделы: прежняя Tailwind-навигация
+             с выпадающими меню второго уровня заменена шапкой v26, а её пункты переехали
+             в меню раздела (partials/v26/menu-items). --}}
+        @include('partials.v26.icons')
+        @include('partials.v26.chrome')
 
         <!-- Page Heading -->
         @if (isset($header))
@@ -77,6 +82,7 @@
 
         {{-- #184 Версия приложения --}}
         @include('partials.version-footer')
+        </div>
     </div>
 
     @stack('scripts')

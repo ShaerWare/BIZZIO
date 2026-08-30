@@ -165,18 +165,12 @@
         </div>
         {{-- 2.1.2 Раздела «Публикации» у нас пока нет — пункта в меню тоже нет.
              Кнопки «Войти»/«Регистрация» из меню убраны: вход теперь в шапке. --}}
-        <div class="bz-drawer-section">Моя работа</div>
-        <a class="bz-nav-row bz-current" href="{{ route('home') }}"><svg><use href="#guest-home"/></svg>Главная</a>
-        <a class="bz-nav-row" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg>Компании</a>
-        <a class="bz-nav-row" href="{{ $registerUrl }}"><svg><use href="#users"/></svg>Контакты</a>
-        <a class="bz-nav-row" href="{{ route('tenders.index') }}"><img class="bz-procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
-        <a class="bz-nav-row" href="{{ route('news.index') }}"><svg><use href="#news"/></svg>Новости</a>
-        <a class="bz-nav-row" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg>Проекты</a>
+        {{-- #181 Состав меню общий для всех страниц сайта --}}
+        @include('partials.v26.menu-items', [
+            'rowClass' => 'bz-nav-row',
+            'labelClass' => 'bz-drawer-section',
+        ])
 
-        <div class="bz-drawer-section">Настройки и поддержка</div>
-        <a class="bz-nav-row" href="{{ $authUrl }}"><svg><use href="#help-chat"/></svg>Помощь и обратная связь</a>
-
-        <div class="gm-menu-note">Персональные компании, проекты, закупки и публикации появятся после регистрации.</div>
     </aside>
 
     <aside class="bz-drawer bz-services-drawer gm-drawer" aria-label="Сервисы Bizzio">
