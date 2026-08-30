@@ -24,7 +24,10 @@
                 </button>
                 <form class="search" method="GET" action="{{ route('search.index') }}">
                     <svg><use href="#search"/></svg>
+                    {{-- #181 На планшете длинная подпись не помещается в поле — v26.js подставляет короткую --}}
                     <input type="text" name="q" placeholder="Компании, проекты, люди, закупки и новости"
+                           data-placeholder-full="Компании, проекты, люди, закупки и новости"
+                           data-placeholder-short="Поиск в Bizzio"
                            value="{{ request('q') }}" aria-label="Поиск по Bizzio">
                 </form>
                 <div class="top-actions">
