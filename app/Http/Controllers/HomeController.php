@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Auction;
 use App\Models\AuctionInvitation;
+use App\Models\Company;
 use App\Models\CompanyJoinRequest;
 use App\Models\Friendship;
 use App\Models\News;
@@ -236,6 +237,26 @@ class HomeController extends Controller
                 'url' => route('projects.show', $project),
             ]);
 
-        return $procedures->concat($auctions)->concat($projects)->take(3)->values();
+        // Заказчик просил в «Актуальном» состав из четырёх разделов. «Друзей» у гостя нет
+        // по определению — сессии нет, поэтому для него это закупки, компании и проекты.
+        $companies = Company::verified()
+            ->latest()
+            ->take(2)
+            ->get()
+            ->map(fn (Company $company) => [
+                'type' => 'company',
+                'title' => $company->name,
+                'meta' => 'Новая компания на площадке',
+                'tag' => 'Компания',
+                'tag_class' => 'blue-tag',
+                'url' => route('companies.show', $company),
+            ]);
+
+        return $procedures
+            ->concat($auctions)
+            ->concat($companies)
+            ->concat($projects)
+            ->take(3)
+            ->values();
     }
 }

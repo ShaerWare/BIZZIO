@@ -23,7 +23,10 @@
                     <svg class="hamb" aria-hidden="true"><use href="#menu"/></svg><span>Меню</span>
                 </button>
                 <a class="search" href="{{ route('login') }}">
-                    <svg><use href="#search"/></svg><span>Компании, проекты, люди, закупки и новости</span>
+                    <svg><use href="#search"/></svg>
+                    {{-- #181 На планшете длинная подпись не помещается в поле — v26.js подставляет короткую --}}
+                    <span data-placeholder-full="Компании, проекты, люди, закупки и новости"
+                          data-placeholder-short="Поиск в Bizzio">Компании, проекты, люди, закупки и новости</span>
                 </a>
                 <div class="top-actions">
                     <a class="icon-btn" href="{{ route('login') }}" aria-label="Помощь и обратная связь"><svg><use href="#help-chat"/></svg></a>
@@ -215,7 +218,7 @@
                     <span>Сервисы Bizzio</span>
                     <button class="guest-close" type="button" data-panel-close aria-label="Закрыть сервисы"><svg><use href="#guest-x"/></svg></button>
                 </div>
-                <div class="guest-drawer-section">Доступные сервисы</div>
+                <div class="guest-drawer-label">Доступные сервисы</div>
                 <div class="guest-drawer-grid">
                     <a class="guest-drawer-service" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><div class="guest-service-name">Компании</div></a>
                     <a class="guest-drawer-service" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><div class="guest-service-name">Проекты</div></a>
@@ -223,7 +226,8 @@
                     <a class="guest-drawer-service" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><div class="guest-service-name">Новости</div></a>
                     <a class="guest-drawer-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><div class="guest-service-name">Контакты</div></a>
                 </div>
-                <div class="guest-drawer-section">Будущие сервисы</div>
+                <div class="guest-drawer-rule"></div>
+                <div class="guest-drawer-label">Будущие сервисы<div class="guest-drawer-sub">Нажмите на сервис — ваш выбор будет учтён</div></div>
                 <div class="guest-drawer-grid">
                     @foreach($futureServices as $service)
                         <div class="guest-drawer-service"
