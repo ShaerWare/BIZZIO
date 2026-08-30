@@ -623,6 +623,36 @@ button.plain-icon{border:0;background:transparent;padding:0;font:inherit;color:i
   .v26-chrome .page{max-width:none}
 }
 
+/* Выпадающие панели «Меню» и «Сервисы».
+ *
+ * В эталоне они позиционируются absolute внутри .page, который там занимает весь экран.
+ * В шапке сайта .page оборачивает только саму панель, поэтому absolute-панель с `bottom:0`
+ * схлопывалась по высоте шапки, а полупрозрачная подложка не накрывала страницу — на планшете
+ * это выглядело как «съехавшие масштабы и прозрачность». Здесь они привязаны к вьюпорту.
+ */
+.v26-chrome .auth-drawer,
+.v26-chrome .guest-drawer{position:fixed;z-index:1001}
+.v26-chrome .auth-overlay,
+.v26-chrome .guest-overlay{position:fixed;left:0;right:0;bottom:0;z-index:1000}
+.v26-chrome .auth-menu-drawer,
+.v26-chrome .guest-menu-drawer{bottom:0}
+.v26-chrome .auth-services-drawer,
+.v26-chrome .guest-services-drawer{max-height:calc(100vh - 88px);overflow-y:auto}
+
+@media (min-width:768px) and (max-width:1279px){
+  /* На планшете шапка ниже (72px) — панели и подложка начинаются под ней. */
+  .v26-chrome .auth-overlay,
+  .v26-chrome .guest-overlay{top:72px}
+  .v26-chrome .auth-menu-drawer,
+  .v26-chrome .guest-menu-drawer{top:72px}
+  .v26-chrome .auth-services-drawer,
+  .v26-chrome .guest-services-drawer{max-height:calc(100vh - 84px)}
+}
+@media (min-width:1280px){
+  .v26-chrome .auth-overlay,
+  .v26-chrome .guest-overlay{top:76px}
+}
+
 /* Переменные мобильной шапки объявлены в :root мобильной секции v26.css; при выборке
  * chrome-правил они не попали бы сюда, а без них .bz-header остаётся без высоты. */
 :root{--bz-safe-top:env(safe-area-inset-top,0px);--bz-safe-right:env(safe-area-inset-right,0px);--bz-safe-bottom:env(safe-area-inset-bottom,0px);--bz-safe-left:env(safe-area-inset-left,0px);--bz-header-height:calc(58px + var(--bz-safe-top));--bz-bottom-height:calc(50px + var(--bz-safe-bottom));background:#f8fbff;color-scheme:light}
