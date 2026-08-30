@@ -9,6 +9,8 @@
     $rowClass ??= 'auth-menu-row';
     $labelClass ??= 'auth-drawer-label';
     $current ??= request()->routeIs('home') ? 'home' : null;
+    // Иконка закупок — PNG; в мобильном скоупе эталона у неё свой класс с размерами
+    $iconClass ??= 'procurement-icon';
 
     $isCurrent = fn (string $key) => $current === $key;
 @endphp
@@ -32,12 +34,12 @@
 {{-- Закупки: прежнее выпадающее меню второго уровня целиком --}}
 <div class="{{ $labelClass }}">Закупки</div>
 <a class="{{ $rowClass }} {{ request()->routeIs('tenders.index') ? 'current bz-current' : '' }}" href="{{ route('tenders.index') }}">
-    <img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><span>Найти закупку</span>
+    <img class="{{ $iconClass }}" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><span>Найти закупку</span>
 </a>
 @auth
     @if(auth()->user()->isModeratorOfAnyCompany())
         <a class="{{ $rowClass }}" href="{{ route('rfqs.create', ['procedure' => 'commercial']) }}">
-            <img class="procurement-icon" src="/images/v26/bizzio-quick-icon-create-procurement-v4.png" alt=""><span>Создать закупку</span>
+            <img class="{{ $iconClass }}" src="/images/v26/bizzio-quick-icon-create-procurement-v4.png" alt=""><span>Создать закупку</span>
         </a>
         <a class="{{ $rowClass }} {{ request()->routeIs('tenders.my') ? 'current bz-current' : '' }}" href="{{ route('tenders.my') }}">
             <svg><use href="#gavel"/></svg><span>Мои закупки</span>

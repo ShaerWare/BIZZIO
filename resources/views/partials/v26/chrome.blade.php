@@ -157,6 +157,7 @@
             @include('partials.v26.menu-items', [
                 'rowClass' => 'bz-nav-row',
                 'labelClass' => 'bz-drawer-section',
+                'iconClass' => 'bz-procurement-icon',
             ])
 
             @auth
