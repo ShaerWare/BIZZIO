@@ -93,4 +93,56 @@ class SiteWideMenuTest extends TestCase
             $this->assertStringContainsString($item, $inner, "На внутренней странице нет пункта «{$item}»");
         }
     }
+
+    /**
+     * #181 Стили шапки собираются из v26.css выборкой по именам классов, и правило,
+     * не попавшее в выборку, ломает вид молча — тестами разметки такое не ловится.
+     * Поэтому сверяем каждый класс отрендеренной шапки с таблицей стилей.
+     */
+    public function test_every_chrome_class_has_styles(): void
+    {
+        $html = $this->actingAs($this->user)->get('/companies')->assertOk()->getContent();
+
+        $start = strpos($html, '<div class="v26-chrome"');
+        $end = strpos($html, '<div class="v26-page-body">');
+        $chrome = substr($html, $start, $end - $start);
+
+        $css = file_get_contents(resource_path('css/v26-chrome.css'));
+
+        // Служебные обёртки этого проекта, а не эталона.
+        $ownClasses = ['v26-chrome', 'v26-desktop', 'v26-page-body', 'current'];
+
+        preg_match_all('/class="([^"]*)"/', $chrome, $matches);
+        $missing = [];
+
+        foreach ($matches[1] as $attribute) {
+            foreach (preg_split('/\s+/', trim($attribute)) as $class) {
+                if ($class === '' || in_array($class, $ownClasses, true)) {
+                    continue;
+                }
+
+                if (! preg_match('/\.'.preg_quote($class, '/').'[^a-zA-Z0-9_-]/', $css)) {
+                    $missing[$class] = true;
+                }
+            }
+        }
+
+        $this->assertSame([], array_keys($missing), 'В v26-chrome.css нет правил для классов шапки: '.implode(', ', array_keys($missing)));
+    }
+
+    /**
+     * #181 Базовые правила эталона (обводка иконок, box-sizing, ширина .page) заданы
+     * в v26.css глобально и в выборку по именам классов не попадают — они дописаны
+     * вручную. Тест держит их на месте: без них иконки заливаются чёрным, а шапка
+     * теряет ширину.
+     */
+    public function test_chrome_keeps_base_rules(): void
+    {
+        $css = file_get_contents(resource_path('css/v26-chrome.css'));
+
+        $this->assertStringContainsString('.v26-chrome svg{fill:none;stroke:currentColor', $css);
+        $this->assertStringContainsString('.v26-chrome *{box-sizing:border-box}', $css);
+        $this->assertStringContainsString('.v26-chrome .page{', $css);
+        $this->assertStringContainsString('--bz-header-height', $css);
+    }
 }
