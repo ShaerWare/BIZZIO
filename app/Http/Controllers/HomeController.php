@@ -30,7 +30,7 @@ class HomeController extends Controller
      *
      * @var list<array{id: string, name: string, icon: string}>
      */
-    private const FUTURE_SERVICES = [
+    public const FUTURE_SERVICES = [
         ['id' => 'articles', 'name' => 'Статьи', 'icon' => 'file'],
         ['id' => 'jobs', 'name' => 'Работа', 'icon' => 'guest-briefcase'],
         ['id' => 'goods_services', 'name' => 'Товары и услуги', 'icon' => 'guest-basket'],
@@ -42,6 +42,17 @@ class HomeController extends Controller
         ['id' => 'business_sale', 'name' => 'Покупка-продажа бизнеса', 'icon' => 'business-transfer'],
         ['id' => 'commercial_property', 'name' => 'Коммерческая недвижимость', 'icon' => 'building'],
     ];
+
+    /**
+     * #181 Список будущих сервисов для меню «Сервисы» на любых страницах сайта:
+     * контроллеры внутренних разделов его не передают.
+     *
+     * @return list<array{id: string, name: string, icon: string}>
+     */
+    public static function futureServices(): array
+    {
+        return self::FUTURE_SERVICES;
+    }
 
     public function index(): View|RedirectResponse
     {

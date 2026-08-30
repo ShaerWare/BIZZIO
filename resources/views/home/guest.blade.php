@@ -192,20 +192,12 @@
                     <span>Меню</span>
                     <button class="guest-close" type="button" data-panel-close aria-label="Закрыть меню"><svg><use href="#guest-x"/></svg></button>
                 </div>
-                <div class="guest-drawer-label">Моя работа</div>
-                <div class="guest-menu-list">
-                    <a class="guest-menu-row active" href="{{ route('home') }}"><svg><use href="#guest-home"/></svg><span>Главная</span></a>
-                    <a class="guest-menu-row" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><span>Компании</span></a>
-                    <a class="guest-menu-row" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><span>Контакты</span></a>
-                    <a class="guest-menu-row" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><span>Закупки</span></a>
-                    <a class="guest-menu-row" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><span>Новости</span></a>
-                    <a class="guest-menu-row" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><span>Проекты</span></a>
-                    <a class="guest-menu-row" href="{{ $registerUrl }}"><svg><use href="#file"/></svg><span>Публикации</span></a>
-                </div>
-                <div class="guest-drawer-label">Настройки и поддержка</div>
-                <div class="guest-menu-list">
-                    <a class="guest-menu-row" href="{{ $authUrl }}"><svg><use href="#help-chat"/></svg><span>Помощь и обратная связь</span></a>
-                </div>
+                {{-- #181 Состав меню общий для всех страниц сайта --}}
+                @include('partials.v26.menu-items', [
+                    'rowClass' => 'guest-menu-row',
+                    'labelClass' => 'guest-drawer-label',
+                ])
+
                 <div class="guest-menu-note">Персональные возможности станут доступны после регистрации.</div>
                 <div class="guest-menu-actions">
                     <a class="guest-login" href="{{ $authUrl }}">Войти</a>

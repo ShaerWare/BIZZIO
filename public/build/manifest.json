@@ -1,11 +1,20 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-C-7CTmXL.css",
+    "file": "assets/app-Bu3y_-WE.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
     "names": [
       "app.css"
+    ]
+  },
+  "resources/css/v26-chrome.css": {
+    "file": "assets/v26-chrome-DYGajyrh.css",
+    "src": "resources/css/v26-chrome.css",
+    "isEntry": true,
+    "name": "v26-chrome",
+    "names": [
+      "v26-chrome.css"
     ]
   },
   "resources/css/v26.css": {

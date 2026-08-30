@@ -251,19 +251,9 @@
                         <a href="{{ route('users.show', $viewer) }}">Открыть профиль</a>
                     </div>
                 </div>
-                {{-- #181 Блока «Мои компании» в меню раздела нет: компании показывает
-                     карточка левой колонки, в эталоне v26 меню начинается с «Моей работы». --}}
-                <div class="auth-drawer-label">Моя работа</div>
-                <a class="auth-menu-row current" href="{{ route('home') }}"><svg><use href="#auth-home"/></svg><span>Главная</span></a>
-                <a class="auth-menu-row" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><span>Компании</span></a>
-                <a class="auth-menu-row" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg><span>Контакты</span></a>
-                <a class="auth-menu-row" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><span>Закупки</span></a>
-                <a class="auth-menu-row" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><span>Новости</span></a>
-                <a class="auth-menu-row" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><span>Проекты</span></a>
+                {{-- #181 Состав меню общий для всех страниц сайта --}}
+                @include('partials.v26.menu-items')
 
-                {{-- #181 «Настройки профиля» живут в меню профиля (правый верхний угол), в меню раздела их нет --}}
-                <div class="auth-drawer-label">Настройки и поддержка</div>
-                <a class="auth-menu-row" href="{{ route('profile.edit') }}#feedback"><svg><use href="#help-chat"/></svg><span>Помощь и обратная связь</span></a>
             </aside>
 
             <aside class="auth-drawer auth-services-drawer" aria-label="Сервисы Bizzio">
@@ -271,44 +261,8 @@
                     <span>Сервисы Bizzio</span>
                     <button class="auth-close" type="button" data-panel-close aria-label="Закрыть сервисы"><svg><use href="#auth-x"/></svg></button>
                 </div>
-                <div class="auth-services-label">Доступные сервисы</div>
-                <div class="auth-services-grid">
-                    <a class="auth-service-tile" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg>Компании</a>
-                    <a class="auth-service-tile" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg>Проекты</a>
-                    <a class="auth-service-tile" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
-                    <a class="auth-service-tile" href="{{ route('news.index') }}"><svg><use href="#news"/></svg>Новости</a>
-                    <a class="auth-service-tile" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg>Контакты</a>
-                    <a class="auth-service-tile" href="{{ route('subscriptions.index') }}"><svg><use href="#auth-bookmark"/></svg>Подписки</a>
-                </div>
+                @include('partials.v26.services-items', ['placement' => 'auth_services_drawer'])
 
-                <div class="auth-services-label">
-                    Будущие сервисы
-                    <span class="auth-services-sub">Нажмите на карточку — ваш интерес будет учтён</span>
-                </div>
-                <div class="auth-services-grid">
-                    @foreach($futureServices as $service)
-                        <div class="auth-service-tile"
-                             data-future-service="{{ $service['id'] }}"
-                             data-service-name="{{ $service['name'] }}"
-                             data-placement="auth_services_drawer">
-                            <svg><use href="#{{ $service['icon'] }}"/></svg>{{ $service['name'] }}
-                            <span class="auth-plus">+</span>
-                        </div>
-                    @endforeach
-                </div>
-
-                <div class="auth-rule"></div>
-                <div class="auth-propose">
-                    <svg><use href="#auth-light"/></svg>
-                    <span>Не нашли нужный сервис?</span>
-                    <button type="button"
-                            data-inactive-feature="suggest_service"
-                            data-feature-label="Предложить сервис"
-                            data-placement="auth_services_drawer">Предложить</button>
-                </div>
-
-                {{-- #181 Блок «Bizzio в соцсетях» (ссылки появятся, когда заведут аккаунты) --}}
-                @include('partials.v26.social-links', ['scope' => 'auth'])
             </aside>
         </div>
     </div>
