@@ -55,10 +55,10 @@
                         <a class="guest-text-link" href="{{ $registerUrl }}">Добавить компанию после регистрации&nbsp; →</a>
                     </article>
                     <article class="card guest-placeholder">
-                        <h3>Контакты</h3>
+                        <h3>Друзья</h3>
                         <div class="guest-placeholder-icon"><svg><use href="#users"/></svg></div>
                         <p class="guest-side-copy">Создавайте деловые связи и расширяйте профессиональную сеть.</p>
-                        <a class="guest-text-link" href="{{ $registerUrl }}">Найти контакты после регистрации&nbsp; →</a>
+                        <a class="guest-text-link" href="{{ $registerUrl }}">Найти друзей после регистрации&nbsp; →</a>
                     </article>
                 </section>
 
@@ -88,8 +88,8 @@
                             </a>
                             <a class="guest-service-card" href="{{ $registerUrl }}">
                                 <div class="guest-service-icon"><svg><use href="#users"/></svg></div>
-                                <div class="guest-service-name">Контакты</div>
-                                <div class="guest-service-copy">Контакты и деловые связи</div>
+                                <div class="guest-service-name">Друзья</div>
+                                <div class="guest-service-copy">Друзья и деловые связи</div>
                             </a>
                             <a class="guest-service-card" href="{{ route('tenders.index') }}">
                                 <div class="guest-service-icon"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""></div>
@@ -216,7 +216,7 @@
                     <a class="guest-drawer-service" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><div class="guest-service-name">Проекты</div></a>
                     <a class="guest-drawer-service" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><div class="guest-service-name">Закупки</div></a>
                     <a class="guest-drawer-service" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><div class="guest-service-name">Новости</div></a>
-                    <a class="guest-drawer-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><div class="guest-service-name">Контакты</div></a>
+                    <a class="guest-drawer-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><div class="guest-service-name">Друзья</div></a>
                 </div>
                 <div class="guest-drawer-rule"></div>
                 <div class="guest-drawer-label">Будущие сервисы<div class="guest-drawer-sub">Нажмите на сервис — ваш выбор будет учтён</div></div>

@@ -8,6 +8,9 @@
     $tileClass ??= 'auth-service-tile';
     $plusClass ??= 'auth-plus';
     $placement ??= 'chrome_services_drawer';
+    // PNG-иконка закупок: в мобильном скоупе эталона у неё свой класс с размерами,
+    // иначе картинка вылезает из плитки (замечание заказчика от 03.09).
+    $iconClass ??= 'procurement-icon';
     // На внутренних страницах контроллеры список будущих сервисов не передают.
     $services = $futureServices ?? \App\Http\Controllers\HomeController::futureServices();
 @endphp
@@ -16,13 +19,13 @@
 <div class="{{ $gridClass }}">
     <a class="{{ $tileClass }}" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg>Компании</a>
     <a class="{{ $tileClass }}" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg>Проекты</a>
-    <a class="{{ $tileClass }}" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
+    <a class="{{ $tileClass }}" href="{{ route('tenders.index') }}"><img class="{{ $iconClass }}" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
     <a class="{{ $tileClass }}" href="{{ route('news.index') }}"><svg><use href="#news"/></svg>Новости</a>
+    {{-- «Подписки» переехали в левое меню (замечание заказчика от 30.08), здесь их больше нет --}}
     @auth
-        <a class="{{ $tileClass }}" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg>Контакты</a>
-        <a class="{{ $tileClass }}" href="{{ route('subscriptions.index') }}"><svg><use href="#auth-bookmark"/></svg>Подписки</a>
+        <a class="{{ $tileClass }}" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg>Друзья</a>
     @else
-        <a class="{{ $tileClass }}" href="{{ config('app.register_url') }}"><svg><use href="#users"/></svg>Контакты</a>
+        <a class="{{ $tileClass }}" href="{{ config('app.register_url') }}"><svg><use href="#users"/></svg>Друзья</a>
     @endauth
 </div>
 

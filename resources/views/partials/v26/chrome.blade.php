@@ -135,16 +135,9 @@
             <button class="bz-icon-button" type="button" data-open-panel="services" aria-label="Открыть сервисы"><svg><use href="#grid"/></svg></button>
         </header>
 
-        <nav class="bz-bottom" aria-label="Основная навигация">
-            <a class="bz-bottom-item {{ request()->routeIs('home') ? 'bz-current' : '' }}" href="{{ route('home') }}"><svg><use href="#auth-home"/></svg><span>Главная</span></a>
-            <a class="bz-bottom-item {{ request()->routeIs('tenders.*', 'rfqs.*', 'auctions.*') ? 'bz-current' : '' }}" href="{{ route('tenders.index') }}"><svg><use href="#gavel"/></svg><span>Закупки</span></a>
-            <a class="bz-bottom-item {{ request()->routeIs('companies.*') ? 'bz-current' : '' }}" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><span>Компании</span></a>
-            @auth
-                <a class="bz-bottom-item {{ request()->routeIs('users.show') ? 'bz-current' : '' }}" href="{{ route('users.show', $viewer) }}"><svg><use href="#auth-user"/></svg><span>Профиль</span></a>
-            @else
-                <a class="bz-bottom-item" href="{{ config('app.auth_url') }}"><svg><use href="#guest-user"/></svg><span>Войти</span></a>
-            @endauth
-        </nav>
+        {{-- Нижняя навигация — та же, что на главной (эталон v26): поиск, сообщения,
+             уведомления, помощь. Своя навигация здесь читалась как «старое меню». --}}
+        @include('partials.v26.mobile-bottom-nav', ['placement' => 'page_mobile_bottom'])
 
         <div class="bz-dim" data-close-panels></div>
 
@@ -179,6 +172,7 @@
                 'gridClass' => 'bz-service-grid',
                 'tileClass' => 'bz-service-tile',
                 'plusClass' => 'bz-plus',
+                'iconClass' => 'bz-procurement-icon',
                 'placement' => 'page_mobile_drawer',
             ])
         </aside>

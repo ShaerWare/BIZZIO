@@ -93,7 +93,7 @@
                     </article>
 
                     <article class="card side-card">
-                        <h3>Контакты</h3>
+                        <h3>Друзья</h3>
                         <a class="friend-row" href="{{ route('friends.index') }}">
                             <div class="soft-icon"><svg><use href="#users"/></svg></div>
                             <div>
