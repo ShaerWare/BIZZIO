@@ -6,7 +6,7 @@
 
      Порядок блоков основной области — как в эталоне v26:
      Добро пожаловать → Сервисы → Актуальное в Bizzio → Реклама → заглушки
-     «Мои компании»/«Контакты» → Новости → выбор следующего сервиса. --}}
+     «Мои компании»/«Друзья» → Новости → выбор следующего сервиса. --}}
 <div id="bizzio-mobile-v1" data-open="none">
     <section class="bz-phone" aria-label="Главная Bizzio для гостя">
         <header class="bz-header gm-header">
@@ -34,7 +34,7 @@
                 <div class="gm-active-grid">
                     <a class="gm-active-service" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><strong>Компании</strong><span>Каталог компаний и партнёров</span></a>
                     <a class="gm-active-service" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><strong>Проекты</strong><span>Проекты и кооперация</span></a>
-                    <a class="gm-active-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><strong>Контакты</strong><span>Контакты и связи</span></a>
+                    <a class="gm-active-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><strong>Друзья</strong><span>Друзья и деловые связи</span></a>
                     <a class="gm-active-service" href="{{ route('tenders.index') }}"><img class="bz-procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><strong>Закупки</strong><span>Торги и закупки</span></a>
                     <a class="gm-active-service" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><strong>Новости</strong><span>Новости компаний</span></a>
                 </div>
@@ -94,10 +94,10 @@
             <section class="bz-panel gm-placeholder">
                 <div class="gm-placeholder-head">
                     <div class="gm-placeholder-icon"><svg><use href="#users"/></svg></div>
-                    <h2>Контакты</h2>
+                    <h2>Друзья</h2>
                 </div>
                 <p>Создавайте деловые связи и расширяйте профессиональную сеть.</p>
-                <a href="{{ $registerUrl }}">Найти контакты после регистрации →</a>
+                <a href="{{ $registerUrl }}">Найти друзей после регистрации →</a>
             </section>
 
             <section class="bz-panel bz-news" aria-label="Новости">
@@ -147,13 +147,9 @@
             </section>
         </main>
 
-        {{-- Нижняя навигация: в эталоне ровно четыре ячейки (grid 4×1fr) --}}
-        <nav class="bz-bottom gm-bottom" aria-label="Основная навигация">
-            <a class="bz-bottom-item" href="{{ route('search.index') }}" aria-label="Поиск"><svg><use href="#search"/></svg></a>
-            <a class="bz-bottom-item" href="{{ $authUrl }}" aria-label="Сообщения"><svg><use href="#chat"/></svg></a>
-            <a class="bz-bottom-item" href="{{ $authUrl }}" aria-label="Уведомления"><svg><use href="#bell"/></svg></a>
-            <a class="bz-bottom-item" href="{{ $authUrl }}" aria-label="Помощь и обратная связь"><svg><use href="#help-chat"/></svg></a>
-        </nav>
+        {{-- Нижняя навигация: в эталоне ровно четыре ячейки (grid 4×1fr).
+             Состав общий с внутренними страницами — partials/v26/mobile-bottom-nav --}}
+        @include('partials.v26.mobile-bottom-nav', ['navClass' => 'gm-bottom', 'placement' => 'guest_mobile'])
     </section>
 
     <div class="bz-dim" data-close-panels></div>
@@ -183,7 +179,7 @@
         <div class="bz-service-grid">
             <a class="bz-service-tile" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg>Компании</a>
             <a class="bz-service-tile" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg>Проекты</a>
-            <a class="bz-service-tile" href="{{ $registerUrl }}"><svg><use href="#users"/></svg>Контакты</a>
+            <a class="bz-service-tile" href="{{ $registerUrl }}"><svg><use href="#users"/></svg>Друзья</a>
             <a class="bz-service-tile" href="{{ route('tenders.index') }}"><img class="bz-procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
             <a class="bz-service-tile" href="{{ route('news.index') }}"><svg><use href="#news"/></svg>Новости</a>
         </div>

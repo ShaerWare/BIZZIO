@@ -104,7 +104,9 @@ class SiteWideMenuTest extends TestCase
         $html = $this->actingAs($this->user)->get('/companies')->assertOk()->getContent();
 
         $start = strpos($html, '<div class="v26-chrome"');
-        $end = strpos($html, '<div class="v26-page-body">');
+        $end = strpos($html, '<!-- Page Heading -->');
+        $this->assertNotFalse($start);
+        $this->assertNotFalse($end);
         $chrome = substr($html, $start, $end - $start);
 
         $css = file_get_contents(resource_path('css/v26-chrome.css'));
@@ -144,5 +146,102 @@ class SiteWideMenuTest extends TestCase
         $this->assertStringContainsString('.v26-chrome *{box-sizing:border-box}', $css);
         $this->assertStringContainsString('.v26-chrome .page{', $css);
         $this->assertStringContainsString('--bz-header-height', $css);
+    }
+
+    /**
+     * #181 Замечание заказчика от 03.09: на внутренних страницах снизу появлялось
+     * «старое нижнее меню» — своя навигация Главная / Закупки / Компании / Профиль.
+     * Нижняя панель должна быть той же, что на главной (эталон v26).
+     */
+    public function test_mobile_bottom_navigation_is_the_same_everywhere(): void
+    {
+        $home = $this->actingAs($this->user)->get('/')->assertOk()->getContent();
+        $inner = $this->actingAs($this->user)->get('/companies')->assertOk()->getContent();
+
+        foreach ([$home, $inner] as $html) {
+            preg_match('/<nav class="bz-bottom[^"]*".*?<\/nav>/s', $html, $nav);
+
+            $this->assertSame(4, substr_count($nav[0] ?? '', 'bz-bottom-item'));
+            $this->assertStringNotContainsString('<span>Главная</span>', $nav[0] ?? '');
+            $this->assertStringNotContainsString('<span>Профиль</span>', $nav[0] ?? '');
+        }
+    }
+
+    /**
+     * #181 Замечание заказчика от 30.08: «Подписки» переезжают из правого меню
+     * «Сервисы» в левое меню, сервис «Контакты» переименован в «Друзья».
+     */
+    public function test_subscriptions_live_in_section_menu_and_service_is_renamed(): void
+    {
+        $html = $this->actingAs($this->user)->get('/companies')->assertOk()->getContent();
+
+        $services = $this->servicesDrawer($html);
+
+        $this->assertStringNotContainsString('Подписки', $services, '«Подписки» остались в меню «Сервисы»');
+        $this->assertStringNotContainsString('Контакты', $services, 'Сервис не переименован в «Друзья»');
+        $this->assertStringContainsString('Друзья', $services);
+
+        $this->assertStringContainsString(route('subscriptions.index'), $html, 'Нет ссылки «Подписки» в меню раздела');
+    }
+
+    /**
+     * #181 Замечание заказчика от 30.08: меню раздела одинаковое для всех сервисов
+     * и неполное. Пункты текущего сервиса выводятся отдельной группой сверху.
+     */
+    public function test_section_menu_is_personalised_for_each_service(): void
+    {
+        $expectations = [
+            '/companies' => ['Компании', 'Каталог компаний', 'Создать компанию'],
+            '/projects' => ['Проекты', 'Все проекты', 'Активные проекты'],
+            '/friends' => ['Друзья', 'Входящие заявки', 'Рекомендации'],
+            '/news' => ['Новости', 'Лента новостей', 'Ключевые слова'],
+        ];
+
+        foreach ($expectations as $page => $items) {
+            $menu = $this->menuDrawer($this->actingAs($this->user)->get($page)->assertOk()->getContent());
+
+            foreach ($items as $item) {
+                $this->assertStringContainsString($item, $menu, "В меню раздела {$page} нет пункта «{$item}»");
+            }
+
+            // Группа текущего сервиса стоит выше общей группы «Моя работа».
+            $this->assertLessThan(
+                strpos($menu, 'Моя работа'),
+                strpos($menu, $items[1]),
+                "Пункты текущего раздела {$page} должны идти первыми"
+            );
+        }
+    }
+
+    /**
+     * #181 Замечание заказчика от 03.09: PNG-иконка «Закупки» в мобильном меню
+     * «Сервисы» выпадала из плитки — там свой класс с размерами.
+     */
+    public function test_mobile_services_drawer_uses_mobile_procurement_icon(): void
+    {
+        $html = $this->actingAs($this->user)->get('/companies')->assertOk()->getContent();
+
+        $mobile = substr($html, (int) strpos($html, '<div id="bizzio-mobile-v1"'));
+
+        $this->assertStringContainsString('class="bz-procurement-icon"', $mobile);
+        $this->assertStringNotContainsString('class="procurement-icon"', $mobile);
+    }
+
+    /** Разметка панели «Сервисы» десктопной шапки. */
+    private function servicesDrawer(string $html): string
+    {
+        $start = (int) strpos($html, 'aria-label="Сервисы Bizzio"');
+        $end = (int) strpos($html, '</aside>', $start);
+
+        return substr($html, $start, $end - $start);
+    }
+
+    /** Разметка панели «Меню» десктопной шапки. */
+    private function menuDrawer(string $html): string
+    {
+        $start = (int) strpos($html, 'aria-label="Меню"');
+        $end = (int) strpos($html, '</aside>', $start);
+
+        return substr($html, $start, $end - $start);
     }
 }

@@ -668,3 +668,18 @@ button.plain-icon{border:0;background:transparent;padding:0;font:inherit;color:i
 @media (min-width:768px){
   .v26-chrome #bizzio-mobile-v1{display:none}
 }
+
+
+/* ======================= #181 ПРАВКИ ПОСЛЕ ТЕСТОВ (03.09) =======================
+ *
+ * Пустота между шапкой и контентом на внутренних страницах: у эталонного
+ * #bizzio-mobile-v1 задан min-height:100dvh — на главной он оборачивает весь экран
+ * телефона, а в шапке сайта все его дети (шапка, нижняя навигация, панели) позиционированы
+ * fixed, поэтому пустой контейнер просто отодвигал контент вниз на высоту экрана.
+ */
+.v26-chrome #bizzio-mobile-v1{min-height:0}
+
+/* Меню раздела стало длиннее (пункты текущего сервиса + все разделы) — панели прокручиваются. */
+.v26-chrome .auth-menu-drawer,
+.v26-chrome .guest-menu-drawer{overflow-y:auto;overscroll-behavior:contain}
+.v26-chrome #bizzio-mobile-v1 .bz-menu-drawer{overflow-y:auto;-webkit-overflow-scrolling:touch}
