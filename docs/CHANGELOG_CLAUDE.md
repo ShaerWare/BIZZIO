@@ -3195,3 +3195,79 @@ read-only — смена организатора ломала бы пригла
 в разметке не встречался (`strpos` возвращал `false`), теперь блок режется по «Page Heading».
 
 **Изменённые файлы:** `resources/views/partials/v26/{menu-items,services-items,chrome,mobile-guest,mobile-authorized,icons}.blade.php`, `resources/views/partials/v26/mobile-bottom-nav.blade.php` (новый), `resources/views/home/{guest,authorized}.blade.php`, `resources/views/layouts/app.blade.php`, `resources/css/{v26.css,v26-chrome.css}`, `public/build/*`, `tests/Feature/SiteWideMenuTest.php`.
+
+---
+
+## 2026-09-09 — Разбор канбана и деплой на прод (релиз #311)
+
+**Задача:** выкатить на прод всё из колонки «Ready to prod».
+
+**Что нашлось.** В «Ready to prod» одна карточка — #286 (форма обратной связи). Её фикс
+(`1ebec5d`) давно был в `main` в составе релизного PR #311. При этом GitHub-запуск CI/CD для
+`main` @ `c8b71a6` висел в статусе `waiting` **с 30 августа (9 дней)** — все три чека
+(Tests / Pint / Assets) зелёные, но `production` environment ждал ручного подтверждения.
+Подтверждение выдал пользователь через браузер; джоба `Deploy main -> bizzio.ru` отработала
+успешно (run 33304955421).
+
+**Важно:** прод **уже стоял на этом релизе**. Reflog на сервере показывает
+`reset: moving to origin/main` → `c8b71a6` от 2026-08-30 10:28 UTC — кто-то выкатил релиз
+вручную по SSH, минуя гейт GitHub. Поэтому запуск и висел неподтверждённым, а сегодняшний
+деплой оказался повторной раскаткой того же коммита: `composer install` → «Nothing to install»,
+`migrate --force` → «Nothing to migrate».
+
+**Проверка после деплоя:** `HEAD` = `c8b71a6`; миграция #296
+`2026_08_21_120000_add_closed_at_to_procedures` — `Ran` (batch 24); supervisor: php-fpm, nginx,
+scheduler, laravel-worker — RUNNING (воркер перезапущен деплоем); `/`, `/tenders`, `/news`,
+`/login` отдают 200; главная отдаёт ассеты `v26-Cdj8eZui.css` / `v26-5XM27v6c.js` — ровно те,
+что собраны в `c8b71a6`.
+
+**Замечено попутно (не чинилось):** `storage/logs/laravel.log` на проде разросся до **852 МБ**,
+476 598 записей ERROR. Свежие ошибки — один повторяющийся сюжет: парсер RSS вставляет уже
+существующие ссылки и ловит `SQLSTATE[23505] duplicate key ... news_link_unique`, логируя это
+как ERROR на каждый дубль. Функционально безвредно, но лог растёт; диск пока свободен
+(7.6G / 38G, 21%). Кандидат в бэклог: ловить дубли в `rss:parse` (или `upsert`/`firstOrCreate`)
+и настроить ротацию лога.
+
+**Изменённые файлы:** только `docs/CHANGELOG_CLAUDE.md` (код не менялся — задача деплойная).
+
+---
+
+## 2026-09-09 — #317 RSS-парсер спамил ERROR на каждый дубль
+
+**Симптом.** На проде `storage/logs/laravel.log` — 852 МБ, 476 598 записей ERROR. Все свежие
+ошибки одного вида, каждые 5 минут (расписание `rss:parse`):
+`SQLSTATE[23505] duplicate key value violates unique constraint "news_link_unique"`.
+
+**Первопричина** (цепочка из четырёх звеньев, каждое по отдельности выглядит безобидно):
+
+1. `News` использует `SoftDeletes`.
+2. `news:clean-old` вызывает `->delete()` — удаление **мягкое**, строки остаются в таблице.
+3. Индекс `news_link_unique` видит **все** строки, включая мягко удалённые.
+4. Проверка на дубль `News::where('link', $link)->exists()` работает через глобальный scope
+   SoftDeletes и мягко удалённые строки **не видит**.
+
+Дубль проходил проверку → `News::create()` падал на 23505 → generic `catch (\Exception)`
+писал ERROR. Данные с прода: 213 196 строк в `news`, из них **184 940 мягко удалённых**;
+ссылки из свежих ошибок оказались именно такими строками (удалены в феврале и июне).
+
+**Фикс** (`app/Console/Commands/ParseRSSCommand.php`):
+
+- проверка на дубль теперь через `News::withTrashed()->where('link', $link)`;
+- элементы без `permalink` пропускаются — такую новость некуда открывать и нечем
+  дедуплицировать (раньше создавалась строка с `link = null`);
+- `QueryException` с нарушением уникальности (23505 в PostgreSQL, 23000 в SQLite) ловится
+  отдельно и тихо пропускается — это гонка между проверкой и вставкой либо один и тот же
+  permalink дважды в одной ленте, а не ошибка. Прочие `QueryException` пробрасываются
+  во внешний catch, как и раньше.
+
+**Тесты:** новый `tests/Feature/ParseRSSCommandTest.php` — четыре кейса (мягко удалённая
+ссылка пропускается без ERROR; элемент без ссылки пропускается; дубль внутри одной ленты
+сохраняется один раз; новые элементы по-прежнему создаются). SimplePie подменяется через
+`FeedsFacade::swap()` заглушками. Проверено, что на коде ДО фикса тесты падают: первый —
+ровно с исходным симптомом (`Log::error` вызван 1 раз вместо 0), второй — строкой с `link = null`.
+
+**Изменённые файлы:** `app/Console/Commands/ParseRSSCommand.php`,
+`tests/Feature/ParseRSSCommandTest.php`, `docs/CHANGELOG_CLAUDE.md`.
+
+**Не входит в фикс (решение за заказчиком):** на проде `LOG_STACK=single` — лог не ротируется
+вообще; кандидат `daily` + `LOG_DAILY_DAYS`. Сам файл на 852 МБ нужно обнулить после выката.
