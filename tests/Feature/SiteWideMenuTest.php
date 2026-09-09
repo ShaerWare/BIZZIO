@@ -236,6 +236,51 @@ class SiteWideMenuTest extends TestCase
         return substr($html, $start, $end - $start);
     }
 
+    /**
+     * #181 Полное меню ниже группы текущего раздела должно содержать ВСЕ сервисы.
+     *
+     * Цикл вывода перебирал только ['tenders', 'news'], поэтому при уходе из раздела
+     * пункты «Компании», «Проекты» и «Друзья» пропадали — левое меню заметно
+     * сокращалось, ровно то, что персонализация должна была предотвратить.
+     */
+    public function test_full_menu_below_keeps_every_service_on_any_page(): void
+    {
+        // Пункты, по которым видно, что группа сервиса раскрыта, а не сведена к ссылке.
+        $groupItems = [
+            'Компании' => 'Каталог компаний',
+            'Проекты' => 'Все проекты',
+            'Друзья' => 'Входящие заявки',
+            'Закупки' => 'Найти закупку',
+            'Новости' => 'Лента новостей',
+        ];
+
+        foreach (['/', '/companies', '/projects', '/friends', '/tenders', '/news'] as $page) {
+            $menu = $this->menuDrawer($this->actingAs($this->user)->get($page)->assertOk()->getContent());
+
+            foreach ($groupItems as $group => $item) {
+                $this->assertStringContainsString(
+                    $item,
+                    $menu,
+                    "На странице {$page} в меню нет пункта «{$item}» группы «{$group}»"
+                );
+            }
+        }
+    }
+
+    /**
+     * #181 Группа текущего раздела не должна дублироваться в полном меню ниже.
+     */
+    public function test_current_section_group_is_not_duplicated(): void
+    {
+        $menu = $this->menuDrawer($this->actingAs($this->user)->get('/companies')->assertOk()->getContent());
+
+        $this->assertSame(
+            1,
+            substr_count($menu, 'Каталог компаний'),
+            'Группа текущего раздела продублировалась в полном меню'
+        );
+    }
+
     /** Разметка панели «Меню» десктопной шапки. */
     private function menuDrawer(string $html): string
     {
