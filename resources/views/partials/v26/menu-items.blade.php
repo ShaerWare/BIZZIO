@@ -233,8 +233,11 @@
 
     $rendered[] = ['title' => 'Моя работа', 'items' => $workItems];
 
-    foreach (['tenders', 'news'] as $key) {
-        if ($section !== $key) {
+    // Полное меню ниже — ВСЕ сервисы, а не только закупки и новости: иначе при уходе
+    // из раздела его пункты пропадали, ровно то, что персонализация должна была
+    // предотвратить. `isset` нужен из-за группы «Друзья» — её нет у гостя.
+    foreach (['companies', 'projects', 'friends', 'tenders', 'news'] as $key) {
+        if ($section !== $key && isset($groups[$key])) {
             $rendered[] = $groups[$key];
         }
     }
