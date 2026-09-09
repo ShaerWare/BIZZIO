@@ -216,6 +216,38 @@ function initMobilePanels(mobileRoot) {
     });
 }
 
+/**
+ * #181 Подпись поиска в шапке. На планшете полная фраза не помещается в поле и вылезает
+ * за его границы, поэтому там показываем короткий вариант. Работает и для <input>
+ * (placeholder), и для <span> гостевой шапки.
+ */
+function initSearchPlaceholder(root) {
+    const targets = root.querySelectorAll('[data-placeholder-full][data-placeholder-short]');
+
+    if (!targets.length) {
+        return;
+    }
+
+    const compact = window.matchMedia('(max-width: 1279px)');
+
+    const apply = () => {
+        targets.forEach((element) => {
+            const text = compact.matches
+                ? element.dataset.placeholderShort
+                : element.dataset.placeholderFull;
+
+            if (element.tagName === 'INPUT') {
+                element.placeholder = text;
+            } else {
+                element.textContent = text;
+            }
+        });
+    };
+
+    apply();
+    compact.addEventListener('change', apply);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const root = document.querySelector('[data-v26-root]');
 
@@ -229,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initPanels(page);
         initTabletReflow(page);
     });
+    initSearchPlaceholder(root);
     initMobilePanels(root.querySelector('#bizzio-mobile-v1'));
     initInactiveFeatures(root, authState);
     initFutureServices(root, authState);

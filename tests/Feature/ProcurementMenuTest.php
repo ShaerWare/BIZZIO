@@ -59,8 +59,9 @@ class ProcurementMenuTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         $this->actingAs($user);
 
-        // Рендерим само меню: на дашборде «Мои закупки» есть ещё и в виджете.
-        $menu = view('layouts.navigation')->render();
+        // #181 Меню переехало в общий партиал шапки v26; рендерим именно его, потому что
+        // на страницах «Мои закупки» встречается ещё и в контенте.
+        $menu = view('partials.v26.menu-items')->render();
 
         $this->assertStringContainsString('Найти закупку', $menu);
         $this->assertStringContainsString('Мои заявки', $menu);

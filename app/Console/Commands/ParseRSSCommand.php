@@ -7,6 +7,7 @@ use App\Models\News;
 use App\Models\RSSSource;
 use Feeds;
 use Illuminate\Console\Command;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 class ParseRSSCommand extends Command
@@ -56,8 +57,18 @@ class ParseRSSCommand extends Command
                         // Извлечение данных из RSS
                         $link = $item->get_permalink();
 
-                        // Проверка на дубль
-                        if (News::where('link', $link)->exists()) {
+                        // Без ссылки новость бесполезна (некуда вести читателя) и её
+                        // нечем дедуплицировать — колонка `link` уникальна.
+                        if (blank($link)) {
+                            continue;
+                        }
+
+                        // Проверка на дубль. `withTrashed()` обязателен: `news:clean-old`
+                        // удаляет старые новости МЯГКО, строки остаются в таблице, а
+                        // уникальный индекс `news_link_unique` их по-прежнему видит.
+                        // Без этого дубль проходил проверку, падал на insert и писал
+                        // ERROR в лог на каждый элемент ленты — каждые 5 минут (#317).
+                        if (News::withTrashed()->where('link', $link)->exists()) {
                             continue;
                         }
 
@@ -92,6 +103,15 @@ class ParseRSSCommand extends Command
                         ]);
 
                         $parsedCount++;
+                    } catch (QueryException $e) {
+                        // Гонка: ссылку успели вставить между проверкой и insert, либо
+                        // лента отдала один и тот же permalink дважды. Это штатная
+                        // ситуация, а не ошибка — дубль просто пропускаем.
+                        if (! $this->isDuplicateLink($e)) {
+                            throw $e;
+                        }
+
+                        continue;
                     } catch (\Exception $e) {
                         Log::error("Ошибка парсинга элемента RSS: {$e->getMessage()}", [
                             'source' => $source->name,
@@ -129,5 +149,13 @@ class ParseRSSCommand extends Command
         $this->info("🎉 Парсинг завершён. Всего добавлено: {$totalParsed} новостей. Ошибок: {$totalErrors}");
 
         return 0;
+    }
+
+    /**
+     * Нарушение уникальности `news.link`: 23505 в PostgreSQL, 23000 в SQLite (тесты).
+     */
+    private function isDuplicateLink(QueryException $e): bool
+    {
+        return in_array((string) $e->getCode(), ['23505', '23000'], true);
     }
 }

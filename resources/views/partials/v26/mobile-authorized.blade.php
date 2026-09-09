@@ -142,24 +142,9 @@
             </section>
         </main>
 
-        {{-- 2.2.1 Нижняя навигация эталона: поиск, сообщения, уведомления, помощь --}}
-        <nav class="bz-bottom" aria-label="Основная навигация">
-            <a class="bz-bottom-item" href="{{ route('search.index') }}" aria-label="Поиск"><svg><use href="#search"/></svg></a>
-            {{-- Раздела сообщений пока нет: элемент остаётся видимым и уходит в аналитику --}}
-            <button class="bz-bottom-item" type="button"
-                    data-inactive-feature="messages"
-                    data-feature-label="Сообщения"
-                    data-placement="auth_mobile_bottom"
-                    aria-label="Сообщения"><svg><use href="#chat"/></svg></button>
-            <a class="bz-bottom-item" href="{{ route('notifications.index') }}" aria-label="Уведомления">
-                <svg><use href="#bell"/></svg>
-                @php($unread = $viewer->unreadNotifications()->count())
-                @if($unread > 0)
-                    <span class="bz-count">{{ $unread }}</span>
-                @endif
-            </a>
-            <a class="bz-bottom-item" href="{{ route('profile.edit') }}#feedback" aria-label="Помощь и обратная связь"><svg><use href="#help-chat"/></svg></a>
-        </nav>
+        {{-- 2.2.1 Нижняя навигация эталона: поиск, сообщения, уведомления, помощь.
+             Состав общий с внутренними страницами — partials/v26/mobile-bottom-nav --}}
+        @include('partials.v26.mobile-bottom-nav', ['placement' => 'auth_mobile_bottom'])
     </section>
 
     <div class="bz-dim" data-close-panels></div>
@@ -170,16 +155,13 @@
             <button class="bz-close" type="button" data-close-panels aria-label="Закрыть меню"><svg><use href="#auth-x"/></svg></button>
         </div>
         {{-- Настройки профиля и выход живут в меню профиля (шапка), в меню раздела их нет --}}
-        <div class="bz-drawer-section">Моя работа</div>
-        <a class="bz-nav-row bz-current" href="{{ route('home') }}"><svg><use href="#auth-home"/></svg>Главная</a>
-        <a class="bz-nav-row" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg>Компании</a>
-        <a class="bz-nav-row" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg>Контакты</a>
-        <a class="bz-nav-row" href="{{ route('tenders.index') }}"><img class="bz-procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
-        <a class="bz-nav-row" href="{{ route('news.index') }}"><svg><use href="#news"/></svg>Новости</a>
-        <a class="bz-nav-row" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg>Проекты</a>
+        {{-- #181 Состав меню общий для всех страниц сайта --}}
+        @include('partials.v26.menu-items', [
+            'rowClass' => 'bz-nav-row',
+            'labelClass' => 'bz-drawer-section',
+            'iconClass' => 'bz-procurement-icon',
+        ])
 
-        <div class="bz-drawer-section">Настройки и поддержка</div>
-        <a class="bz-nav-row" href="{{ route('profile.edit') }}#feedback"><svg><use href="#help-chat"/></svg>Помощь и обратная связь</a>
     </aside>
 
     <aside class="bz-drawer bz-services-drawer" aria-label="Сервисы Bizzio">
@@ -191,10 +173,9 @@
         <div class="bz-service-grid">
             <a class="bz-service-tile" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg>Компании</a>
             <a class="bz-service-tile" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg>Проекты</a>
-            <a class="bz-service-tile" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg>Контакты</a>
+            <a class="bz-service-tile" href="{{ route('friends.index') }}"><svg><use href="#users"/></svg>Друзья</a>
             <a class="bz-service-tile" href="{{ route('tenders.index') }}"><img class="bz-procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt="">Закупки</a>
             <a class="bz-service-tile" href="{{ route('news.index') }}"><svg><use href="#news"/></svg>Новости</a>
-            <a class="bz-service-tile" href="{{ route('subscriptions.index') }}"><svg><use href="#auth-bookmark"/></svg>Подписки</a>
         </div>
 
         <div class="bz-service-label">Будущие сервисы · нажмите, чтобы поддержать</div>

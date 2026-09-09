@@ -23,7 +23,10 @@
                     <svg class="hamb" aria-hidden="true"><use href="#menu"/></svg><span>Меню</span>
                 </button>
                 <a class="search" href="{{ route('login') }}">
-                    <svg><use href="#search"/></svg><span>Компании, проекты, люди, закупки и новости</span>
+                    <svg><use href="#search"/></svg>
+                    {{-- #181 На планшете длинная подпись не помещается в поле — v26.js подставляет короткую --}}
+                    <span data-placeholder-full="Компании, проекты, люди, закупки и новости"
+                          data-placeholder-short="Поиск в Bizzio">Компании, проекты, люди, закупки и новости</span>
                 </a>
                 <div class="top-actions">
                     <a class="icon-btn" href="{{ route('login') }}" aria-label="Помощь и обратная связь"><svg><use href="#help-chat"/></svg></a>
@@ -52,10 +55,10 @@
                         <a class="guest-text-link" href="{{ $registerUrl }}">Добавить компанию после регистрации&nbsp; →</a>
                     </article>
                     <article class="card guest-placeholder">
-                        <h3>Контакты</h3>
+                        <h3>Друзья</h3>
                         <div class="guest-placeholder-icon"><svg><use href="#users"/></svg></div>
                         <p class="guest-side-copy">Создавайте деловые связи и расширяйте профессиональную сеть.</p>
-                        <a class="guest-text-link" href="{{ $registerUrl }}">Найти контакты после регистрации&nbsp; →</a>
+                        <a class="guest-text-link" href="{{ $registerUrl }}">Найти друзей после регистрации&nbsp; →</a>
                     </article>
                 </section>
 
@@ -85,8 +88,8 @@
                             </a>
                             <a class="guest-service-card" href="{{ $registerUrl }}">
                                 <div class="guest-service-icon"><svg><use href="#users"/></svg></div>
-                                <div class="guest-service-name">Контакты</div>
-                                <div class="guest-service-copy">Контакты и деловые связи</div>
+                                <div class="guest-service-name">Друзья</div>
+                                <div class="guest-service-copy">Друзья и деловые связи</div>
                             </a>
                             <a class="guest-service-card" href="{{ route('tenders.index') }}">
                                 <div class="guest-service-icon"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""></div>
@@ -189,20 +192,12 @@
                     <span>Меню</span>
                     <button class="guest-close" type="button" data-panel-close aria-label="Закрыть меню"><svg><use href="#guest-x"/></svg></button>
                 </div>
-                <div class="guest-drawer-label">Моя работа</div>
-                <div class="guest-menu-list">
-                    <a class="guest-menu-row active" href="{{ route('home') }}"><svg><use href="#guest-home"/></svg><span>Главная</span></a>
-                    <a class="guest-menu-row" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><span>Компании</span></a>
-                    <a class="guest-menu-row" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><span>Контакты</span></a>
-                    <a class="guest-menu-row" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><span>Закупки</span></a>
-                    <a class="guest-menu-row" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><span>Новости</span></a>
-                    <a class="guest-menu-row" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><span>Проекты</span></a>
-                    <a class="guest-menu-row" href="{{ $registerUrl }}"><svg><use href="#file"/></svg><span>Публикации</span></a>
-                </div>
-                <div class="guest-drawer-label">Настройки и поддержка</div>
-                <div class="guest-menu-list">
-                    <a class="guest-menu-row" href="{{ $authUrl }}"><svg><use href="#help-chat"/></svg><span>Помощь и обратная связь</span></a>
-                </div>
+                {{-- #181 Состав меню общий для всех страниц сайта --}}
+                @include('partials.v26.menu-items', [
+                    'rowClass' => 'guest-menu-row',
+                    'labelClass' => 'guest-drawer-label',
+                ])
+
                 <div class="guest-menu-note">Персональные возможности станут доступны после регистрации.</div>
                 <div class="guest-menu-actions">
                     <a class="guest-login" href="{{ $authUrl }}">Войти</a>
@@ -215,15 +210,16 @@
                     <span>Сервисы Bizzio</span>
                     <button class="guest-close" type="button" data-panel-close aria-label="Закрыть сервисы"><svg><use href="#guest-x"/></svg></button>
                 </div>
-                <div class="guest-drawer-section">Доступные сервисы</div>
+                <div class="guest-drawer-label">Доступные сервисы</div>
                 <div class="guest-drawer-grid">
                     <a class="guest-drawer-service" href="{{ route('companies.index') }}"><svg><use href="#building"/></svg><div class="guest-service-name">Компании</div></a>
                     <a class="guest-drawer-service" href="{{ route('projects.index') }}"><svg><use href="#clip"/></svg><div class="guest-service-name">Проекты</div></a>
                     <a class="guest-drawer-service" href="{{ route('tenders.index') }}"><img class="procurement-icon" src="/images/v26/bizzio-quick-icon-procurement-base-v5.png" alt=""><div class="guest-service-name">Закупки</div></a>
                     <a class="guest-drawer-service" href="{{ route('news.index') }}"><svg><use href="#news"/></svg><div class="guest-service-name">Новости</div></a>
-                    <a class="guest-drawer-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><div class="guest-service-name">Контакты</div></a>
+                    <a class="guest-drawer-service" href="{{ $registerUrl }}"><svg><use href="#users"/></svg><div class="guest-service-name">Друзья</div></a>
                 </div>
-                <div class="guest-drawer-section">Будущие сервисы</div>
+                <div class="guest-drawer-rule"></div>
+                <div class="guest-drawer-label">Будущие сервисы<div class="guest-drawer-sub">Нажмите на сервис — ваш выбор будет учтён</div></div>
                 <div class="guest-drawer-grid">
                     @foreach($futureServices as $service)
                         <div class="guest-drawer-service"

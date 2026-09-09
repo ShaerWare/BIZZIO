@@ -85,12 +85,15 @@ class PriorityTasksTest extends TestCase
             ->assertSee('avatarCropper(', false);
     }
 
-    // #150 — мобильное меню раскрывающееся (есть сворачиваемые группы)
-    public function test_150_mobile_menu_has_collapsible_groups(): void
+    // #150 — мобильное меню сгруппировано по разделам.
+    // #181 Прежнее меню на Alpine (сворачиваемые группы через x-show="expanded") заменено
+    // шапкой v26: панель открывается кнопкой, а пункты разбиты заголовками секций.
+    public function test_150_mobile_menu_is_grouped_by_sections(): void
     {
-        $this->get(route('companies.index'))
-            ->assertStatus(200)
-            ->assertSee('x-show="expanded"', false);
+        $response = $this->get(route('companies.index'))->assertStatus(200);
+
+        $response->assertSee('data-open-panel="menu"', false);
+        $response->assertSee('bz-drawer-section', false);
     }
 
     // #152 — SEO-разметка на публичной странице компании
